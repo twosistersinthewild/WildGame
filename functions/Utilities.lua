@@ -45,7 +45,33 @@ function utilities:Round(number)
     else
         return math.floor(number)
     end
-end  
+end
+-------------------------------------------------  
+-- return a string value for the type of environment that is active
+-- environments in play and an index need to be passed in 
+
+function utilities:DetermineEnvType(myEnvs, ind)
+    local envStr = "" 
+    
+    --todo: change this to id perhaps
+    if myEnvs[ind]["activeEnv"].Name == "Rivers and Streams" then
+        envStr = "RS"
+    elseif myEnvs[ind]["activeEnv"].Name == "Lakes and Ponds" then
+        envStr = "LP"                            
+    elseif myEnvs[ind]["activeEnv"].Name == "Fields and Meadows" then
+        envStr = "FM"                            
+    elseif myEnvs[ind]["activeEnv"].Name == "Forests and Woodlands" then
+        envStr = "FW"                            
+    --!!human wildcard played
+    elseif myEnvs[ind]["activeEnv"].Type == "Wild" then
+        --todo need to check to make sure that another active chain on this card
+        -- hasn't already determined the type for the wild card'
+
+        -- todo need to determine how this is chosen and accounted for
+    end    
+    
+    return envStr 
+end
 
 -------------------------------------------------
 -- load a file into memory from the system.ResourceDirectory. this is being used to load a json file in and decoding it
