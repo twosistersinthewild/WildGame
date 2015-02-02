@@ -1,5 +1,6 @@
 local composer = require( "composer" )
 local GLOB = require "globals"
+local utilities = require "functions.Utilities"
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
@@ -15,6 +16,7 @@ local activeEnvs = {}
 --local env3
 local deckIndex = 1
 local maxEnvirons = 3
+local maxDiets = 5
 
 --controls
 local testLabel
@@ -141,23 +143,9 @@ function scene:PlayCard()
                             --todo might need to check 2 envs for nature bites back
                             local envType = ""
 
-                            --todo: change this to id perhaps
-                            if activeEnvs[j]["activeEnv"].Name == "Rivers and Streams" then
-                                envType = "RS"
-                            elseif activeEnvs[j]["activeEnv"].Name == "Lakes and Ponds" then
-                                envType = "LP"                            
-                            elseif activeEnvs[j]["activeEnv"].Name == "Fields and Meadows" then
-                                envType = "FM"                            
-                            elseif activeEnvs[j]["activeEnv"].Name == "Forests and Woodlands" then
-                                envType = "FW"                            
-                            --!!human wildcard played
-                            elseif activeEnvs[j]["activeEnv"].Type == "Wild" then
-                                --todo need to check to make sure that another active chain on this card
-                                -- hasn't already determined the type for the wild card'
+                            envType = utilities:DetermineEnvType(activeEnvs, j)
 
-                                -- todo need to determine how this is chosen and accounted for
-                            end
-
+                            -- see if any of the plants places to live match the environment played
                             for myEnv = 1, 4 do
                                 local myEnvSt = "Env"..myEnv                            
 
@@ -195,42 +183,124 @@ function scene:PlayCard()
                 -- can eat plants and or invertebrates
                 -- check environment
                 -- if ok add to chain and set value appropriately
-                 --[[]           
+                
+                
                 local space = false
                 local availChain = ""
-                
-                for j = 1, maxEnvirons do
-                    if activeEnvs[j] then 
-                        if activeEnvs[j]["chain1"] then
-                            -- determine if anything can be eaten
-                            if activeEnvs[j]["chain1"][1] then -- if there is a plant
-                                
-                                --space = true
-                                --availChain = "chain1"   
-                            --elseif invert 
-                            end
-                            
+                local tabLen = 0
+                local dietValue = 0
 
+                -- todo maxEnvirons could be substituted if a card allows up to 3 chains
+                for j = 1, maxEnvirons do
+                    if activeEnvs[j] then         
+                        --todo: make sure there is something to eat on one of the chains
+                        if activeEnvs[j]["chain1"] then
+                            -- first get the table length to find the last card played on the chain
+                            tabLen = scene:tableLength(activeEnvs[j]["chain1"])
+                            
+                            if tabLen > 0 then
+                                local foodType = activeEnvs[j]["chain1"][tabLen].Type
+                                
+                                -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
+                                if foodType == "Small Plant" or foodType == "Large Plant" then
+                                    foodType = "Plant"
+                                end
+                                
+                                -- loop through the card's available diets and try to match the chain
+                                for diet = 1, maxDiets do
+                                    local dietString = "Diet"..diet.."_Type"
+                                                                    
+                                    -- if this is true, there is space and the last card in the chain is edible
+                                    if hand[ind][dietString] and hand[ind][dietString] == foodType then
+                                        space = true
+                                        availChain = "chain1"
+                                        dietValue = diet
+                                        break
+                                    end                                        
+                                end                                
+                            else
+                                print("No card was in that position. You have an Error.")
+                            end 
                         end
-                        
-                        
-                        
-                        
-                    end
-                    
-                    
-                    if space then
-                            break
+
+                        if not space and activeEnvs[j]["chain2"] then                            
+                            -- first get the table length to find the last card played on the chain
+                            tabLen = scene:tableLength(activeEnvs[j]["chain2"])
+                            
+                            if tabLen > 0 then
+                                local foodType = activeEnvs[j]["chain2"][tabLen].Type
+                                
+                                -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
+                                if foodType == "Small Plant" or foodType == "Large Plant" then
+                                    foodType = "Plant"
+                                end
+                                
+                                -- loop through the card's available diets and try to match the chain
+                                for diet = 1, maxDiets do
+                                    local dietString = "Diet"..diet.."_Type"
+                                                                    
+                                    -- if this is true, there is space and the last card in the chain is edible
+                                    if hand[ind][dietString] and hand[ind][dietString] == foodType then
+                                        space = true
+                                        availChain = "chain2"
+                                        dietValue = diet
+                                        break
+                                    end                                        
+                                end                                
+                            else
+                                print("No card was in that position. You have an Error.")
+                            end 
+                        end
+
+                        if space then
+                            -- make sure types match
+                            local envMatch = false
+
+                            --todo might need to check 2 envs for nature bites back
+                            local envType = ""
+
+                            envType = utilities:DetermineEnvType(activeEnvs, j)
+
+                            -- see if any of the invertebrate's places to live match the environment played
+                            for myEnv = 1, 4 do
+                                local myEnvSt = "Env"..myEnv                            
+
+                                if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
+                                    envMatch = true
+                                    break
+                                end
+                            end
+
+                            -- still need this part. add it to chain and change its value
+                            if envMatch then
+                                local valueStr = "Diet"..dietValue.."_Value"
+                                hand[ind].Value = hand[ind][valueStr]
+                                
+                                -- assign the plant to first postion of the food chain array chosen above
+                                activeEnvs[j][availChain][tabLen + 1] = hand[ind]
+                                
+                                played = true
+                                -- remove the card from the hand
+                                hand[ind] = nil
+                                print(activeEnvs[j][availChain][tabLen + 1].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen].Name .. ".") 
+                            else                                
+                                print("I didn't get a type")--todo: remove this
+                            end
+                        end
+
                     end  
-                    
-                    
-                    
+
+                    if space then
+                        break
+                    end                
                 end
-                --]]
                 
             end 
         end
         
+        
+        -- todo need to make sure this happens any time a card is played from hand
+        -- may want to abstract it out to its own fx
         if played then
             -- loop up through deck from where card was played to fill empty hole
             -- if the card played was the last card in hand
