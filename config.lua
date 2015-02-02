@@ -1,5 +1,7 @@
 application = {
 	content = {
+                -- trying a 3:2 resolution. this fits between 16:9 and 4:3.
+                -- todo: 4:3 may have top and bottom cut off so needs testing
 		width = 960,
 		height = 640, 
 		scale = "letterBox",
