@@ -11,12 +11,41 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 
-
+function scene:showButton()
+        local endTurnBtn = display.newRect( 100, 300, 150, 150 )
+    endTurnBtn.alpha = 0.8
+    endTurnBtn.name = "Front Object"
+    local endTurnLbl = display.newText( { text = "Card Movement", x = 100, y = 300, fontSize = 28 } )
+    endTurnLbl:setTextColor( 1 )
+    
+    local function endTurnListener( event )
+        local object = event.target
+        --print( object.name.." TAPPED!" )
+    composer.gotoScene("screens.CardMovement")
+end    
+    
+    endTurnBtn:addEventListener( "tap", endTurnListener )
+end
 
 
 function scene:create( event )
 
    local sceneGroup = self.view
+   
+          local endTurnBtn = display.newRect( 100, 300, 150, 150 )
+    endTurnBtn.alpha = 0.8
+    endTurnBtn.name = "Front Object"
+    local endTurnLbl = display.newText( { text = "Card Movement", x = 100, y = 300, fontSize = 28 } )
+    endTurnLbl:setTextColor( 1 )
+    
+    local function endTurnListener( event )
+        local object = event.target
+        --print( object.name.." TAPPED!" )
+    composer.gotoScene("screens.CardMovement")
+end    
+    
+    endTurnBtn:addEventListener( "tap", endTurnListener )
+    sceneGroup: insert(endTurnBtn)
 
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
@@ -30,6 +59,7 @@ function scene:show( event )
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
+      -- scene:showButton()
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
