@@ -46,7 +46,23 @@ end
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
     sceneGroup: insert(endTurnBtn)
+    sceneGroup:insert(endTurnLbl)
 
+    local sliderDemo = display.newRect( 100, 500, 150, 150 )
+    sliderDemo.alpha = 0.8
+    sliderDemo.name = "Front Object"
+    local sliderDemoLbl = display.newText( { text = "sliderDemo", x = 100, y = 500, fontSize = 28 } )
+    sliderDemoLbl:setTextColor( 1 )
+    
+    local function sliderDemoListener( event )
+        local object = event.target
+        --print( object.name.." TAPPED!" )
+    composer.gotoScene("screens.scrollViewDemo")
+end    
+    
+    sliderDemo:addEventListener( "tap", sliderDemoListener )
+    sceneGroup: insert(sliderDemo)
+    sceneGroup:insert(sliderDemoLbl)
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
