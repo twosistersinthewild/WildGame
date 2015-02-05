@@ -22,7 +22,7 @@ local profilerPeriod = 1
 local profilerTimer,reporter,systemTime,removeHook,debugloop,socketRecieveLoop,handleError
 local socket = require "socket"
 local tcpSocket,master,resolveName, tableToID, idToTable, lastKnownPC
-local CiderRunMode = {};CiderRunMode.runmode = 'RUN';CiderRunMode.assertImage = true;CiderRunMode.userdir = "C:/Users/az0ni_000/AppData/Roaming/luaglider2/dev";local SOCKET_PORT=47270;local GLIDER_MAIN_FOLDER= "C:/Users/az0ni_000/Documents/GitHub/WildGame";local useNativePrint= false;local snapshotInterval= -1;local snapshotInterval= -1;local fileFilters= {"CiderDebugger.lua",};local startupMode= "require";local function shouldDebug()
+local CiderRunMode = {};CiderRunMode.runmode = 'RUN';CiderRunMode.assertImage = true;CiderRunMode.userdir = "C:/Users/az0ni_000/AppData/Roaming/luaglider2/dev";local SOCKET_PORT=46208;local GLIDER_MAIN_FOLDER= "C:/Users/az0ni_000/Documents/GitHub/WildGame";local useNativePrint= false;local snapshotInterval= -1;local snapshotInterval= -1;local fileFilters= {"CiderDebugger.lua",};local startupMode= "require";local function shouldDebug()
     local env = system.getInfo( "environment" )
     if(env~="simulator") then
         native.showAlert(

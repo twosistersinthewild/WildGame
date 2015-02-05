@@ -9,9 +9,6 @@ local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
 function scene:doIt ()
-    
--- screen orientation should rotate when user rotates phone
-
 -- ** Tasks **
 -- bind together in a group and rotate all as one (adjustments need to be made)
 -- get objects bound within screen space
@@ -25,11 +22,12 @@ local myObject = display.newRect( 300, 430, 75, 75 )
      
 
 -- create second object
-local anotherObject = display.newRect(100, 430, 50, 50)
+local anotherObject = display.newImage("/images/assets/v2-Back.jpg",50, 800)
 local tapCounter = 0
 
 -- store x pos
 local xPos 
+local yPos
 
 -- stores orientation text
 local orientation = system.orientation
@@ -74,15 +72,17 @@ function anotherObject:tap( event )
     if (event.numTaps >= 2 ) then
         -- checks to make sure image isn't already zoomed
         if tapCounter == 0 then
-            self.xScale = 10 -- resize is relative to original size
-            self.yScale = 10
+            self.xScale = 3.5 -- resize is relative to original size
+            self.yScale = 3.5
             xPos = self.x   -- store original position
-            self.x = 300    -- center x pos to give max viewable area
+            yPos = self.y
+            self.y = 480    -- center y pos to give max viewable area
             tapCounter = 1 -- sets flag to indicate zoomed image
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
             self.x = xPos  -- reset x pos
+            self.y = yPos
             tapCounter = 0 -- reset flag
         end
             print( "The object was double-tapped." )
@@ -102,12 +102,15 @@ function myObject:touch( event )
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object
 	
-    elseif event.phase == "moved" then
+    elseif event.phase == "moved"  then
 	
         local x = (event.x - event.xStart) + self.markX
         local y = (event.y - event.yStart) + self.markY
         
+        
         self.x, self.y = x, y    -- move object based on calculations above
+        
+        
     end
     
     return true

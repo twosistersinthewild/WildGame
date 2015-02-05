@@ -15,8 +15,7 @@ function scene:showButton()
         local endTurnBtn = display.newRect( 100, 300, 150, 150 )
     endTurnBtn.alpha = 0.8
     endTurnBtn.name = "Front Object"
-    local endTurnLbl = display.newText( { text = "Card Movement", x = 100, y = 300, fontSize = 28 } )
-    endTurnLbl:setTextColor( 1 )
+    
     
     local function endTurnListener( event )
         local object = event.target
@@ -35,8 +34,7 @@ function scene:create( event )
           local endTurnBtn = display.newRect( 100, 300, 150, 150 )
     endTurnBtn.alpha = 0.8
     endTurnBtn.name = "Front Object"
-    local endTurnLbl = display.newText( { text = "Card Movement", x = 100, y = 300, fontSize = 28 } )
-    endTurnLbl:setTextColor( 1 )
+   
     
     local function endTurnListener( event )
         local object = event.target
