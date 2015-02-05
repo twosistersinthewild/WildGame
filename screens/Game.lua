@@ -56,15 +56,27 @@ function scene:shuffleDeck(myTable)
     end
 end
 
-local function drawCards( num, myHand )
-
-    for i = deckIndex, num do
-        -- insert the card into the hand, then nil it from the deck
-        table.insert(myHand, deck[i])
+-- cards will be dealt to hand
+--@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
+function scene:drawCards( num, myHand )
+    
+    -- todo: make sure there is a card to draw or this will crash. i think this is fixed
+    
+    local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
+    
+    for i = deckIndex, numDraw, 1 do -- start from deckIndex and draw the number passed in. third param is step
         
-        print("You have been dealt the " .. deck[i].Name .. " card.")
-        deck[i] = nil
-                
+        if deck[i] then -- make sure there is a card to draw
+            -- insert the card into the hand, then nil it from the deck
+            table.insert(myHand, deck[i])
+
+            print("You have been dealt the " .. deck[i].Name .. " card.")
+            deck[i] = nil
+        else
+            -- the draw pile is empty
+            -- todo: deal with this by either reshuffling discard or ending game
+            print("There are no cards left to draw.")
+        end
         
     end
     
@@ -74,10 +86,79 @@ local function drawCards( num, myHand )
     
 end
 
+function scene:CalculateScore()
+    -- run through activeEnvs
+    -- run through each chain
+    
+    -- for each card found, flag the value in curEco for that spot of chain
+    
+    local envFound = false
+    local tabLen = 0
+    
+    -- todo: might want to deal with this differently
+    local curEco = {} -- clear the table first so that we only mark true if they are currently there
+    local chainStr = "chain"
+    
+    for i = 1, maxEnvirons do 
+        if activeEnvs[i] then
+            if not envFound then -- only want to set this once, so once an env has been found this will not be true again
+                envFound = true
+                curEco[1] = true
+            end
+            
+            -- todo: change this for loop if there are more than 2 possible chains
+            for chainCount = 1, 2 do
+                chainStr = "chain"..chainCount -- will have a value of "chain1" or "chain2"
+                
+                if activeEnvs[i][chainStr] then
+                    tabLen = scene:tableLength(activeEnvs[i][chainStr])                            
+
+                    local cardValue = 0
+
+                    if tabLen > 0 then
+                        for j = 1, tabLen do                        
+                            cardValue = activeEnvs[i][chainStr][j].Value
+                            curEco[cardValue] = true
+                        end
+                    end
+                end
+                
+                
+            end            
+        end 
+    end
+    
+    print("Current Score:")
+    
+    for i = 1, 10 do
+        if curEco[i] then
+            print(i..": ",curEco[i]) -- needed to use , here to concatenate a boolean value
+        else
+            print(i..": false")
+        end
+        
+        
+    end
+    
+end
+
+function scene:EndTurn()
+    
+    --print("hello")
+    -- shift control to npc
+    
+    -- determine current score    
+    scene:CalculateScore()
+    -- if there's a winner do something
+    
+end
+
 function scene:PlayCard()
         -- todo change this so that a click will try to play a certain card
         -- todo this is only for testing. the outer for loop will be thrown off by holes in hand table
         -- this will need to be addressed. using in pairs for hand might be better
+        
+        --todo account for strohmstead card
     local played = false
     
     local handSize = #hand
@@ -178,9 +259,11 @@ function scene:PlayCard()
                     end                
                 end
             -- invertebrate
-            elseif hand[ind].Type == "Invertebrate" then
+            elseif hand[ind].Type == "Invertebrate" or hand[ind].Type == "Small Animal" or hand[ind].Type == "Large Animal" or hand[ind].Type == "Apex" then
+                -- todo may need a special case for apex to make it a 10 if played on a 9
+                
+                -- make sure there is an available chain to play on
                 -- check diet types against cards in play
-                -- can eat plants and or invertebrates
                 -- check environment
                 -- if ok add to chain and set value appropriately
                 
@@ -261,7 +344,7 @@ function scene:PlayCard()
 
                             envType = utilities:DetermineEnvType(activeEnvs, j)
 
-                            -- see if any of the invertebrate's places to live match the environment played
+                            -- see if any of the animal's' places to live match the environment played
                             for myEnv = 1, 4 do
                                 local myEnvSt = "Env"..myEnv                            
 
@@ -271,12 +354,13 @@ function scene:PlayCard()
                                 end
                             end
 
-                            -- still need this part. add it to chain and change its value
+                            -- add it to chain, change its value, nil it from hand
                             if envMatch then
-                                local valueStr = "Diet"..dietValue.."_Value"
+                                local valueStr = "Diet"..dietValue.."_Value"                                
+                                
                                 hand[ind].Value = hand[ind][valueStr]
                                 
-                                -- assign the plant to first postion of the food chain array chosen above
+                                -- assign to next available spot in the table
                                 activeEnvs[j][availChain][tabLen + 1] = hand[ind]
                                 
                                 played = true
@@ -329,9 +413,11 @@ function scene:testfx()
     
     -- a line for testing git
     --another test
+
     
     deck = GLOB.deck
     hand = {}
+    
     
     --local deckSize = scene:tableLength(deck)
     
@@ -339,7 +425,7 @@ function scene:testfx()
     scene:shuffleDeck(deck)
     
     -- pass 5 cards out to the player
-    drawCards(10,hand)
+    scene:drawCards(5,hand)
     
     -- flip over a card and add to discard if we want
     
@@ -365,10 +451,10 @@ function scene:testfx()
     --]]
     
     -- touch demo
-    local frontObject = display.newRect( 150, 150, 150, 150 )
+    local frontObject = display.newRect( 100, 100, 150, 150 )
     frontObject.alpha = 0.8
     frontObject.name = "Front Object"
-    local frontLabel = display.newText( { text = "Play Card", x = 150, y = 150, fontSize = 28 } )
+    local frontLabel = display.newText( { text = "Play Card", x = 100, y = 100, fontSize = 28 } )
     frontLabel:setTextColor( 1 )
     
     local function tapListener( event )
@@ -377,16 +463,46 @@ function scene:testfx()
         scene:PlayCard()
     end
     
-    local function touchListener( event )
-        local object = event.target
-        print( event.target.name.." TOUCH on the '"..event.phase.."' Phase!" )
-    end
+    --local function touchListener( event )
+    --    local object = event.target
+    --    print( event.target.name.." TOUCH on the '"..event.phase.."' Phase!" )
+    --end
     --add "tap" event listener to back object and update text label
     --backObject:addEventListener( "tap", tapListener )
     --backLabel.text = "tap"
     --add "tap" event listener to front object and update text label
     frontObject:addEventListener( "tap", tapListener )
     --    
+    
+    local endTurnBtn = display.newRect( 100, 300, 150, 150 )
+    endTurnBtn.alpha = 0.8
+    endTurnBtn.name = "Front Object"
+    local endTurnLbl = display.newText( { text = "End Turn", x = 100, y = 300, fontSize = 28 } )
+    endTurnLbl:setTextColor( 1 )
+    
+    local function endTurnListener( event )
+        local object = event.target
+        --print( object.name.." TAPPED!" )
+        scene:EndTurn()
+    end    
+    
+    endTurnBtn:addEventListener( "tap", endTurnListener )
+    
+    
+    --
+    local drawCardBtn = display.newRect( 100, 500, 150, 150 )
+    drawCardBtn.alpha = 0.8
+    drawCardBtn.name = "Front Object"
+    local drawCardLbl = display.newText( { text = "Draw Card", x = 100, y = 500, fontSize = 28 } )
+    drawCardLbl:setTextColor( 1 )
+    
+    local function drawCardListener( event )
+        local object = event.target
+        scene:drawCards(1,hand)
+    end    
+    
+    drawCardBtn:addEventListener( "tap", drawCardListener )    
+    --
     
     -- touch demo
     --[[
@@ -440,7 +556,11 @@ function scene:show( event )
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
-      scene:testfx()
+        scene:testfx()
+          
+        
+        local cardBack = display.newImage( "/images/assets/v2-Back.jpg", 300, 500 )
+        --sceneGroup:insert(cardBack)
    end
 end
 
