@@ -9,7 +9,7 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 -- local forward references should go here
-local deck, hand, drawPile, curEco
+local deck, hand, discardPile, curEco
 local activeEnvs = {}
 --local env1
 --local env2
@@ -17,9 +17,11 @@ local activeEnvs = {}
 local deckIndex = 1
 local maxEnvirons = 3
 local maxDiets = 5
+local firstTurn = true -- flag 
 
 --controls
 local testLabel
+local discardImage
 
 ---------------------------------------------------------------------------------
 
@@ -153,6 +155,35 @@ function scene:EndTurn()
     
 end
 
+-- discard the current hand and add it to the discard pile
+-- todo: change this so that it discards one at a time or however it will work in actual game
+-- make sure when this is changed to remove any potential holes from hand or discard
+function scene:Discard(myHand)
+
+    for i = 1, #myHand do
+        table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
+        myHand[i] = nil
+    end
+    
+    -- show the image for the last card layed on discard
+    -- todo this is done all wrong so fix it properly. this is probably a memory leak
+    local imgString = "/images/assets/"
+    local filenameString = discardPile[#discardPile]["File Name"]
+    imgString = imgString..filenameString
+    
+    print(imgString)
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    --discardImage = display.newImage( imgString, 600, 500 )
+    --discardImage = display.newImage( "/images/assets/v2-Back.jpg", 600, 500 )
+    discardImage.fill = paint
+    
+    print("All cards in hand have been discarded")
+end
+
 function scene:PlayCard()
         -- todo change this so that a click will try to play a certain card
         -- todo this is only for testing. the outer for loop will be thrown off by holes in hand table
@@ -247,8 +278,6 @@ function scene:PlayCard()
                                 -- remove the card from the hand
                                 hand[ind] = nil
                                 print(activeEnvs[j][availChain][1].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"].Name .. ".") 
-                            else                                
-                                print("I didn't get a type")--todo: remove this
                             end
                         end
 
@@ -367,8 +396,6 @@ function scene:PlayCard()
                                 -- remove the card from the hand
                                 hand[ind] = nil
                                 print(activeEnvs[j][availChain][tabLen + 1].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen].Name .. ".") 
-                            else                                
-                                print("I didn't get a type")--todo: remove this
                             end
                         end
 
@@ -417,6 +444,7 @@ function scene:testfx()
     
     deck = GLOB.deck
     hand = {}
+    discardPile = {}
     
     
     --local deckSize = scene:tableLength(deck)
@@ -433,7 +461,44 @@ function scene:testfx()
     
     --scene:PlayCard()
 
-    --[[
+
+    
+end
+
+
+function scene:create( event )
+
+    local sceneGroup = self.view
+
+    local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+    background:setFillColor(.3,.3,.3)
+    sceneGroup:insert(background)
+    
+
+    -- Initialize the scene here.
+    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
+
+    -- create a rect to use for discard pile display
+    -- this will be "filled" with a card image once a discard has occurred
+
+    -- initialize the discard pile image and add to scene group
+    -- no image shown currently, just a white rect
+    -- todo change this
+    discardImage = display.newRect(600, 250, 100, 160) 
+    discardImage:setFillColor(.5,.5,.5)
+    sceneGroup:insert(discardImage)             
+        
+    -- show the back of the card for the draw pile
+    local cardBack = display.newRect( 400, 250, 100, 160 )
+    local paint = {
+        type = "image",
+        filename = "/images/assets/v2-Back.jpg"
+    }    
+    
+    cardBack.fill = paint
+    sceneGroup:insert(cardBack)
+   
+       --[[
     local textOptions = {
     text = "Play Card",
     x = 100,
@@ -450,11 +515,13 @@ function scene:testfx()
     testLabel:setFillColor(1,1,1)
     --]]
     
+    local btnY = 550
+    
     -- touch demo
-    local frontObject = display.newRect( 100, 100, 150, 150 )
-    frontObject.alpha = 0.8
+    local frontObject = display.newRect( 75, btnY, 100, 100 )
+    frontObject:setFillColor(.5,.5,.5)
     frontObject.name = "Front Object"
-    local frontLabel = display.newText( { text = "Play Card", x = 100, y = 100, fontSize = 28 } )
+    local frontLabel = display.newText( { text = "Play Card", x = 75, y = btnY, fontSize = 16 } )
     frontLabel:setTextColor( 1 )
     
     local function tapListener( event )
@@ -473,11 +540,13 @@ function scene:testfx()
     --add "tap" event listener to front object and update text label
     frontObject:addEventListener( "tap", tapListener )
     --    
+    sceneGroup:insert(frontObject)
+    sceneGroup:insert(frontLabel)
     
-    local endTurnBtn = display.newRect( 100, 300, 150, 150 )
-    endTurnBtn.alpha = 0.8
+    local endTurnBtn = display.newRect( 200, btnY, 100, 100 )
+    endTurnBtn:setFillColor(.5,.5,.5)
     endTurnBtn.name = "Front Object"
-    local endTurnLbl = display.newText( { text = "End Turn", x = 100, y = 300, fontSize = 28 } )
+    local endTurnLbl = display.newText( { text = "End Turn", x = 200, y = btnY, fontSize = 16 } )
     endTurnLbl:setTextColor( 1 )
     
     local function endTurnListener( event )
@@ -490,10 +559,10 @@ function scene:testfx()
     
     
     --
-    local drawCardBtn = display.newRect( 100, 500, 150, 150 )
-    drawCardBtn.alpha = 0.8
+    local drawCardBtn = display.newRect( 325, btnY, 100, 100 )
+    drawCardBtn:setFillColor(.5,.5,.5)
     drawCardBtn.name = "Front Object"
-    local drawCardLbl = display.newText( { text = "Draw Card", x = 100, y = 500, fontSize = 28 } )
+    local drawCardLbl = display.newText( { text = "Draw Card", x = 325, y = btnY, fontSize = 16 } )
     drawCardLbl:setTextColor( 1 )
     
     local function drawCardListener( event )
@@ -502,6 +571,20 @@ function scene:testfx()
     end    
     
     drawCardBtn:addEventListener( "tap", drawCardListener )    
+    
+    
+    local discardBtn = display.newRect( 450, btnY, 100, 100 )
+    discardBtn:setFillColor(.5,.5,.5)
+    discardBtn.name = "Front Object"
+    local discardLbl = display.newText( { text = "Discard", x = 450, y = btnY, fontSize = 16 } )
+    discardLbl:setTextColor( 1 )
+    
+    local function discardListener( event )
+        --local object = event.target
+        scene:Discard(hand)
+    end    
+    
+    discardBtn:addEventListener( "tap", discardListener )  
     --
     
     -- touch demo
@@ -532,24 +615,7 @@ function scene:testfx()
     frontLabel.text = "tap"    
     --]]
     
-    
-end
 
-
-function scene:create( event )
-
-   local sceneGroup = self.view
-
-   -- Initialize the scene here.
-   -- Example: add display objects to "sceneGroup", add touch listeners, etc.
-   
-   
-   
-   
-   
-   
-   
-   
 end
 
 -- "scene:show()"
@@ -565,10 +631,6 @@ function scene:show( event )
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         scene:testfx()
-          
-        
-        local cardBack = display.newImage( "/images/assets/v2-Back.jpg", 300, 500 )
-        --sceneGroup:insert(cardBack)
    end
 end
 
