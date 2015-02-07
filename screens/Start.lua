@@ -11,27 +11,11 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 
-function scene:showButton()
-        local endTurnBtn = display.newRect( 100, 300, 150, 150 )
-    endTurnBtn.alpha = 0.8
-    endTurnBtn.name = "Front Object"
-    
-    
-    local function endTurnListener( event )
-        local object = event.target
-        --print( object.name.." TAPPED!" )
-    composer.gotoScene("screens.CardMovement")
-end    
-    
-    endTurnBtn:addEventListener( "tap", endTurnListener )
-end
-
-
 function scene:create( event )
 
    local sceneGroup = self.view
    
-          local endTurnBtn = display.newRect( 100, 300, 150, 150 )
+          local endTurnBtn = display.newRect( 75, 75, 150, 150 )
     endTurnBtn.alpha = 0.8
     endTurnBtn.name = "Front Object"
    
@@ -45,10 +29,10 @@ end
     endTurnBtn:addEventListener( "tap", endTurnListener )
     sceneGroup: insert(endTurnBtn)
     
-    local sliderDemo = display.newRect( 100, 500, 150, 150 )
+    local sliderDemo = display.newRect( 75, 250, 150, 150 )
     sliderDemo.alpha = 0.8
     sliderDemo.name = "Front Object"
-    local sliderDemoLbl = display.newText( { text = "sliderDemo", x = 100, y = 500, fontSize = 28 } )
+    local sliderDemoLbl = display.newText( { text = "sliderDemo", x = 75, y = 250, fontSize = 28 } )
     sliderDemoLbl:setTextColor( 1 )
     
     local function sliderDemoListener( event )
@@ -61,10 +45,10 @@ end
     sceneGroup: insert(sliderDemo)
     sceneGroup:insert(sliderDemoLbl)
     
-        local logicDemo = display.newRect( 100, 700, 150, 150 )
+        local logicDemo = display.newRect( 75, 425, 150, 150 )
         logicDemo.alpha = 0.8
         logicDemo.name = "Front Object"
-        local logicDemoLbl = display.newText( { text = "logicDemo", x = 100, y = 700, fontSize = 28 } )
+        local logicDemoLbl = display.newText( { text = "logicDemo", x = 75, y = 425, fontSize = 28 } )
         logicDemoLbl:setTextColor( 1 )
 
         local function logicDemoListener( event )
