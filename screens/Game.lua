@@ -542,6 +542,14 @@ function scene:create( event )
 
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
+   
+   
+   
+   
+   
+   
+   
+   
 end
 
 -- "scene:show()"

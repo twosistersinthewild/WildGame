@@ -44,8 +44,7 @@ end
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
     sceneGroup: insert(endTurnBtn)
-    sceneGroup:insert(endTurnLbl)
-
+    
     local sliderDemo = display.newRect( 100, 500, 150, 150 )
     sliderDemo.alpha = 0.8
     sliderDemo.name = "Front Object"
@@ -61,6 +60,22 @@ end
     sliderDemo:addEventListener( "tap", sliderDemoListener )
     sceneGroup: insert(sliderDemo)
     sceneGroup:insert(sliderDemoLbl)
+    
+        local logicDemo = display.newRect( 100, 700, 150, 150 )
+        logicDemo.alpha = 0.8
+        logicDemo.name = "Front Object"
+        local logicDemoLbl = display.newText( { text = "logicDemo", x = 100, y = 700, fontSize = 28 } )
+        logicDemoLbl:setTextColor( 1 )
+
+        local function logicDemoListener( event )
+            local object = event.target
+            --print( object.name.." TAPPED!" )
+            composer.gotoScene("screens.Game")
+        end    
+
+        logicDemo:addEventListener( "tap", logicDemoListener )
+        sceneGroup: insert(logicDemo)
+        sceneGroup:insert(logicDemoLbl)    
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
