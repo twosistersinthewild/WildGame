@@ -63,6 +63,8 @@ function utilities:DetermineEnvType(myEnvs, ind)
     elseif myEnvs[ind]["activeEnv"].Name == "Forests and Woodlands" then
         envStr = "FW"                            
     --!!human wildcard played
+    elseif myEnvs[ind]["activeEnv"].Name == "The Strohmstead" then
+        envStr = "ST"
     elseif myEnvs[ind]["activeEnv"].Type == "Wild" then
         --todo need to check to make sure that another active chain on this card
         -- hasn't already determined the type for the wild card'
