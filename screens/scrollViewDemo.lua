@@ -10,31 +10,10 @@ local widget = require( "widget" )
 local scrollView
 local icons = {}
 ---------------------------------------------------------------------------------
-function scene:doit() 
-    local group = display.newGroup();
+function scene:doit()   
     
-    local function movementListener(event)
-        
-        local self = event.target;
-        
-        if event.phase == "began" then
-	
-            self.markX = self.x    -- store x location of object
-            self.markY = self.y    -- store y location of object
-            
-            print(self.markX, self.markY, self.x, self.y);
-	
-        elseif event.phase == "moved"  then
-	
-            local x = (event.x - event.xStart) + self.markX
-            local y = (event.y - event.yStart) + self.markY
-        
-        
-            self.x, self.y = x, y    -- move object based on calculations above
-        end;
     
-        return true;
-    end;
+    
 
     local function iconListener( event )
         local id = event.target.id
@@ -46,79 +25,56 @@ function scene:doit()
         elseif ( event.phase == "ended" ) then
             --take action if an object was touched
             print( "object", id, "was touched" )
-            --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
-            --icons[id]:removeSelf();
-            icons[id]:removeEventListener('touch', iconListener )
-            icons[id]:addEventListener('touch', movementListener)
-            group:insert(icons[id]);
-            print('x');
-            
+            timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
         end
         return true
     end
-    
-    
-    local function generateIcons()
-        for i = 1, 10 do
-            --originals
-            --icons[i] = display.newCircle( i * 56, 50, 22 )
-            --icons[i]:setFillColor( math.random(), math.random(), math.random() )
-            local padding = 5;
-            if i == 1 then
-                icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 200, 80 )
-            elseif i ~= 1 then
-                icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 200 + padding , 80 )
-            end
-            
-            icons[i].id = i
-            icons[i]:addEventListener( "touch", iconListener )
-        end
-    end
-    
-    local function insertIntoScrollView()
-        for i = 1, #icons do
-            scrollView:insert( icons[i] )
-        end
-    end
-    
     local function showSlidingMenu( event )
         if ( "ended" == event.phase ) then
-           
-            
-                
+            scrollView = widget.newScrollView
+            {
+                --Originals
+                --left = 37.5,
+                --top = 225,
+                --width = 460,
+                --height = 100,
+                --scrollWidth = 1200,
+                --scrollHeight = 100,
+                --verticalScrollDisabled = true
 
-                scrollView = widget.newScrollView
-                {
-                    --Originals
-                    --left = 37.5,
-                    --top = 225,
-                    --width = 460,
-                    --height = 100,
-                    --scrollWidth = 1200,
-                    --scrollHeight = 100,
-                    --verticalScrollDisabled = true
+                --left = 0,
+                --top = 225,
+                --dimensions of scroll window
+                width = 300,
+                height = 169,
 
-                    --left = 0,
-                    --top = 225,
-                    --dimensions of scroll window
-                    width = display.contentWidth,
-                    height = 169,
+                verticalScrollDisabled = true,
+                backgroundColor = {.5,.5,.5}
+            }
+            --location
+            scrollView.x = display.contentCenterX
+            scrollView.y = display.contentHeight - 80
+            --Original scrollView.y = display.contentCenterY
 
-                    verticalScrollDisabled = true,
-                    backgroundColor = {.5,.5,.5}
-                }
-                --location
-                scrollView.x = display.contentCenterX
-                scrollView.y = display.contentHeight - 80
-                --Original scrollView.y = display.contentCenterY
-            
             --Background
             --local scrollViewBackground = display.newRect( 600, 50, 1200, 100 )
             --scrollViewBackground:setFillColor( 1, 1, 1 )
            -- scrollView:insert( scrollViewBackground )
             --generate icons
-            generateIcons();
-            insertIntoScrollView();
+            for i = 1, 10 do
+                --originals
+                --icons[i] = display.newCircle( i * 56, 50, 22 )
+                --icons[i]:setFillColor( math.random(), math.random(), math.random() )
+                local padding = 5;
+                if i == 1 then
+                    icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 106, 80 )
+                elseif i ~= 1 then
+                    icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 106 + padding , 80 )
+                end
+                scrollView:insert( icons[i] )
+                icons[i].id = i
+                icons[i]:addEventListener( "touch", iconListener )
+            end
         end
         return true
     end
