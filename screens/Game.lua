@@ -25,7 +25,7 @@ local discardImage
 
 ---------------------------------------------------------------------------------
 
-
+-- todo enable strohmstead special ability to move plants
 
 -- shuffle deck
 
@@ -258,15 +258,22 @@ function scene:PlayCard()
                             envType = utilities:DetermineEnvType(activeEnvs, j)
 
                             -- see if any of the plants places to live match the environment played
-                            for myEnv = 1, 4 do
-                                local myEnvSt = "Env"..myEnv                            
+                            -- loop through and check all 4 against the current environment
+                            -- check first for The Strohmstead. If it is present, then the card can be played
+                            -- todo might want to check here for when first plant is played on strohmstead. 
+                            -- this plant will determine what can be played after it
+                            if envType == "ST" then
+                                envMatch = true
+                            else
+                                for myEnv = 1, 4 do
+                                    local myEnvSt = "Env"..myEnv                            
 
-                                if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
-                                    envMatch = true
-                                    break
+                                    if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
+                                        envMatch = true
+                                        break
+                                    end
                                 end
                             end
-
                             if envMatch then
                                 -- create the table for the food chain
                                 activeEnvs[j][availChain] = {}
@@ -373,15 +380,46 @@ function scene:PlayCard()
 
                             envType = utilities:DetermineEnvType(activeEnvs, j)
 
-                            -- see if any of the animal's' places to live match the environment played
-                            for myEnv = 1, 4 do
-                                local myEnvSt = "Env"..myEnv                            
+                            -- see if any of the animal's places to live match the environment played
+                            -- loop through and check all 4 against the current environment
+                            -- check first for The Strohmstead. If it is present, then the card can be played
+                            -- todo fix this. the strohmstead will become whatever environments are supported                            
+                            -- by the previous cards played. currently it just lets a card be played regardless of 
+                            -- what is below
+                            
+                            -- todo: this may need tweaked. i think that the first plant card played will determine strohmstead type. 
+                            --may need to store this as an added field to the strohmstead card data
+                            -- this would be done when the first plant is played onto strohmstead
+                            if envType == "ST" then                                
+                                -- determine envs supported by plant played (in a table)
+                                local supportedEnvs = {}
+                                
+                                for pos = 1, 4 do
+                                    if activeEnvs[j][availChain][1]["Env"..pos] then -- access the plant in the chain's environments
+                                        table.insert(supportedEnvs, activeEnvs[j][availChain][1]["Env"..pos]) -- insert the env string that the plant supports
+                                    end                                    
+                                end
+                                
+                                -- if there are more cards in the chain, continue checking each one
+                                    -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
+                                    -- can probably use table.remove to take them out of supportedEnvs table to fill the hole properly
+                                    
+                                -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
+                                -- both the creature being played and possible envs
+                                -- todo: make this a reusable function so that it works for wild cards as well                                
+                                
+                                envMatch = true
+                            else
+                                for myEnv = 1, 4 do
+                                    local myEnvSt = "Env"..myEnv                            
 
-                                if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
-                                    envMatch = true
-                                    break
+                                    if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
+                                        envMatch = true
+                                        break
+                                    end
                                 end
                             end
+                            
 
                             -- add it to chain, change its value, nil it from hand
                             if envMatch then
