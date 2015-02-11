@@ -1,4 +1,5 @@
 local composer = require( "composer" )
+local widget = require "widget"
 local GLOB = require "globals"
 local utilities = require "functions.Utilities"
 local scene = composer.newScene()
@@ -9,7 +10,8 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 -- local forward references should go here
-local deck, hand, discardPile, curEco
+local deck = {}
+local hand, discardPile, curEco
 local activeEnvs = {}
 --local env1
 --local env2
@@ -19,9 +21,18 @@ local maxEnvirons = 3
 local maxDiets = 5
 local firstTurn = true -- flag 
 
+-- values for card size
+-- todo see if this needs to change
+local cardHeight = 160
+local cardWidth = 100
+local scrollYPos = cardHeight / 2 
+local scrollXPos = cardWidth / 2
+
 --controls
 local testLabel
 local discardImage
+local mainGroup
+local scrollView
 
 ---------------------------------------------------------------------------------
 
@@ -69,10 +80,38 @@ function scene:drawCards( num, myHand )
     for i = deckIndex, numDraw, 1 do -- start from deckIndex and draw the number passed in. third param is step
         
         if deck[i] then -- make sure there is a card to draw
-            -- insert the card into the hand, then nil it from the deck
+            -- insert the card into the hand, then nil it from the deck            
             table.insert(myHand, deck[i])
 
-            print("You have been dealt the " .. deck[i].Name .. " card.")
+            local imgString = "/images/assets/"
+            local filenameString = myHand[#myHand]["cardData"]["File Name"]
+            imgString = imgString..filenameString
+
+            print(imgString)
+            print(myHand[#myHand].x)
+            local paint = {
+                type = "image",
+                filename = imgString
+            }
+
+            
+            local myImg = myHand[#myHand]
+            myImg.fill = paint    
+
+            
+            scrollView:insert(myHand[#myHand])
+            
+            myImg.x = scrollXPos
+            myImg.y = scrollYPos
+            scrollXPos = scrollXPos + cardWidth
+            --mainGroup:insert(myHand[#myHand])
+            --myImg.x = 0
+            --myImg.y = 0          
+            --myImg:toFront()
+            
+            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            print("Locataion: " .. deck[i].x .. ","..deck[i].y)
+            --deck[i]:removeSelf()
             deck[i] = nil
         else
             -- the draw pile is empty
@@ -119,7 +158,7 @@ function scene:CalculateScore()
 
                     if tabLen > 0 then
                         for j = 1, tabLen do                        
-                            cardValue = activeEnvs[i][chainStr][j].Value
+                            cardValue = activeEnvs[i][chainStr][j]["cardData"].Value
                             curEco[cardValue] = true
                         end
                     end
@@ -162,13 +201,14 @@ function scene:Discard(myHand)
 
     for i = 1, #myHand do
         table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
+        myHand[i]:removeSelf()
         myHand[i] = nil
     end
     
     -- show the image for the last card layed on discard
     -- todo this is done all wrong so fix it properly. this is probably a memory leak
     local imgString = "/images/assets/"
-    local filenameString = discardPile[#discardPile]["File Name"]
+    local filenameString = discardPile[#discardPile]["cardData"]["File Name"]
     imgString = imgString..filenameString
     
     print(imgString)
@@ -201,7 +241,7 @@ function scene:PlayCard()
             --------------------------
             -- try to play an environment card
             --------------------------            
-            if hand[ind].Type == "Environment" then   
+            if hand[ind]["cardData"].Type == "Environment" then   
                 local space = false
 
                 -- todo can change this to pass in a specific slot to check for when returning from a tap
@@ -212,11 +252,13 @@ function scene:PlayCard()
 
                         -- the card for the enviro will be added here rather than in the hand
                         -- todo deal with this better
-                        activeEnvs[j]["activeEnv"] = hand[ind] 
+                        activeEnvs[j]["activeEnv"] = hand[ind]
 
                         -- remove the card from the hand
+                        --todo might not want removeself here
+                        hand[ind]:removeSelf()
                         hand[ind] = nil
-                        print(activeEnvs[j]["activeEnv"].Name .. " environment card has been played.") 
+                        print(activeEnvs[j]["activeEnv"]["cardData"].Name .. " environment card has been played.") 
 
                         space = true
                         played = true
@@ -230,7 +272,7 @@ function scene:PlayCard()
             --------------------------
             -- try to play a plant card
             --------------------------
-            elseif hand[ind].Type == "Small Plant" or hand[ind].Type == "Large Plant" then
+            elseif hand[ind]["cardData"].Type == "Small Plant" or hand[ind]["cardData"].Type == "Large Plant" then
                 -- must have an environment to play on
                 local space = false
                 local availChain = ""
@@ -268,7 +310,7 @@ function scene:PlayCard()
                                 for myEnv = 1, 4 do
                                     local myEnvSt = "Env"..myEnv                            
 
-                                    if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
+                                    if hand[ind]["cardData"][myEnvSt] and hand[ind]["cardData"][myEnvSt] == envType then
                                         envMatch = true
                                         break
                                     end
@@ -283,8 +325,9 @@ function scene:PlayCard()
                                 
                                 played = true
                                 -- remove the card from the hand
+                                hand[ind]:removeSelf()
                                 hand[ind] = nil
-                                print(activeEnvs[j][availChain][1].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"].Name .. ".") 
+                                print(activeEnvs[j][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"].Name .. ".") 
                             end
                         end
 
@@ -295,7 +338,7 @@ function scene:PlayCard()
                     end                
                 end
             -- invertebrate
-            elseif hand[ind].Type == "Invertebrate" or hand[ind].Type == "Small Animal" or hand[ind].Type == "Large Animal" or hand[ind].Type == "Apex" then
+            elseif hand[ind]["cardData"].Type == "Invertebrate" or hand[ind]["cardData"].Type == "Small Animal" or hand[ind]["cardData"].Type == "Large Animal" or hand[ind]["cardData"].Type == "Apex" then
                 -- todo may need a special case for apex to make it a 10 if played on a 9
                 
                 -- make sure there is an available chain to play on
@@ -318,7 +361,7 @@ function scene:PlayCard()
                             tabLen = scene:tableLength(activeEnvs[j]["chain1"])
                             
                             if tabLen > 0 then
-                                local foodType = activeEnvs[j]["chain1"][tabLen].Type
+                                local foodType = activeEnvs[j]["chain1"][tabLen]["cardData"].Type
                                 
                                 -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
                                 if foodType == "Small Plant" or foodType == "Large Plant" then
@@ -330,7 +373,7 @@ function scene:PlayCard()
                                     local dietString = "Diet"..diet.."_Type"
                                                                     
                                     -- if this is true, there is space and the last card in the chain is edible
-                                    if hand[ind][dietString] and hand[ind][dietString] == foodType then
+                                    if hand[ind]["cardData"][dietString] and hand[ind]["cardData"][dietString] == foodType then
                                         space = true
                                         availChain = "chain1"
                                         dietValue = diet
@@ -347,7 +390,7 @@ function scene:PlayCard()
                             tabLen = scene:tableLength(activeEnvs[j]["chain2"])
                             
                             if tabLen > 0 then
-                                local foodType = activeEnvs[j]["chain2"][tabLen].Type
+                                local foodType = activeEnvs[j]["chain2"][tabLen]["cardData"].Type
                                 
                                 -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
                                 if foodType == "Small Plant" or foodType == "Large Plant" then
@@ -359,7 +402,7 @@ function scene:PlayCard()
                                     local dietString = "Diet"..diet.."_Type"
                                                                     
                                     -- if this is true, there is space and the last card in the chain is edible
-                                    if hand[ind][dietString] and hand[ind][dietString] == foodType then
+                                    if hand[ind]["cardData"][dietString] and hand[ind]["cardData"][dietString] == foodType then
                                         space = true
                                         availChain = "chain2"
                                         dietValue = diet
@@ -395,8 +438,8 @@ function scene:PlayCard()
                                 local supportedEnvs = {}
                                 
                                 for pos = 1, 4 do
-                                    if activeEnvs[j][availChain][1]["Env"..pos] then -- access the plant in the chain's environments
-                                        table.insert(supportedEnvs, activeEnvs[j][availChain][1]["Env"..pos]) -- insert the env string that the plant supports
+                                    if activeEnvs[j][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
+                                        table.insert(supportedEnvs, activeEnvs[j][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
                                     end                                    
                                 end
                                 
@@ -413,7 +456,7 @@ function scene:PlayCard()
                                 for myEnv = 1, 4 do
                                     local myEnvSt = "Env"..myEnv                            
 
-                                    if hand[ind][myEnvSt] and hand[ind][myEnvSt] == envType then
+                                    if hand[ind]["cardData"][myEnvSt] and hand[ind]["cardData"][myEnvSt] == envType then
                                         envMatch = true
                                         break
                                     end
@@ -425,15 +468,16 @@ function scene:PlayCard()
                             if envMatch then
                                 local valueStr = "Diet"..dietValue.."_Value"                                
                                 
-                                hand[ind].Value = hand[ind][valueStr]
+                                hand[ind]["cardData"].Value = hand[ind]["cardData"][valueStr]
                                 
                                 -- assign to next available spot in the table
                                 activeEnvs[j][availChain][tabLen + 1] = hand[ind]
                                 
                                 played = true
                                 -- remove the card from the hand
+                                hand[ind]:removeSelf()
                                 hand[ind] = nil
-                                print(activeEnvs[j][availChain][tabLen + 1].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen].Name .. ".") 
+                                print(activeEnvs[j][availChain][tabLen + 1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen]["cardData"].Name .. ".") 
                             end
                         end
 
@@ -456,6 +500,7 @@ function scene:PlayCard()
             local curCard = ind
             while hand[curCard + 1] do
                 hand[curCard] = hand[curCard + 1]
+                hand[curCard + 1]:removeSelf()
                 hand[curCard + 1] = nil
                 curCard = curCard + 1
             end
@@ -476,11 +521,10 @@ end
 
 function scene:testfx()
     
-    -- a line for testing git
-    --another test
+
 
     
-    deck = GLOB.deck
+    --deck = GLOB.deck
     hand = {}
     discardPile = {}
     
@@ -507,10 +551,61 @@ end
 function scene:create( event )
 
     local sceneGroup = self.view
+    mainGroup = display.newGroup() -- display group for anything that just needs added
+    sceneGroup:insert(mainGroup)
+    
+
+    --[[
+    for i = 1, #deck do
+        deck[i]:removeSelf()
+        deck[i] = nil
+    end --]]   
+    
+
 
     local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+    --local background = display.newImage("images/")
     background:setFillColor(.3,.3,.3)
     sceneGroup:insert(background)
+    
+
+    
+    scrollView = widget.newScrollView
+    {
+        --Originals
+        --left = 37.5,
+        --top = 225,
+        --width = 460,
+        --height = 100,
+        --scrollWidth = 1200,
+        --scrollHeight = 100,
+        --verticalScrollDisabled = true
+
+        --left = 0,
+        --top = 225,
+        --dimensions of scroll window
+        width = display.contentWidth,
+        height = cardHeight,
+
+        verticalScrollDisabled = true,
+        backgroundColor = {.5,.5,.5}
+    }
+                
+    --location
+    scrollView.x = display.contentCenterX
+    scrollView.y = display.contentHeight - 80    
+    
+    sceneGroup:insert(scrollView)
+    
+
+
+    for i = 1, #GLOB.deck do
+        deck[i] = display.newRect(0, 0, cardWidth, cardHeight)
+        deck[i]["cardData"] = GLOB.deck[i]
+        mainGroup:insert(deck[i])
+        deck[i].x = 0
+        deck[i].y = 0
+    end    
     
 
     -- Initialize the scene here.
@@ -523,6 +618,8 @@ function scene:create( event )
     -- no image shown currently, just a white rect
     -- todo change this
     discardImage = display.newRect(600, 250, 100, 160) 
+    --discardImage.Whatever = "hello"
+    --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
     sceneGroup:insert(discardImage)             
         
@@ -553,7 +650,7 @@ function scene:create( event )
     testLabel:setFillColor(1,1,1)
     --]]
     
-    local btnY = 550
+    local btnY = 100
     
     -- touch demo
     local frontObject = display.newRect( 75, btnY, 100, 100 )
