@@ -525,8 +525,20 @@ function scene:PlayCard()
     else
         
     end
+    
+    scene:AdjustScroller()
 end
 
+-- reset back to original position, then adjust each card's x value. 
+-- this seems to fill in gaps properly and adjust the size as desired. 
+function scene:AdjustScroller()    
+    scrollXPos = cardWidth / 2    
+    
+    for i = 1, #hand do        
+        hand[i].x = scrollXPos
+        scrollXPos = scrollXPos + cardWidth
+    end
+end
 
 function scene:testfx()
     
@@ -604,7 +616,7 @@ function scene:create( event )
         height = cardHeight,
 
         verticalScrollDisabled = true,
-        backgroundColor = {.5,.5,.5}
+        backgroundColor = {.5,.5,.5, 0} -- transparent. remove the 0 to see it
     }
                 
     --location
