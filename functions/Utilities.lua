@@ -54,18 +54,18 @@ function utilities:DetermineEnvType(myEnvs, ind)
     local envStr = "" 
     
     --todo: change this to id perhaps
-    if myEnvs[ind]["activeEnv"].Name == "Rivers and Streams" then
+    if myEnvs[ind]["activeEnv"]["cardData"].Name == "Rivers and Streams" then
         envStr = "RS"
-    elseif myEnvs[ind]["activeEnv"].Name == "Lakes and Ponds" then
+    elseif myEnvs[ind]["activeEnv"]["cardData"].Name == "Lakes and Ponds" then
         envStr = "LP"                            
-    elseif myEnvs[ind]["activeEnv"].Name == "Fields and Meadows" then
+    elseif myEnvs[ind]["activeEnv"]["cardData"].Name == "Fields and Meadows" then
         envStr = "FM"                            
-    elseif myEnvs[ind]["activeEnv"].Name == "Forests and Woodlands" then
+    elseif myEnvs[ind]["activeEnv"]["cardData"].Name == "Forests and Woodlands" then
         envStr = "FW"                            
     --!!human wildcard played
-    elseif myEnvs[ind]["activeEnv"].Name == "The Strohmstead" then
+    elseif myEnvs[ind]["activeEnv"]["cardData"].Name == "The Strohmstead" then
         envStr = "ST"
-    elseif myEnvs[ind]["activeEnv"].Type == "Wild" then
+    elseif myEnvs[ind]["activeEnv"]["cardData"].Type == "Wild" then
         --todo need to check to make sure that another active chain on this card
         -- hasn't already determined the type for the wild card'
 

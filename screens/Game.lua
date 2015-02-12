@@ -34,6 +34,10 @@ local discardImage
 local mainGroup
 local scrollView
 
+-- locations for on screen elements
+local envLocs = {} -- locations that environment cards will be placed
+local chainLocs = {}
+
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -87,8 +91,8 @@ function scene:drawCards( num, myHand )
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
             imgString = imgString..filenameString
 
-            print(imgString)
-            print(myHand[#myHand].x)
+            --print(imgString)
+            --print(myHand[#myHand].x)
             local paint = {
                 type = "image",
                 filename = imgString
@@ -110,7 +114,7 @@ function scene:drawCards( num, myHand )
             --myImg:toFront()
             
             print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")
-            print("Locataion: " .. deck[i].x .. ","..deck[i].y)
+            --print("Locataion: " .. deck[i].x .. ","..deck[i].y)
             --deck[i]:removeSelf()
             deck[i] = nil
         else
@@ -201,25 +205,12 @@ function scene:Discard(myHand)
 
     for i = 1, #myHand do
         table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
-        myHand[i]:removeSelf()
+        --myHand[i]:removeSelf()
         myHand[i] = nil
+        mainGroup:insert(discardPile[#discardPile])
+        discardPile[#discardPile].x = 850
+        discardPile[#discardPile].y = 100
     end
-    
-    -- show the image for the last card layed on discard
-    -- todo this is done all wrong so fix it properly. this is probably a memory leak
-    local imgString = "/images/assets/"
-    local filenameString = discardPile[#discardPile]["cardData"]["File Name"]
-    imgString = imgString..filenameString
-    
-    print(imgString)
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    --discardImage = display.newImage( imgString, 600, 500 )
-    --discardImage = display.newImage( "/images/assets/v2-Back.jpg", 600, 500 )
-    discardImage.fill = paint
     
     print("All cards in hand have been discarded")
 end
@@ -256,9 +247,15 @@ function scene:PlayCard()
 
                         -- remove the card from the hand
                         --todo might not want removeself here
-                        hand[ind]:removeSelf()
+                        --hand[ind]:removeSelf()
+                        mainGroup:insert(activeEnvs[j]["activeEnv"])
+                        activeEnvs[j]["activeEnv"].x = envLocs[j]["xLoc"]
+                        activeEnvs[j]["activeEnv"].y = envLocs[j]["yLoc"]
+                        activeEnvs[j]["activeEnv"].rotation = 270                        
+                        
                         hand[ind] = nil
                         print(activeEnvs[j]["activeEnv"]["cardData"].Name .. " environment card has been played.") 
+
 
                         space = true
                         played = true
@@ -322,12 +319,18 @@ function scene:PlayCard()
                                 
                                 -- assign the plant to first postion of the food chain array chosen above
                                 activeEnvs[j][availChain][1] = hand[ind]
-                                
+
                                 played = true
+                                
+                                local myCard = activeEnvs[j][availChain][1]
+                                
+                                mainGroup:insert(activeEnvs[j][availChain][1])
+                                myCard.x = chainLocs[j][availChain]["xLoc"]
+                                myCard.y = chainLocs[j][availChain]["yLoc"]                                  
+                                
                                 -- remove the card from the hand
-                                hand[ind]:removeSelf()
                                 hand[ind] = nil
-                                print(activeEnvs[j][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"].Name .. ".") 
+                                print(activeEnvs[j][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"]["cardData"].Name .. ".") 
                             end
                         end
 
@@ -473,9 +476,15 @@ function scene:PlayCard()
                                 -- assign to next available spot in the table
                                 activeEnvs[j][availChain][tabLen + 1] = hand[ind]
                                 
+                                local myCard = activeEnvs[j][availChain][tabLen + 1]
+                                
                                 played = true
+                                
+                                mainGroup:insert(activeEnvs[j][availChain][tabLen + 1])
+                                myCard.x = chainLocs[j][availChain]["xLoc"]
+                                myCard.y = chainLocs[j][availChain]["yLoc"] + ((tabLen + 1) * 15)
+                                
                                 -- remove the card from the hand
-                                hand[ind]:removeSelf()
                                 hand[ind] = nil
                                 print(activeEnvs[j][availChain][tabLen + 1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen]["cardData"].Name .. ".") 
                             end
@@ -500,7 +509,7 @@ function scene:PlayCard()
             local curCard = ind
             while hand[curCard + 1] do
                 hand[curCard] = hand[curCard + 1]
-                hand[curCard + 1]:removeSelf()
+                --hand[curCard + 1]:removeSelf()
                 hand[curCard + 1] = nil
                 curCard = curCard + 1
             end
@@ -547,27 +556,34 @@ function scene:testfx()
     
 end
 
+function scene:SetLocs()
+    local chainY = 300
+    
+    envLocs[1] = {["xLoc"] = 100, ["yLoc"] = 250}
+    envLocs[2] = {["xLoc"] = 350, ["yLoc"] = 250}
+    envLocs[3] = {["xLoc"] = 600, ["yLoc"] = 250}
+    chainLocs[1] = {["chain1"] = {["xLoc"] = 50, ["yLoc"] = chainY},["chain2"] = {["xLoc"] = 150, ["yLoc"] = chainY}}
+    chainLocs[2] = {["chain1"] = {["xLoc"] = 300, ["yLoc"] = chainY},["chain2"] = {["xLoc"] = 400, ["yLoc"] = chainY}}
+    chainLocs[3] = {["chain1"] = {["xLoc"] = 550, ["yLoc"] = chainY},["chain2"] = {["xLoc"] = 650, ["yLoc"] = chainY}}
+end
 
 function scene:create( event )
+
+    scene:SetLocs()
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup)
     
-
-    --[[
-    for i = 1, #deck do
-        deck[i]:removeSelf()
-        deck[i] = nil
-    end --]]   
-    
-
-
-    local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
-    --local background = display.newImage("images/")
-    background:setFillColor(.3,.3,.3)
-    sceneGroup:insert(background)
-    
+    local imgString, paint, filename
+ 
+    --local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+    local background = display.newImage("images/background-create-cafe.jpg")
+    background.x = display.contentWidth / 2
+    background.y = display.contentHeight / 2
+    --background:setFillColor(.3,.3,.3)
+    --sceneGroup:insert(background)
+    mainGroup:insert(background)
 
     
     scrollView = widget.newScrollView
@@ -598,13 +614,15 @@ function scene:create( event )
     sceneGroup:insert(scrollView)
     
 
-
+    -- create a rectangle for each card
+    -- attach card data to the image as a table
+    -- insert into main group
+    -- they will sit on the draw pile for now
+    -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(0, 0, cardWidth, cardHeight)
+        deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
-        deck[i].x = 0
-        deck[i].y = 0
     end    
     
 
@@ -617,21 +635,21 @@ function scene:create( event )
     -- initialize the discard pile image and add to scene group
     -- no image shown currently, just a white rect
     -- todo change this
-    discardImage = display.newRect(600, 250, 100, 160) 
+    discardImage = display.newRect(850, 100, 100, 160) 
     --discardImage.Whatever = "hello"
     --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
-    sceneGroup:insert(discardImage)             
+    mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
-    local cardBack = display.newRect( 400, 250, 100, 160 )
-    local paint = {
+    local cardBack = display.newRect( 725, 100, 100, 160 )
+    paint = {
         type = "image",
         filename = "/images/assets/v2-Back.jpg"
     }    
     
     cardBack.fill = paint
-    sceneGroup:insert(cardBack)
+    mainGroup:insert(cardBack)
    
        --[[
     local textOptions = {
@@ -650,7 +668,7 @@ function scene:create( event )
     testLabel:setFillColor(1,1,1)
     --]]
     
-    local btnY = 100
+    local btnY = 50
     
     -- touch demo
     local frontObject = display.newRect( 75, btnY, 100, 100 )
@@ -675,14 +693,19 @@ function scene:create( event )
     --add "tap" event listener to front object and update text label
     frontObject:addEventListener( "tap", tapListener )
     --    
-    sceneGroup:insert(frontObject)
-    sceneGroup:insert(frontLabel)
+    mainGroup:insert(frontObject)
+    mainGroup:insert(frontLabel)
     
-    local endTurnBtn = display.newRect( 200, btnY, 100, 100 )
-    endTurnBtn:setFillColor(.5,.5,.5)
-    endTurnBtn.name = "Front Object"
-    local endTurnLbl = display.newText( { text = "End Turn", x = 200, y = btnY, fontSize = 16 } )
-    endTurnLbl:setTextColor( 1 )
+    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    
+    imgString = "/images/button-end-turn.jpg"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    endTurnBtn.fill = paint   
     
     local function endTurnListener( event )
         local object = event.target
@@ -691,14 +714,19 @@ function scene:create( event )
     end    
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
-    
-    
+    mainGroup:insert(endTurnBtn)    
     --
-    local drawCardBtn = display.newRect( 325, btnY, 100, 100 )
-    drawCardBtn:setFillColor(.5,.5,.5)
-    drawCardBtn.name = "Front Object"
-    local drawCardLbl = display.newText( { text = "Draw Card", x = 325, y = btnY, fontSize = 16 } )
-    drawCardLbl:setTextColor( 1 )
+    
+    local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
+    
+    imgString = "/images/button-draw-a-card.jpg"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    drawCardBtn.fill = paint       
     
     local function drawCardListener( event )
         local object = event.target
@@ -706,13 +734,18 @@ function scene:create( event )
     end    
     
     drawCardBtn:addEventListener( "tap", drawCardListener )    
+    mainGroup:insert(drawCardBtn)
     
+    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
     
-    local discardBtn = display.newRect( 450, btnY, 100, 100 )
-    discardBtn:setFillColor(.5,.5,.5)
-    discardBtn.name = "Front Object"
-    local discardLbl = display.newText( { text = "Discard", x = 450, y = btnY, fontSize = 16 } )
-    discardLbl:setTextColor( 1 )
+    imgString = "/images/button-discard-card.jpg"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    discardBtn.fill = paint         
     
     local function discardListener( event )
         --local object = event.target
@@ -720,37 +753,8 @@ function scene:create( event )
     end    
     
     discardBtn:addEventListener( "tap", discardListener )  
+    mainGroup:insert(discardBtn)
     --
-    
-    -- touch demo
-    --[[
-    local backObject = display.newRect( 25, 25, 150, 150 )
-    backObject.alpha = 0.5
-    backObject.name = "Back Object"
-    local frontObject = display.newRect( 75, 75, 150, 150 )
-    frontObject.alpha = 0.8
-    frontObject.name = "Front Object"
-    local backLabel = display.newText( { text = "", x = 0, y = 0, fontSize = 28 } )
-    backLabel:setTextColor( 0 ) ; backLabel.x = 100 ; backLabel.y = 45
-    local frontLabel = display.newText( { text = "", x = 0, y = 0, fontSize = 28 } )
-    frontLabel:setTextColor( 0 ) ; frontLabel.x = 150 ; frontLabel.y = 200
-    local function tapListener( event )
-    local object = event.target
-    print( object.name.." TAPPED!" )
-    end
-    local function touchListener( event )
-    local object = event.target
-    print( event.target.name.." TOUCH on the '"..event.phase.."' Phase!" )
-    end
-    --add "tap" event listener to back object and update text label
-    backObject:addEventListener( "tap", tapListener )
-    backLabel.text = "tap"
-    --add "tap" event listener to front object and update text label
-    frontObject:addEventListener( "tap", tapListener )
-    frontLabel.text = "tap"    
-    --]]
-    
-
 end
 
 -- "scene:show()"
