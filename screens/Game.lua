@@ -128,7 +128,7 @@ function scene:drawCards( num, myHand )
     -- increment the deck index for next deal
     deckIndex = deckIndex + num
     
-    
+    scene:AdjustScroller()
 end
 
 function scene:CalculateScore()
@@ -538,6 +538,9 @@ function scene:AdjustScroller()
         hand[i].x = scrollXPos
         scrollXPos = scrollXPos + cardWidth
     end
+    
+    scrollView:setScrollWidth(cardWidth * #hand)
+    scrollView:scrollTo("left", {time=1200})
 end
 
 function scene:testfx()
