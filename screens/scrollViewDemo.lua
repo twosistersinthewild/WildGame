@@ -13,31 +13,16 @@ local icons = {}
 function scene:doit() 
     local group = display.newGroup();
     
-    local function newListener(event)
-        if event.phase == "began" then
-            print('x');
-            --print(event.numTaps);
-        
-        elseif event.phase == "ended" then
-            --scrollView:insert( icons[self.id] )
-            --if (event.numTaps >= 2 ) then
-            print(event.numTaps);
-        end
-    end
-    
     local function movementListener(event)
         
         local self = event.target;
-        
-        self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object
         
         if event.phase == "began" then
 	
             self.markX = self.x    -- store x location of object
             self.markY = self.y    -- store y location of object
             
-            print(event.xStart, self.x);
+            print(self.markX, self.markY, self.x, self.y);
 	
         elseif event.phase == "moved"  then
 	
@@ -47,6 +32,7 @@ function scene:doit()
         
             self.x, self.y = x, y    -- move object based on calculations above
         end;
+    
         return true;
     end;
 
@@ -54,32 +40,22 @@ function scene:doit()
         local id = event.target.id
         if ( event.phase == "moved" ) then
             local dx = math.abs( event.x - event.xStart ) 
-            local dy = math.abs( event.y - event.yStart )
             if ( dx > 5 ) then
                 scrollView:takeFocus( event ) 
-            end
-            
-            if( dy > 10) then 
-                icons[id].x = event.target.x;
-                icons[id].y = display.contentHeight - event.target.y;
-                group:insert(icons[id]);
-                group:toFront();
-                icons[id]:removeEventListener('touch', iconListener )
-                icons[id]:addEventListener('touch', movementListener)
             end
         elseif ( event.phase == "ended" ) then
             --take action if an object was touched
             print( "object", id, "was touched" )
             --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
             --icons[id]:removeSelf();
-            --icons[id].x = event.target.x;
-            --icons[id].y = display.contentHeight - event.target.y;
-            --print(event.target.x);
-            --icons[id]:removeEventListener('touch', iconListener )
-            --icons[id]:addEventListener('touch', movementListener)
-            --icons[id]:addEventListener('touch', tapListener)
-            --group:insert(icons[id]);
-            --group:toFront();
+            icons[id].x = event.target.x;
+            icons[id].y = display.contentHeight - event.target.y;
+            print(event.target.x);
+            icons[id]:removeEventListener('touch', iconListener )
+            icons[id]:addEventListener('touch', movementListener)
+            group:insert(icons[id]);
+            group:toFront();
+            print('x');
             
         end
         return true
