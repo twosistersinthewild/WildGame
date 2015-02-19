@@ -655,7 +655,7 @@ function scene:create( event )
         --top = 225,
         --dimensions of scroll window
         --width = display.contentWidth,
-        width = cardWidth * 5, --DO Changed
+        width = cardWidth * 5,
         height = cardHeight,
 
         verticalScrollDisabled = true,
@@ -664,10 +664,8 @@ function scene:create( event )
                 
     --location
     --scrollView.x = display.contentCenterX + 100
-    scrollView.x = display.contentWidth / 2; --DO changed
-    scrollView.y = display.contentHeight - 80    
-    
-    print("scroll x: ", scrollView.x , "scroll y: ", scrollView.y, "Display y:", display.contentHeight , "Display x:", display.contentWidth);
+    scrollView.x = display.contentWidth / 2;
+    scrollView.y = display.contentHeight - 80;    
     
     sceneGroup:insert(scrollView)
     
@@ -775,7 +773,7 @@ function scene:create( event )
     mainGroup:insert(endTurnBtn)    
     --
     
-    local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
+    --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-draw-a-card.jpg"
     
@@ -784,15 +782,16 @@ function scene:create( event )
         filename = imgString
     }
     
-    drawCardBtn.fill = paint       
+    --drawCardBtn.fill = paint       
     
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand)
     end    
     
-    drawCardBtn:addEventListener( "tap", drawCardListener )    
-    mainGroup:insert(drawCardBtn)
+    --drawCardBtn:addEventListener( "tap", drawCardListener )
+    cardBack:addEventListener( "tap", drawCardListener ) 
+    --mainGroup:insert(drawCardBtn)
     
     local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
     
