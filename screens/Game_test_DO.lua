@@ -253,6 +253,40 @@ function scene:Discard(myHand)
     print("All cards in hand have been discarded")
 end
 
+function scene:DiscardCard(myCard)
+
+    
+    table.insert(discardPile, myCard) -- insert the first card in hand to the last available position on discard
+    --myHand[i]:removeSelf()
+    mainGroup:insert(discardPile[#discardPile])
+    discardPile[#discardPile].x = 850
+    discardPile[#discardPile].y = 100
+    scene:AdjustHandTable(myCard)
+    
+    print("All cards in hand have been discarded")
+end
+
+function scene:AdjustHandTable(myCard)
+    local index = 0
+    
+     for i = 1, #hand do
+            if hand[i]["cardData"].ID == myCard["cardData"].ID then
+                print (myCard["cardData"].Name.. " is the same as "..hand[i]["cardData"].Name)
+                index = i
+                hand[i] = nil
+                break
+            end   
+        end
+    
+    while hand[index + 1] do
+            hand[index] = hand[index + 1]
+            --hand[curCard + 1]:removeSelf()
+            hand[index + 1] = nil
+            index = index + 1
+        end
+end
+
+
 function scene:PlayCard()
         -- todo change this so that a click will try to play a certain card
         -- todo this is only for testing. the outer for loop will be thrown off by holes in hand table
