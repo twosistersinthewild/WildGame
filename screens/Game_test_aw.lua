@@ -103,7 +103,7 @@ local function movementListener(event)
 
         -- may need to remove the listener here?
 
-        local validLoc = false
+        local validLoc = ""
 
         validLoc = scene:ValidLocation(self)
         
@@ -113,8 +113,10 @@ local function movementListener(event)
         if not validLoc then
             scrollView:insert(self)
             scene:AdjustScroller()
-        else
+        elseif validLoc == "play" then
             scene:PlayCard2(self)
+        elseif validLoc == "discard" then
+            print("discard")
         end
 
         scrollView.isVisible = true
@@ -127,6 +129,13 @@ function scene:ValidLocation(myCard)
     
     -- determine if being dropped back into hand as well
     
+    -- over discard pile
+    if myCard.x >= 850 - cardWidth/2 and 850 + cardWidth/2 and myCard.y >= 100 - cardHeight/2 and myCard.x >= 100 + cardHeight/2 then
+        return "discard"
+    else
+        return nil
+    end
+    --[[]
     if myCard["cardData"].Type == "Environment" then
         if (myCard.x >= envLocs[1]["xLoc"] / 2 and myCard.x <= envLocs[1]["xLoc"] * 1.5) or
             (myCard.x >= envLocs[2]["xLoc"] / 2 and myCard.x <= envLocs[2]["xLoc"] * 1.5) or
@@ -139,7 +148,7 @@ function scene:ValidLocation(myCard)
     else
         return false
     end
-    
+    --]]
     
     
 end
@@ -1006,7 +1015,8 @@ function scene:create( event )
         --left = 0,
         --top = 225,
         --dimensions of scroll window
-        width = display.contentWidth,
+        --width = display.contentWidth,
+        width = cardWidth * 5,
         height = cardHeight,
 
         verticalScrollDisabled = true,
@@ -1014,8 +1024,9 @@ function scene:create( event )
     }
                 
     --location
-    scrollView.x = display.contentCenterX
-    scrollView.y = display.contentHeight - 80    
+    --scrollView.x = display.contentCenterX + 100
+    scrollView.x = display.contentWidth / 2;
+    scrollView.y = display.contentHeight - 80;    
     
     sceneGroup:insert(scrollView)
     
@@ -1123,7 +1134,7 @@ function scene:create( event )
     mainGroup:insert(endTurnBtn)    
     --
     
-    local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
+    --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-draw-a-card.jpg"
     
@@ -1132,15 +1143,16 @@ function scene:create( event )
         filename = imgString
     }
     
-    drawCardBtn.fill = paint       
+    --drawCardBtn.fill = paint       
     
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand)
     end    
     
-    drawCardBtn:addEventListener( "tap", drawCardListener )    
-    mainGroup:insert(drawCardBtn)
+    --drawCardBtn:addEventListener( "tap", drawCardListener )
+    cardBack:addEventListener( "tap", drawCardListener ) 
+    --mainGroup:insert(drawCardBtn)
     
     local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
     
