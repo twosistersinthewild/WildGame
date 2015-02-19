@@ -57,8 +57,8 @@ function scene:doit()
         return true;
     end;
 
-    function tapListener( event )
-        local self = event.target;
+function tapListener( event )
+    local self = event.target;
         
     -- checks for double tap event
     if (event.numTaps >= 2 ) then
@@ -86,30 +86,30 @@ function scene:doit()
     --  ** single tap event **
     -- elseif (event.numTaps == 1 ) then
        -- print("The object was tapped once.")
-return true
+    return true
 end
 
-    local function iconListener( event )
-        local id = event.target.id
-        if ( event.phase == "moved" ) then
-            local dx = math.abs( event.x - event.xStart ) 
-            if ( dx > 5 ) then
-                scrollView:takeFocus( event ) 
-            end
-        elseif ( event.phase == "ended" ) then
-            --take action if an object was touched
-            print( "object", id, "was touched" )
-            --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
-            --icons[id]:removeSelf();
-            icons[id]:removeEventListener('touch', iconListener )
-            icons[id]:addEventListener('touch', movementListener)
-            icons[id]:addEventListener('tap', tapListener)
-            group:insert(icons[id]);
-            print('x');
-            
+local function iconListener( event )
+    local id = event.target.id
+    if ( event.phase == "moved" ) then
+        local dx = math.abs( event.x - event.xStart ) 
+        if ( dx > 5 ) then
+            scrollView:takeFocus( event ) 
         end
-        return true
+    elseif ( event.phase == "ended" ) then
+        --take action if an object was touched
+        print( "object", id, "was touched" )
+        --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
+        --icons[id]:removeSelf();
+        icons[id]:removeEventListener('touch', iconListener )
+        icons[id]:addEventListener('touch', movementListener)
+        icons[id]:addEventListener('tap', tapListener)
+        group:insert(icons[id]);
+        print('x');
+
     end
+    return true
+end
     
     
     local function generateIcons()
