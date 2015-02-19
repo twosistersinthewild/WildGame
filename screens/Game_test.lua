@@ -73,6 +73,50 @@ function scene:shuffleDeck(myTable)
     end
 end
 
+-- from damian's code'            
+local function movementListener(event)
+
+    local self = event.target
+
+    if event.phase == "began" then
+        --new
+        self.x = event.target.x;
+        self.y = display.contentHeight - (cardHeight / 2)
+
+        self.markX = self.x    -- store x location of object
+        self.markY = self.y    -- store y location of object  
+
+        --new
+        mainGroup:insert(self)
+        self:toFront()
+        scrollView.isVisible = false
+        print(self.markX, self.markY, self.x, self.y);
+    elseif event.phase == "moved"  then
+        local x = (event.x - event.xStart) + self.markX
+        local y = (event.y - event.yStart) + self.markY
+        self.x, self.y = x, y    -- move object based on calculations above    
+    elseif event.phase == "ended" then
+        -- try to click into place
+            -- make sure to move card to appropriate table (env, discard, etc)
+            -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
+        -- or snap back to hand if not in a valid area
+
+        -- may need to remove the listener here?
+
+        local validLoc = false
+
+        -- if card hasn't been moved to a valid place, snap it back to the hand
+        if not validLoc then
+            scrollView:insert(self)
+            scene:AdjustScroller()
+        end
+
+        scrollView.isVisible = true
+    end
+
+    return true
+end 
+
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
 function scene:drawCards( num, myHand )    
@@ -105,55 +149,7 @@ function scene:drawCards( num, myHand )
             myImg.y = scrollYPos
             scrollXPos = scrollXPos + cardWidth
             
-            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")
-            
-            -- from damian's code'            
-            local function movementListener(event)
-
-                local self = event.target
-
-                if event.phase == "began" then
-                    --new
-                    self.x = event.target.x;
-                    self.y = display.contentHeight - (cardHeight / 2)
-                    
-                    self.markX = self.x    -- store x location of object
-                    self.markY = self.y    -- store y location of object  
-                    
-                    --new
-                    mainGroup:insert(self)
-                    --self:toFront()
-                    scrollView.isVisible = false
-                    print(self.markX, self.markY, self.x, self.y);
-                elseif event.phase == "moved"  then
-                    local x = (event.x - event.xStart) + self.markX
-                    local y = (event.y - event.yStart) + self.markY
-                    self.x, self.y = x, y    -- move object based on calculations above
-                elseif event.phase == "ended" then
-                    -- try to click into place
-                        -- make sure to move card to appropriate table (env, discard, etc)
-                        -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
-                    -- or snap back to hand if not in a valid area
-                    
-                    -- may need to remove the listener here?
-                    
-                
-                    
-                    local validLoc = false
-                    
-                    -- if card hasn't been moved to a valid place, snap it back to the hand
-                    if not validLoc then
-                        scrollView:insert(self)
-                        scene:AdjustScroller()
-                    end
-                    
-                    
-                    scrollView.isVisible = true
-                
-                end
-
-                return true
-            end            
+            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")     
             
             myImg:addEventListener( "touch", movementListener )
             -- end from damian's code'
