@@ -2,6 +2,7 @@ local composer = require( "composer" )
 local widget = require "widget"
 local GLOB = require "globals"
 local utilities = require "functions.Utilities"
+local gameLogic = require "functions.GameLogic"
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
@@ -11,11 +12,12 @@ local scene = composer.newScene()
 
 -- local forward references should go here
 local deck = {}
-local hand, discardPile, curEco
+local hand, discardPile, curEco, cpuHand
 local activeEnvs = {}
---local env1
---local env2
---local env3
+
+-- number of cpu or other opponents
+local numOpp = 0
+
 local deckIndex = 1
 local maxEnvirons = 3
 local maxDiets = 5
@@ -23,10 +25,9 @@ local firstTurn = true -- flag
 
 -- values for card size
 -- todo see if this needs to change
-local cardHeight = 160
-local cardWidth = 100
-local scrollYPos = cardHeight / 2 
-local scrollXPos = cardWidth / 2
+
+local scrollYPos = GLOB.cardHeight / 2 
+local scrollXPos = GLOB.cardWidth / 2--display.contentWidth / 2
 
 --controls
 local testLabel
@@ -35,8 +36,8 @@ local mainGroup
 local scrollView
 
 -- locations for on screen elements
-local envLocs = {} -- locations that environment cards will be placed
-local chainLocs = {}
+--local envLocs = {} -- locations that environment cards will be placed
+--local chainLocs = {}
 
 ---------------------------------------------------------------------------------
 
@@ -73,27 +74,70 @@ function scene:shuffleDeck(myTable)
     end
 end
 
--- from damian's code'            
-local function movementListener(event)
+-- activated when a card has been dropped onto the discard pile
+function scene:DiscardCard(myCard)
+    table.insert(discardPile, myCard) -- insert the card in the last available position on discard
+    mainGroup:insert(discardPile[#discardPile])
+    discardPile[#discardPile]["x"] = 850
+    discardPile[#discardPile]["y"] = 100    
+    scene:AdjustHandTable(myCard)
+end
+
+-- nil a card out of the hand
+-- this function will shift elements in the hand table to fill any holes after a card is played or discarded
+function scene:AdjustHandTable(myCard)
+    local index = 0
+    
+    for i = 1, #hand do
+        if hand[i]["cardData"].ID == myCard["cardData"].ID then
+            print (myCard["cardData"].Name.. " is the same as "..hand[i]["cardData"].Name)
+            index = i
+            hand[i] = nil
+            break
+        end   
+    end
+    
+    while hand[index + 1] do
+        hand[index] = hand[index + 1]
+        hand[index + 1] = nil
+        index = index + 1
+    end
+end
+
+-- from damian's code'
+-- movement of a card from the hand out onto the playfield
+local function HandMovementListener(event)
 
     local self = event.target
 
     if event.phase == "began" then
-        --new
-        self.x = event.target.x;
-        self.y = display.contentHeight - (cardHeight / 2)
+        self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
 
-        --new
         mainGroup:insert(self)
         self:toFront()
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
     elseif event.phase == "moved"  then
-        local x = (event.x - event.xStart) + self.markX
-        local y = (event.y - event.yStart) + self.markY
+        local x, y
+        
+        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
+        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
+        
+        if self.markX then
+            x = (event.x - event.xStart) + self.markX
+        else 
+            x = display.contentWidth/2
+        end
+        
+        if self.markX then
+            y = (event.y - event.yStart) + self.markY
+        else
+            y = display.contentWidth/2
+        end
+        
         self.x, self.y = x, y    -- move object based on calculations above    
     elseif event.phase == "ended" then
         -- try to click into place
@@ -104,54 +148,68 @@ local function movementListener(event)
         -- may need to remove the listener here?
 
         local validLoc = ""
-
-        validLoc = scene:ValidLocation(self)
+        local played = false
         
-
-
-        -- if card hasn't been moved to a valid place, snap it back to the hand
-        if not validLoc then
+        -- get a string if the card has been dropped in a valid spot
+        validLoc = gameLogic:ValidLocation(self)
+        
+        
+        if not validLoc then -- if card hasn't been moved to a valid place, snap it back to the hand
             scrollView:insert(self)
-            scene:AdjustScroller()
-        elseif validLoc == "play" then
-            scene:PlayCard2(self)
-        elseif validLoc == "discard" then
-            print("discard")
+         elseif validLoc == "discard" then
+            self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
+            scene:DiscardCard(self)
+        elseif validLoc ~= "" then
+            for i = 1, 3 do
+                if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
+                    -- try to play an env card
+                   if self["cardData"].Type == "Environment" then
+                       played = scene:PlayEnvironment(self, i)
+                       break
+                   -- try to play a plant card
+                   elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
+                       if validLoc == "env"..i.."chain1" then
+                           played = scene:PlayPlant(self, i, "chain1")
+                           break
+                       elseif validLoc == "env"..i.."chain2" then
+                           played = scene:PlayPlant(self, i, "chain2")
+                           break
+                       end
+                   elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
+                       if validLoc == "env"..i.."chain1" then
+                           played = scene:PlayAnimal(self, i, "chain1")
+                           break
+                       elseif validLoc == "env"..i.."chain2" then
+                           played = scene:PlayAnimal(self, i, "chain2")
+                           break
+                       end                       
+                   end
+                   
+                end
+            end
+            
+        end   
+            
+            
+        --elseif validLoc == "env1chain1" or validLoc == "env1chain2" then
+           
+
+          
+
+
+        if not played and validLoc and validLoc ~= "discard" then
+            scrollView:insert(self)
+        elseif played then
+            self:removeEventListener("touch", HandMovementListener)
+            -- todo add any new listener that the card may need
         end
 
         scrollView.isVisible = true
+        scene:AdjustScroller()
     end
 
     return true
 end 
-
-function scene:ValidLocation(myCard)
-    
-    -- determine if being dropped back into hand as well
-    
-    -- over discard pile
-    if myCard.x >= 850 - cardWidth/2 and 850 + cardWidth/2 and myCard.y >= 100 - cardHeight/2 and myCard.x >= 100 + cardHeight/2 then
-        return "discard"
-    else
-        return nil
-    end
-    --[[]
-    if myCard["cardData"].Type == "Environment" then
-        if (myCard.x >= envLocs[1]["xLoc"] / 2 and myCard.x <= envLocs[1]["xLoc"] * 1.5) or
-            (myCard.x >= envLocs[2]["xLoc"] / 2 and myCard.x <= envLocs[2]["xLoc"] * 1.5) or
-            (myCard.x >= envLocs[3]["xLoc"] / 2 and myCard.x <= envLocs[3]["xLoc"] * 1.5) then
-            
-            return true
-        
-        end
-        
-    else
-        return false
-    end
-    --]]
-    
-    
-end
 
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
@@ -183,11 +241,11 @@ function scene:drawCards( num, myHand )
             
             myImg.x = scrollXPos
             myImg.y = scrollYPos
-            scrollXPos = scrollXPos + cardWidth
+            scrollXPos = scrollXPos + GLOB.cardWidth
             
             print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")     
             
-            myImg:addEventListener( "touch", movementListener )
+            myImg:addEventListener( "touch", HandMovementListener )
             -- end from damian's code'
             
             deck[i] = nil
@@ -289,6 +347,248 @@ function scene:Discard(myHand)
     print("All cards in hand have been discarded")
 end
 
+--------------------------
+-- try to play an environment card
+--------------------------   
+function scene:PlayEnvironment(myCard, index)
+    local played = false          
+         
+    if myCard["cardData"].Type == "Environment" then
+        if not activeEnvs[index] then
+            -- create the env1 table
+            activeEnvs[index] = {}
+
+            -- the card for the enviro will be added here rather than in the hand
+            -- todo deal with this better
+            activeEnvs[index]["activeEnv"] = myCard
+
+            -- insert the card to the mainGroup display and rotate it
+            mainGroup:insert(activeEnvs[index]["activeEnv"])
+            activeEnvs[index]["activeEnv"].x = GLOB.envLocs[index]["xLoc"]
+            activeEnvs[index]["activeEnv"].y = GLOB.envLocs[index]["yLoc"]
+            activeEnvs[index]["activeEnv"].rotation = 270                        
+
+             print(activeEnvs[index]["activeEnv"]["cardData"].Name .. " environment card has been played.") 
+
+            played = true
+            activeEnvs[index]["activeEnv"]["cardData"].Played = true
+        end
+
+          
+    end 
+    
+    if played then
+        scene:AdjustHandTable(myCard)
+        return true
+    else
+        return false
+    end
+
+end
+
+--------------------------
+-- try to play a plant card
+--------------------------   
+function scene:PlayPlant(myCard, index, availChain)
+    if myCard["cardData"].Type == "Small Plant" or myCard["cardData"].Type == "Large Plant" then
+        -- must have an environment to play on
+        local played = false
+
+        -- make sure an environment has already been played in this spot
+        if activeEnvs[index] then             
+            -- if the chain doesn't exist yet, a plant can be played on it
+            if not activeEnvs[index][availChain] then
+                -- make sure types match
+                local envMatch = false
+
+                --todo might need to check 2 envs for nature bites back
+                local envType = ""
+                envType = utilities:DetermineEnvType(activeEnvs, index)
+
+                -- see if any of the plants places to live match the environment played
+                -- loop through and check all 4 against the current environment
+                -- check first for The Strohmstead. If it is present, then the card can be played
+                -- todo might want to check here for when first plant is played on strohmstead. 
+                -- this plant will determine what can be played after it
+                if envType == "ST" then
+                    envMatch = true
+                else
+                    for myEnv = 1, 4 do
+                        local myEnvSt = "Env"..myEnv                            
+
+                        if myCard["cardData"][myEnvSt] and myCard["cardData"][myEnvSt] == envType then
+                            envMatch = true
+                            break
+                        end
+                    end
+                end
+                if envMatch then
+                    -- create the table for the food chain
+                    activeEnvs[index][availChain] = {}
+
+                    -- assign the plant to first postion of the food chain array chosen above
+                    activeEnvs[index][availChain][1] = myCard                
+
+                    -- place into the main display group in the proper position
+                    mainGroup:insert(activeEnvs[index][availChain][1])
+                    myCard.x = GLOB.chainLocs[index][availChain]["xLoc"]
+                    myCard.y = GLOB.chainLocs[index][availChain]["yLoc"] + 30                             
+
+                    print(activeEnvs[index][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[index]["activeEnv"]["cardData"].Name .. ".") 
+                
+                    played = true
+                    myCard["cardData"].Played = true
+                end
+            end
+            
+            
+            
+            
+        end   
+        
+        if played then
+            scene:AdjustHandTable(myCard)
+            return true
+        else
+            return false  
+        end        
+    end
+end
+
+--------------------------
+-- try to play an invert or animal card
+--------------------------   
+function scene:PlayAnimal(myCard, index, availChain)
+    if myCard["cardData"].Type == "Invertebrate" or myCard["cardData"].Type == "Small Animal" or myCard["cardData"].Type == "Large Animal" or myCard["cardData"].Type == "Apex" then
+            -- todo may need a special case for apex to make it a 10 if played on a 9
+
+            -- make sure there is an available chain to play on
+            -- check diet types against cards in play
+            -- check environment
+            -- if ok add to chain and set value appropriately
+
+            local played = false
+
+            local space = false
+            local tabLen = 0
+            local dietValue = 0
+
+            -- todo maxEnvirons could be substituted if a card allows up to 3 chains
+            if activeEnvs[index] then         
+                    --todo: make sure there is something to eat on one of the chains
+                    if activeEnvs[index][availChain] then
+                            -- first get the table length to find the last card played on the chain
+                            tabLen = scene:tableLength(activeEnvs[index][availChain])
+
+                            if tabLen > 0 then
+                                    local foodType = activeEnvs[index][availChain][tabLen]["cardData"].Type
+
+                                    -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
+                                    if foodType == "Small Plant" or foodType == "Large Plant" then
+                                            foodType = "Plant"
+                                    end
+
+                                    -- loop through the card's available diets and try to match the chain
+                                    for diet = 1, maxDiets do
+                                            local dietString = "Diet"..diet.."_Type"
+                                            
+                                            -- if this is true, there is space and the last card in the chain is edible
+                                            if myCard["cardData"][dietString] and myCard["cardData"][dietString] == foodType then
+                                                    space = true
+                                                    dietValue = diet
+                                                    break
+                                            end                                        
+                                    end                                
+                            else
+                                    print("No card was in that position. You have an Error.")
+                            end 
+                    end
+
+
+                    if space then
+                            -- make sure types match
+                            local envMatch = false
+
+                            --todo might need to check 2 envs for nature bites back
+                            local envType = ""
+
+                            envType = utilities:DetermineEnvType(activeEnvs, index)
+
+                            -- see if any of the animal's places to live match the environment played
+                            -- loop through and check all 4 against the current environment
+                            -- check first for The Strohmstead. If it is present, then the card can be played
+                            -- todo fix this. the strohmstead will become whatever environments are supported                            
+                            -- by the previous cards played. currently it just lets a card be played regardless of 
+                            -- what is below
+
+                            -- todo: this may need tweaked. i think that the first plant card played will determine strohmstead type. 
+                            --may need to store this as an added field to the strohmstead card data
+                            -- this would be done when the first plant is played onto strohmstead
+                            if envType == "ST" then                                
+                                    -- determine envs supported by plant played (in a table)
+                                    local supportedEnvs = {}
+
+                                    for pos = 1, 4 do
+                                            if activeEnvs[index][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
+                                                    table.insert(supportedEnvs, activeEnvs[index][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
+                                            end                                    
+                                    end
+
+                                    -- if there are more cards in the chain, continue checking each one
+                                            -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
+                                            -- can probably use table.remove to take them out of supportedEnvs table to fill the hole properly
+
+                                    -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
+                                    -- both the creature being played and possible envs
+                                    -- todo: make this a reusable function so that it works for wild cards as well                                
+
+                                    envMatch = true
+                            else
+                                    for myEnv = 1, 4 do
+                                            local myEnvSt = "Env"..myEnv                            
+
+                                            if myCard["cardData"][myEnvSt] and myCard["cardData"][myEnvSt] == envType then
+                                                    envMatch = true
+                                                    break
+                                            end
+                                    end
+                            end
+
+
+                            -- add it to chain, change its value, nil it from hand
+                            if envMatch then
+                                    local valueStr = "Diet"..dietValue.."_Value"                                
+
+                                    myCard["cardData"].Value = myCard["cardData"][valueStr]
+
+                                    -- assign to next available spot in the table
+                                    activeEnvs[index][availChain][tabLen + 1] = myCard
+
+                                    played = true
+                                    myCard["cardData"].Played = true
+
+                                    mainGroup:insert(activeEnvs[index][availChain][tabLen + 1])
+                                    myCard.x = GLOB.chainLocs[index][availChain]["xLoc"]
+                                    myCard.y = GLOB.chainLocs[index][availChain]["yLoc"] +  ((tabLen + 1) * 35)
+
+                                    print(activeEnvs[index][availChain][tabLen + 1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[index][availChain][tabLen]["cardData"].Name .. ".") 
+                            end
+                    end
+                    
+
+
+
+            end 
+            
+            if played then
+                scene:AdjustHandTable(myCard)
+                return true
+            else
+                return false  
+            end
+    end 
+end
+
 function scene:PlayCard2(myCard)
         -- todo change this so that a click will try to play a certain card
         -- todo this is only for testing. the outer for loop will be thrown off by holes in hand table
@@ -319,8 +619,8 @@ function scene:PlayCard2(myCard)
                     --todo might not want removeself here
                     --hand[ind]:removeSelf()
                     mainGroup:insert(activeEnvs[j]["activeEnv"])
-                    activeEnvs[j]["activeEnv"].x = envLocs[j]["xLoc"]
-                    activeEnvs[j]["activeEnv"].y = envLocs[j]["yLoc"]
+                    activeEnvs[j]["activeEnv"].x = GLOB.envLocs[j]["xLoc"]
+                    activeEnvs[j]["activeEnv"].y = GLOB.envLocs[j]["yLoc"]
                     activeEnvs[j]["activeEnv"].rotation = 270                        
 
                     --myCard = nil
@@ -329,6 +629,7 @@ function scene:PlayCard2(myCard)
 
                     space = true
                     played = true
+                    activeEnvs[j]["activeEnv"]["cardData"].Played = true
                 end
 
                 -- break the loop. a card has been successfully played
@@ -648,8 +949,8 @@ function scene:PlayCard()
                         --todo might not want removeself here
                         --hand[ind]:removeSelf()
                         mainGroup:insert(activeEnvs[j]["activeEnv"])
-                        activeEnvs[j]["activeEnv"].x = envLocs[j]["xLoc"]
-                        activeEnvs[j]["activeEnv"].y = envLocs[j]["yLoc"]
+                        activeEnvs[j]["activeEnv"].x = GLOB.envLocs[j]["xLoc"]
+                        activeEnvs[j]["activeEnv"].y = GLOB.envLocs[j]["yLoc"]
                         activeEnvs[j]["activeEnv"].rotation = 270                        
                         
                         hand[ind] = nil
@@ -658,6 +959,7 @@ function scene:PlayCard()
 
                         space = true
                         played = true
+                        activeEnvs[j]["activeEnv"]["cardData"].Played = true
                     end
 
                     -- break the loop. a card has been successfully played
@@ -719,13 +1021,16 @@ function scene:PlayCard()
                                 -- assign the plant to first postion of the food chain array chosen above
                                 activeEnvs[j][availChain][1] = hand[ind]
 
-                                played = true
+                                
+                                
                                 
                                 local myCard = activeEnvs[j][availChain][1]
+                                played = true
+                                myCard["cardData"].Played = true
                                 
                                 mainGroup:insert(activeEnvs[j][availChain][1])
-                                myCard.x = chainLocs[j][availChain]["xLoc"]
-                                myCard.y = chainLocs[j][availChain]["yLoc"]                                  
+                                myCard.x = GLOB.chainLocs[j][availChain]["xLoc"]
+                                myCard.y = GLOB.chainLocs[j][availChain]["yLoc"] + 30                               
                                 
                                 -- remove the card from the hand
                                 hand[ind] = nil
@@ -878,10 +1183,11 @@ function scene:PlayCard()
                                 local myCard = activeEnvs[j][availChain][tabLen + 1]
                                 
                                 played = true
+                                myCard["cardData"].Played = true
                                 
                                 mainGroup:insert(activeEnvs[j][availChain][tabLen + 1])
-                                myCard.x = chainLocs[j][availChain]["xLoc"]
-                                myCard.y = chainLocs[j][availChain]["yLoc"] + ((tabLen + 1) * 15)
+                                myCard.x = GLOB.chainLocs[j][availChain]["xLoc"]
+                                myCard.y = GLOB.chainLocs[j][availChain]["yLoc"] +  ((tabLen + 1) * 35)
                                 
                                 -- remove the card from the hand
                                 hand[ind] = nil
@@ -931,26 +1237,37 @@ end
 -- reset back to original position, then adjust each card's x value. 
 -- this seems to fill in gaps properly and adjust the size as desired. 
 function scene:AdjustScroller()    
-    scrollXPos = cardWidth / 2    
+    scrollXPos = GLOB.cardWidth / 2    
     
     for i = 1, #hand do  
         hand[i].y = scrollYPos
         hand[i].x = scrollXPos
-        scrollXPos = scrollXPos + cardWidth
+        scrollXPos = scrollXPos + GLOB.cardWidth
     end
     
-    scrollView:setScrollWidth(cardWidth * #hand)
+    scrollView:setScrollWidth(GLOB.cardWidth * #hand)
     scrollView:scrollTo("left", {time=1200})
 end
 
-function scene:testfx()
+function scene:InitializeGame()
     
 
 
     
-    --deck = GLOB.deck
+    --initialize tables for where cards will be stored
     hand = {}
     discardPile = {}
+    
+    if numOpp > 0 then
+        for i = 1, numOpp do
+            cpuHand[numOpp] = {}
+            
+            
+        end
+        
+        
+        
+    end
     
     
     --local deckSize = scene:tableLength(deck)
@@ -971,6 +1288,7 @@ function scene:testfx()
     
 end
 
+--[[]
 function scene:SetLocs()
     local chainY = 300
     
@@ -981,10 +1299,10 @@ function scene:SetLocs()
     chainLocs[2] = {["chain1"] = {["xLoc"] = 300, ["yLoc"] = chainY},["chain2"] = {["xLoc"] = 400, ["yLoc"] = chainY}}
     chainLocs[3] = {["chain1"] = {["xLoc"] = 550, ["yLoc"] = chainY},["chain2"] = {["xLoc"] = 650, ["yLoc"] = chainY}}
 end
-
+--]]
 function scene:create( event )
 
-    scene:SetLocs()
+    --scene:SetLocs()
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
@@ -992,40 +1310,23 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    --local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
     local background = display.newImage("images/background-create-cafe.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
-    --background:setFillColor(.3,.3,.3)
-    --sceneGroup:insert(background)
-    mainGroup:insert(background)
 
+    mainGroup:insert(background)
     
     scrollView = widget.newScrollView
     {
-        --Originals
-        --left = 37.5,
-        --top = 225,
-        --width = 460,
-        --height = 100,
-        --scrollWidth = 1200,
-        --scrollHeight = 100,
-        --verticalScrollDisabled = true
-
-        --left = 0,
-        --top = 225,
-        --dimensions of scroll window
-        --width = display.contentWidth,
-        width = cardWidth * 5,
-        height = cardHeight,
+        width = GLOB.cardWidth * 5,
+        height = GLOB.cardHeight,
 
         verticalScrollDisabled = true,
         backgroundColor = {.5,.5,.5, 0} -- transparent. remove the 0 to see it
     }
                 
     --location
-    --scrollView.x = display.contentCenterX + 100
-    scrollView.x = display.contentWidth / 2;
+    scrollView.x = display.contentWidth / 2;    
     scrollView.y = display.contentHeight - 80;    
     
     sceneGroup:insert(scrollView)
@@ -1037,7 +1338,7 @@ function scene:create( event )
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
+        deck[i] = display.newRect(725, 100, GLOB.cardWidth, GLOB.cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -1067,24 +1368,7 @@ function scene:create( event )
     
     cardBack.fill = paint
     mainGroup:insert(cardBack)
-   
-       --[[
-    local textOptions = {
-    text = "Play Card",
-    x = 100,
-    y = 100,
-    width = 350,
-    height = 100,
-    font = native.systemFont,
-    fontSize = 20,
-    align = "center", 
-    onTap = self.PlayCard()
-    }    
-
-    testLabel = display.newText(textOptions) -- item description
-    testLabel:setFillColor(1,1,1)
-    --]]
-    
+       
     local btnY = 50
     
     -- touch demo
@@ -1100,16 +1384,8 @@ function scene:create( event )
         scene:PlayCard()
     end
     
-    --local function touchListener( event )
-    --    local object = event.target
-    --    print( event.target.name.." TOUCH on the '"..event.phase.."' Phase!" )
-    --end
-    --add "tap" event listener to back object and update text label
-    --backObject:addEventListener( "tap", tapListener )
-    --backLabel.text = "tap"
-    --add "tap" event listener to front object and update text label
     frontObject:addEventListener( "tap", tapListener )
-    --    
+
     mainGroup:insert(frontObject)
     mainGroup:insert(frontLabel)
     
@@ -1187,7 +1463,7 @@ function scene:show( event )
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
-        scene:testfx()
+        scene:InitializeGame()
    end
 end
 
