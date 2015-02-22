@@ -29,11 +29,17 @@ local firstTurn = true -- flag
 local scrollYPos = GLOB.cardHeight / 2 
 local scrollXPos = GLOB.cardWidth / 2--display.contentWidth / 2
 
+local discardXLoc = 850
+local discardYLoc = 100
+local drawPileXLoc = 725
+local drawPileYLoc = 100
+
 --controls
 local testLabel
-local discardImage
 local mainGroup
 local scrollView
+
+
 
 -- locations for on screen elements
 --local envLocs = {} -- locations that environment cards will be placed
@@ -78,8 +84,8 @@ end
 function scene:DiscardCard(myCard)
     table.insert(discardPile, myCard) -- insert the card in the last available position on discard
     mainGroup:insert(discardPile[#discardPile])
-    discardPile[#discardPile]["x"] = 850
-    discardPile[#discardPile]["y"] = 100    
+    discardPile[#discardPile]["x"] = discardXLoc
+    discardPile[#discardPile]["y"] = discardYLoc    
     scene:AdjustHandTable(myCard)
 end
 
@@ -213,14 +219,17 @@ end
 
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
-function scene:drawCards( num, myHand )    
+function scene:drawCards( num, myHand, who )    
     local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
+    local numPlayed = 0
     
     for i = deckIndex, numDraw, 1 do -- start from deckIndex and draw the number passed in. third param is step
         
         if deck[i] then -- make sure there is a card to draw
             -- insert the card into the hand, then nil it from the deck            
             table.insert(myHand, deck[i])
+
+        -- if the player is being dealt a card, put the image on screen
 
             local imgString = "/images/assets/"
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
@@ -233,22 +242,38 @@ function scene:drawCards( num, myHand )
                 filename = imgString
             }
 
-            
+
             local myImg = myHand[#myHand]
-            myImg.fill = paint    
+            myImg.fill = paint              
             
-            scrollView:insert(myHand[#myHand])
+
+            if who == "Player" then 
+
+                scrollView:insert(myHand[#myHand])
+                myImg.x = scrollXPos
+                myImg.y = scrollYPos
+                scrollXPos = scrollXPos + GLOB.cardWidth 
+
+                myImg:addEventListener( "touch", HandMovementListener )
+            else
+                -- todo may want these in a different group
+                -- could also make invisible
+                --local newCard = myHand[#myHand]
+                --mainGroup:insert(newCard)
+               -- newCard.x = drawPileXLoc
+               -- newCard.y = drawPileYLoc
+                --newCard:toBack()
+                
+                
+            end            
+
+            print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            deck[i] = nil  
+            numPlayed = numPlayed + 1
             
-            myImg.x = scrollXPos
-            myImg.y = scrollYPos
-            scrollXPos = scrollXPos + GLOB.cardWidth
-            
-            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")     
-            
-            myImg:addEventListener( "touch", HandMovementListener )
-            -- end from damian's code'
-            
-            deck[i] = nil
+            if who == "Player" then
+                scene:AdjustScroller()
+            end
         else
             -- the draw pile is empty
             -- todo: deal with this by either reshuffling discard or ending game
@@ -257,11 +282,13 @@ function scene:drawCards( num, myHand )
         
     end
     
-    -- increment the deck index for next deal
-    deckIndex = deckIndex + num
+    -- increment the deck index for next deal. it should stop incrementing if deck is empty
+    deckIndex = deckIndex + numPlayed
+
     
-    scene:AdjustScroller()
 end
+
+
 
 function scene:CalculateScore()
     -- run through activeEnvs
@@ -319,17 +346,6 @@ function scene:CalculateScore()
     
 end
 
-function scene:EndTurn()
-    
-    --print("hello")
-    -- shift control to npc
-    
-    -- determine current score    
-    scene:CalculateScore()
-    -- if there's a winner do something
-    
-end
-
 -- discard the current hand and add it to the discard pile
 -- todo: change this so that it discards one at a time or however it will work in actual game
 -- make sure when this is changed to remove any potential holes from hand or discard
@@ -340,8 +356,8 @@ function scene:Discard(myHand)
         --myHand[i]:removeSelf()
         myHand[i] = nil
         mainGroup:insert(discardPile[#discardPile])
-        discardPile[#discardPile].x = 850
-        discardPile[#discardPile].y = 100
+        discardPile[#discardPile].x = discardXLoc
+        discardPile[#discardPile].y = discardYLoc
     end
     
     print("All cards in hand have been discarded")
@@ -1249,34 +1265,77 @@ function scene:AdjustScroller()
     scrollView:scrollTo("left", {time=1200})
 end
 
-function scene:InitializeGame()
+function scene:EndTurn()
     
+    --print("hello")
+    
+    
+    
+    
+    -- shift control to npc
+    -- if not first turn
+        -- don't discard'
+    -- draw 2 cards
+    -- if first turn, try to play env from hand
 
-
-    
-    --initialize tables for where cards will be stored
-    hand = {}
-    discardPile = {}
-    
-    if numOpp > 0 then
+    if numOpp > 0 then       
         for i = 1, numOpp do
-            cpuHand[numOpp] = {}
+            local whoString = "Opponent"..i
+            -- todo check discard pile for a card to draw from
+            scene:drawCards(2,cpuHand[i], whoString)
             
+            
+            -- opponent try to play card
+            -- just calculate their best lineup and put into their eco table
+            --cpuHand[i]
+            
+            -- discard hand after playing
             
         end
-        
-        
-        
-    end
+    end     
     
     
-    --local deckSize = scene:tableLength(deck)
     
+    
+    -- determine current score    
+    scene:CalculateScore()
+    
+    
+    
+    
+    
+    
+    -- if there's a winner do something
+    
+end
+
+function scene:InitializeGame()
     -- deck should be shuffled after this
     scene:shuffleDeck(deck)
     
+    --initialize tables for where cards will be stored
+    hand = {}
+    discardPile = {}  
+    
     -- pass 5 cards out to the player
-    scene:drawCards(5,hand)
+    scene:drawCards(5,hand, "Player")
+    
+       
+    numOpp = 3
+    
+    -- pass 5 cards out to other players 
+    if numOpp > 0 then
+        cpuHand = {}
+        
+        for i = 1, numOpp do
+            cpuHand[i] = {}
+            local whoString = "Opponent"..i
+            scene:drawCards(5,cpuHand[i], whoString)
+            
+        end
+    end 
+    
+
     
     -- flip over a card and add to discard if we want
     
@@ -1353,14 +1412,14 @@ function scene:create( event )
     -- initialize the discard pile image and add to scene group
     -- no image shown currently, just a white rect
     -- todo change this
-    discardImage = display.newRect(850, 100, 100, 160) 
+    discardImage = display.newRect(discardXLoc, discardYLoc, GLOB.cardWidth, GLOB.cardHeight) 
     --discardImage.Whatever = "hello"
     --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
     mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
-    local cardBack = display.newRect( 725, 100, 100, 160 )
+    local cardBack = display.newRect( drawPileXLoc, drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight )
     paint = {
         type = "image",
         filename = "/images/assets/v2-Back.jpg"
@@ -1423,7 +1482,7 @@ function scene:create( event )
     
     local function drawCardListener( event )
         local object = event.target
-        scene:drawCards(1,hand)
+        scene:drawCards(1,hand, "Player")
     end    
     
     --drawCardBtn:addEventListener( "tap", drawCardListener )
