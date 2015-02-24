@@ -6,10 +6,10 @@ local globals = {}
 -- size and location of several on screen areas
 globals.cardHeight = 160
 globals.cardWidth = 100
-globals.discardXLoc = 850
-globals.discardYLoc = 100
-globals.drawPileXLoc = 725
-globals.drawPileYLoc = 100
+globals.discardXLoc = 570
+globals.discardYLoc = 140
+globals.drawPileXLoc = 425
+globals.drawPileYLoc = 140
 
 -- tables for locations for where cards should be played on the field
 globals.chainY = 300

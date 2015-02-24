@@ -37,6 +37,8 @@ local oppGroup -- display's opponent cards
 local scrollView
 local overlay
 
+
+
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -209,11 +211,10 @@ local function ZoomTapListener( event )
             self:removeEventListener("touch", HandMovementListener)
             mainGroup:insert(self)  
             mainGroup:insert(overlay)
+            overlay.isHitTestable = true -- Only needed if alpha is 0
+            overlay:addEventListener("touch", function() return true end)
+            overlay:addEventListener("tap", function() return true end)
             overlay:toFront()
-            overlay.y = display.contentHeight/2    -- Location of image once it is zoomed
-            overlay.x = display.contentWidth/2
-            overlay.xScale = 10
-            overlay.yScale = 10
             self:toFront()
             self.y = display.contentHeight/2    -- Location of image once it is zoomed
             self.x = display.contentWidth/2    
@@ -901,8 +902,10 @@ function scene:create( event )
     mainGroup:insert(background)
     
     --ecm e/b
-    overlay = display.newImage("images/overlay.png")
+    overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
     mainGroup:insert(overlay)
+    overlay:setFillColor( black )    
+    overlay.alpha = .5
     overlay:toBack()
     
     scrollView = widget.newScrollView
