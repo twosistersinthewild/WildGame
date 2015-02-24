@@ -197,7 +197,7 @@ local function HandMovementListener(event)
     return true
 end 
 
-local function tapListener( event )
+local function ZoomTapListener( event )
     local self = event.target;
         
     -- checks for double tap event
@@ -277,8 +277,8 @@ function scene:drawCards( num, myHand, who )
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                myImg:addEventListener( "touch", HandMovementListener )
-                myImg:addEventListener( "tap", tapListener )
+                myImg:addEventListener( "touch", HandMovementListener )                
+                myImg:addEventListener( "tap", ZoomTapListener )
             else                
                 -- do anything cpu player might need
             end            
@@ -894,7 +894,7 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -920,14 +920,40 @@ function scene:create( event )
     
     sceneGroup:insert(scrollView)
     
+    local function right_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX - 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX + 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
 
+    mainGroup:insert(left_arrow)
+    mainGroup:insert(right_arrow)
     -- create a rectangle for each card
     -- attach card data to the image as a table
     -- insert into main group
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, GLOB.cardWidth, GLOB.cardHeight)
+        deck[i] = display.newRect(GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -1047,13 +1073,14 @@ function scene:create( event )
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand, "Player")
+        return true
     end    
     
     --drawCardBtn:addEventListener( "tap", drawCardListener )
     cardBack:addEventListener( "tap", drawCardListener ) 
     --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
+    local discardBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-discard-card.jpg"
     
