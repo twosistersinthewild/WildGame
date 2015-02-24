@@ -250,7 +250,7 @@ function scene:Discard(myHand)
         discardPile[#discardPile].y = 100
     end
     
-    print("All cards in hand have been discarded")
+    print("All cards in hand have been discarded") 
 end
 
 function scene:DiscardCard(myCard)
@@ -666,7 +666,8 @@ function scene:create( event )
     local imgString, paint, filename
  
     --local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
-    local background = display.newImage("images/background-create-cafe.jpg")
+    --local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
     --background:setFillColor(.3,.3,.3)
@@ -710,7 +711,8 @@ function scene:create( event )
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
+        --deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
+        deck[i] = display.newRect(425, 100, cardWidth, cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -725,14 +727,16 @@ function scene:create( event )
     -- initialize the discard pile image and add to scene group
     -- no image shown currently, just a white rect
     -- todo change this
-    discardImage = display.newRect(850, 100, 100, 160) 
+    --discardImage = display.newRect(850, 100, 100, 160) 
+    discardImage = display.newRect(575, 100, 100, 160) 
     --discardImage.Whatever = "hello"
     --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
     mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
-    local cardBack = display.newRect( 725, 100, 100, 160 )
+    --local cardBack = display.newRect( 725, 100, 100, 160 )
+    local cardBack = display.newRect( 425, 100, 100, 160 )
     paint = {
         type = "image",
         filename = "/images/assets/v2-Back.jpg"
@@ -786,7 +790,7 @@ function scene:create( event )
     mainGroup:insert(frontObject)
     mainGroup:insert(frontLabel)
     
-    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    local endTurnBtn = display.newRect( 220 - 175, btnY + 525, 200 * .75, 109 * .75)
     
     imgString = "/images/button-end-turn.jpg"
     
@@ -827,7 +831,7 @@ function scene:create( event )
     cardBack:addEventListener( "tap", drawCardListener ) 
     --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
+    local discardBtn = display.newRect( 580 + 250, btnY + 525, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-discard-card.jpg"
     
@@ -845,6 +849,31 @@ function scene:create( event )
     
     discardBtn:addEventListener( "tap", discardListener )  
     mainGroup:insert(discardBtn)
+    
+    local function right_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX - 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX + 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
     --
 end
 
