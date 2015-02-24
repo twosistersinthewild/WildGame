@@ -22,6 +22,8 @@ local numOpp = 0
 local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
+local tapCounter = 0 -- flag
+
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -33,7 +35,7 @@ local testLabel
 local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
-
+local overlay
 
 ---------------------------------------------------------------------------------
 
@@ -96,8 +98,6 @@ function scene:DiscardHand(myHand)
 end
 
 
-
-
 -- from damian's code'
 -- movement of a card from the hand out onto the playfield
 local function HandMovementListener(event)
@@ -114,7 +114,7 @@ local function HandMovementListener(event)
         self:toFront()
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
-    elseif event.phase == "moved"  then
+    elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
         local x, y
         
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
@@ -197,6 +197,49 @@ local function HandMovementListener(event)
     return true
 end 
 
+local function tapListener( event )
+    local self = event.target;
+        
+    -- checks for double tap event
+    if (event.numTaps >= 2 ) then
+        -- checks to make sure image isn't already zoomed
+        if tapCounter == 0 then
+            self.xScale = 4 -- resize is relative to original size
+            self.yScale = 4
+            self:removeEventListener("touch", HandMovementListener)
+            mainGroup:insert(self)  
+            mainGroup:insert(overlay)
+            overlay:toFront()
+            overlay.y = display.contentHeight/2    -- Location of image once it is zoomed
+            overlay.x = display.contentWidth/2
+            overlay.xScale = 10
+            overlay.yScale = 10
+            self:toFront()
+            self.y = display.contentHeight/2    -- Location of image once it is zoomed
+            self.x = display.contentWidth/2    
+            scrollView.isVisible = false
+            tapCounter = 1 -- sets flag to indicate zoomed image
+            
+            print( "The object was double-tapped." )
+        else
+            self.xScale = 1 -- reset size
+            self.yScale = 1
+            scrollView:insert(self)
+            self:addEventListener("touch", HandMovementListener)
+            scene:AdjustScroller()
+            scrollView.isVisible = true
+            overlay:toBack()
+            tapCounter = 0 -- reset flag
+        end 
+    end
+    -- ecm end
+
+    --  ** single tap event **
+    -- elseif (event.numTaps == 1 ) then
+       -- print("The object was tapped once.")
+    return true
+end
+
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
 function scene:drawCards( num, myHand, who )    
@@ -235,6 +278,7 @@ function scene:drawCards( num, myHand, who )
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
                 myImg:addEventListener( "touch", HandMovementListener )
+                myImg:addEventListener( "tap", tapListener )
             else                
                 -- do anything cpu player might need
             end            
@@ -855,6 +899,11 @@ function scene:create( event )
     background.y = display.contentHeight / 2
 
     mainGroup:insert(background)
+    
+    --ecm e/b
+    overlay = display.newImage("images/overlay.png")
+    mainGroup:insert(overlay)
+    overlay:toBack()
     
     scrollView = widget.newScrollView
     {
