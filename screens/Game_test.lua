@@ -204,13 +204,15 @@ local function ZoomTapListener( event )
         
     -- checks for double tap event
     if (event.numTaps >= 2 ) then
+        local orgX, orgY
+        
         -- checks to make sure image isn't already zoomed
         if tapCounter == 0 then
+            self.orgX, self.orgY = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
             self.xScale = 4 -- resize is relative to original size
             self.yScale = 4
             self:removeEventListener("touch", HandMovementListener)
-            mainGroup:insert(self)  
-            mainGroup:insert(overlay)
+            mainGroup:insert(self)
             overlay.isHitTestable = true -- Only needed if alpha is 0
             overlay:addEventListener("touch", function() return true end)
             overlay:addEventListener("tap", function() return true end)
@@ -225,9 +227,19 @@ local function ZoomTapListener( event )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
-            scrollView:insert(self)
-            self:addEventListener("touch", HandMovementListener)
-            scene:AdjustScroller()
+            
+            
+            if self.orgY > display.contentHeight - GLOB.cardHeight then--it came from the hand
+                scrollView:insert(self)
+                self:addEventListener("touch", HandMovementListener)
+                scene:AdjustScroller()
+            else -- else kick back to position on playfield
+                --todo add field movement listener
+            
+                self.x = self.orgX
+                self.y = self.orgY
+            end               
+            
             scrollView.isVisible = true
             overlay:toBack()
             tapCounter = 0 -- reset flag
