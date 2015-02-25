@@ -306,6 +306,39 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
     end 
 end
 
+function BringToFront(myID, myEnvs)
+    
+    local found = false
+    
+    for i = 1, 3 do
+        local myChain = ""
+        
+        if myEnvs[i]["activeEnv"]["cardData"].ID == myID then            
+            found = true
+        end
+        
+        
+        
+        for j = 1, 2 do
+            if j == 1 then
+                myChain = "chain1"
+            else
+                myChain = "chain2"
+            end    
+        
+        
+        
+        
+        
+        end
+        
+        
+    end
+    
+    
+end
+
+
 -------------------------------------------------
  
 return gameLogic
