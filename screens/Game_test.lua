@@ -901,10 +901,9 @@ function scene:create( event )
 
     mainGroup:insert(background)
     
-    --ecm e/b
     overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
     mainGroup:insert(overlay)
-    overlay:setFillColor( black )    
+    overlay:setFillColor(0,0,0)    
     overlay.alpha = .5
     overlay:toBack()
     

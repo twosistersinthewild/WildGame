@@ -22,6 +22,8 @@ local numOpp = 0
 local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
+local tapCounter = 0 -- flag
+
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -33,6 +35,8 @@ local testLabel
 local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
+local overlay
+
 
 
 ---------------------------------------------------------------------------------
@@ -96,25 +100,21 @@ function scene:DiscardHand(myHand)
 end
 
 
-
-
--- from damian's code'
--- movement of a card from the hand out onto the playfield
-local function HandMovementListener(event)
+local function FieldMovementListener(event)
 
     local self = event.target
 
     if event.phase == "began" then
-        self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
+        --self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
 
-        mainGroup:insert(self)
-        self:toFront()
-        scrollView.isVisible = false
+        --mainGroup:insert(self)
+        --self:toFront()
+        --scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
-    elseif event.phase == "moved"  then
+    elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
         local x, y
         
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
@@ -133,6 +133,8 @@ local function HandMovementListener(event)
         end
         
         self.x, self.y = x, y    -- move object based on calculations above    
+    elseif event.phase == "moved" and self.x<0 and self.x>display.contentWidth and (self.y - self.height/2)< 0 and self.y > (display.contentHeight - self.height/2.5)then
+        event.phase = "ended" -- explicitely end the event if the border is reached
     elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
@@ -197,6 +199,147 @@ local function HandMovementListener(event)
     return true
 end 
 
+
+-- movement of a card from the hand out onto the playfield
+local function HandMovementListener(event)
+
+    local self = event.target
+
+    if event.phase == "began" then
+        self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
+
+        self.markX = self.x    -- store x location of object
+        self.markY = self.y    -- store y location of object  
+
+        mainGroup:insert(self)
+        self:toFront()
+        scrollView.isVisible = false
+        print(self.markX, self.markY, self.x, self.y);
+    elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
+        local x, y
+        
+        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
+        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
+        
+        if self.markX then
+            x = (event.x - event.xStart) + self.markX
+        else 
+            x = display.contentWidth/2
+        end
+        
+        if self.markX then
+            y = (event.y - event.yStart) + self.markY
+        else
+            y = display.contentWidth/2
+        end
+        
+        self.x, self.y = x, y    -- move object based on calculations above  
+    elseif event.phase == "ended" then
+        -- try to click into place
+            -- make sure to move card to appropriate table (env, discard, etc)
+            -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
+        -- or snap back to hand if not in a valid area
+
+        -- may need to remove the listener here?
+
+        local validLoc = ""
+        local played = false
+        
+        -- get a string if the card has been dropped in a valid spot
+        validLoc = gameLogic:ValidLocation(self)
+        
+        
+        if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
+            scrollView:insert(self)
+        elseif validLoc == "discard" then
+            self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
+            scene:DiscardCard(self, hand)
+        elseif validLoc ~= "" then
+            for i = 1, 3 do
+                if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
+                    -- try to play an env card
+                   if self["cardData"].Type == "Environment" then
+                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+                        break
+                   -- try to play a plant card
+                   elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
+                       if validLoc == "env"..i.."chain1" then
+                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
+                            break
+                       elseif validLoc == "env"..i.."chain2" then
+                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
+                            break
+                       end
+                   elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
+                       if validLoc == "env"..i.."chain1" then
+                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
+                            break
+                       elseif validLoc == "env"..i.."chain2" then
+                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
+                           break
+                       end                       
+                   end                   
+                end
+            end            
+        end   
+
+        if not played and validLoc and validLoc ~= "discard" then
+            scrollView:insert(self)
+        elseif played then
+            mainGroup:insert(self) 
+            self:removeEventListener("touch", HandMovementListener)
+            -- todo add any new listener that the card may need
+        end
+
+        scrollView.isVisible = true
+        scene:AdjustScroller()
+    end
+
+    return true
+end 
+
+local function ZoomTapListener( event )
+    local self = event.target;
+        
+    -- checks for double tap event
+    if (event.numTaps >= 2 ) then
+        -- checks to make sure image isn't already zoomed
+        if tapCounter == 0 then
+            self.xScale = 4 -- resize is relative to original size
+            self.yScale = 4
+            self:removeEventListener("touch", HandMovementListener)
+            mainGroup:insert(self)  
+            mainGroup:insert(overlay)
+            overlay.isHitTestable = true -- Only needed if alpha is 0
+            overlay:addEventListener("touch", function() return true end)
+            overlay:addEventListener("tap", function() return true end)
+            overlay:toFront()
+            self:toFront()
+            self.y = display.contentHeight/2    -- Location of image once it is zoomed
+            self.x = display.contentWidth/2    
+            scrollView.isVisible = false
+            tapCounter = 1 -- sets flag to indicate zoomed image
+            
+            print( "The object was double-tapped." )
+        else
+            self.xScale = 1 -- reset size
+            self.yScale = 1
+            scrollView:insert(self)
+            self:addEventListener("touch", HandMovementListener)
+            scene:AdjustScroller()
+            scrollView.isVisible = true
+            overlay:toBack()
+            tapCounter = 0 -- reset flag
+        end 
+    end
+    -- ecm end
+
+    --  ** single tap event **
+    -- elseif (event.numTaps == 1 ) then
+       -- print("The object was tapped once.")
+    return true
+end
+
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
 function scene:drawCards( num, myHand, who )    
@@ -234,7 +377,8 @@ function scene:drawCards( num, myHand, who )
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                myImg:addEventListener( "touch", HandMovementListener )
+                myImg:addEventListener( "touch", HandMovementListener )                
+                myImg:addEventListener( "tap", ZoomTapListener )
             else                
                 -- do anything cpu player might need
             end            
@@ -850,11 +994,17 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
     mainGroup:insert(background)
+    
+    overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
+    mainGroup:insert(overlay)
+    overlay:setFillColor(0,0,0)    
+    overlay.alpha = .5
+    overlay:toBack()
     
     scrollView = widget.newScrollView
     {
@@ -871,14 +1021,40 @@ function scene:create( event )
     
     sceneGroup:insert(scrollView)
     
+    local function right_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX - GLOB.cardWidth;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX + GLOB.cardWidth;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
 
+    mainGroup:insert(left_arrow)
+    mainGroup:insert(right_arrow)
     -- create a rectangle for each card
     -- attach card data to the image as a table
     -- insert into main group
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, GLOB.cardWidth, GLOB.cardHeight)
+        deck[i] = display.newRect(GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -953,7 +1129,7 @@ function scene:create( event )
     showMainLabel:setTextColor( 1 )
     
     local function tapListener( event )
-        local object = event.target
+        --local object = event.target
         --print( object.name.." TAPPED!" )
         scene:HideOpponentCards()
     end
@@ -963,7 +1139,7 @@ function scene:create( event )
     oppGroup:insert(showMain)
     oppGroup:insert(showMainLabel)       
     
-    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    local endTurnBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-end-turn.jpg"
     
@@ -993,35 +1169,14 @@ function scene:create( event )
         filename = imgString
     }
     
-    --drawCardBtn.fill = paint       
-    
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand, "Player")
+        return true
     end    
     
-    --drawCardBtn:addEventListener( "tap", drawCardListener )
     cardBack:addEventListener( "tap", drawCardListener ) 
-    --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
-    
-    imgString = "/images/button-discard-card.jpg"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    discardBtn.fill = paint         
-    
-    local function discardListener( event )
-        --local object = event.target
-        scene:DiscardHand(hand)
-    end    
-    
-    discardBtn:addEventListener( "tap", discardListener )  
-    mainGroup:insert(discardBtn)
     --
 end
 
