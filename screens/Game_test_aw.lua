@@ -22,6 +22,8 @@ local numOpp = 0
 local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
+local tapCounter = 0 -- flag
+
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -33,6 +35,13 @@ local testLabel
 local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
+local overlay
+local logScroll -- aww
+--local visibleScroll = 100 -- the visible area of the scrollview
+--local scrollRectWidth = 725
+--local scrollArea
+local scrollY = 10 -- this will allow the first item added to be in the right position
+--local newScrollHeight = 0
 
 
 ---------------------------------------------------------------------------------
@@ -96,25 +105,21 @@ function scene:DiscardHand(myHand)
 end
 
 
-
-
--- from damian's code'
--- movement of a card from the hand out onto the playfield
-local function HandMovementListener(event)
+local function FieldMovementListener(event)
 
     local self = event.target
 
     if event.phase == "began" then
-        self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
+        --self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
 
-        mainGroup:insert(self)
-        self:toFront()
-        scrollView.isVisible = false
+        --mainGroup:insert(self)
+        --self:toFront()
+        --scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
-    elseif event.phase == "moved"  then
+    elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
         local x, y
         
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
@@ -133,6 +138,8 @@ local function HandMovementListener(event)
         end
         
         self.x, self.y = x, y    -- move object based on calculations above    
+    elseif event.phase == "moved" and self.x<0 and self.x>display.contentWidth and (self.y - self.height/2)< 0 and self.y > (display.contentHeight - self.height/2.5)then
+        event.phase = "ended" -- explicitely end the event if the border is reached
     elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
@@ -197,6 +204,162 @@ local function HandMovementListener(event)
     return true
 end 
 
+
+-- movement of a card from the hand out onto the playfield
+local function HandMovementListener(event)
+
+    local self = event.target
+
+    if event.phase == "began" then
+        self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
+
+        self.markX = self.x    -- store x location of object
+        self.markY = self.y    -- store y location of object  
+
+        mainGroup:insert(self)
+        self:toFront()
+        scrollView.isVisible = false
+        print(self.markX, self.markY, self.x, self.y);
+    elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
+        local x, y
+        
+        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
+        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
+        
+        if self.markX then
+            x = (event.x - event.xStart) + self.markX
+        else 
+            x = display.contentWidth/2
+        end
+        
+        if self.markX then
+            y = (event.y - event.yStart) + self.markY
+        else
+            y = display.contentWidth/2
+        end
+        
+        self.x, self.y = x, y    -- move object based on calculations above  
+    elseif event.phase == "ended" then
+        -- try to click into place
+            -- make sure to move card to appropriate table (env, discard, etc)
+            -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
+        -- or snap back to hand if not in a valid area
+
+        -- may need to remove the listener here?
+
+        local validLoc = ""
+        local played = false
+        
+        -- get a string if the card has been dropped in a valid spot
+        validLoc = gameLogic:ValidLocation(self)
+        
+        
+        if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
+            scrollView:insert(self)
+        elseif validLoc == "discard" then
+            self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
+            scene:DiscardCard(self, hand)
+        elseif validLoc ~= "" then
+            for i = 1, 3 do
+                if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
+                    -- try to play an env card
+                   if self["cardData"].Type == "Environment" then
+                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+                        break
+                   -- try to play a plant card
+                   elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
+                       if validLoc == "env"..i.."chain1" then
+                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
+                            break
+                       elseif validLoc == "env"..i.."chain2" then
+                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
+                            break
+                       end
+                   elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
+                       if validLoc == "env"..i.."chain1" then
+                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
+                            break
+                       elseif validLoc == "env"..i.."chain2" then
+                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
+                           break
+                       end                       
+                   end                   
+                end
+            end            
+        end   
+
+        if not played and validLoc and validLoc ~= "discard" then
+            scrollView:insert(self)
+        elseif played then
+            mainGroup:insert(self) 
+            self:removeEventListener("touch", HandMovementListener)
+            -- todo add any new listener that the card may need
+        end
+
+        scrollView.isVisible = true
+        scene:AdjustScroller()
+    end
+
+    return true
+end 
+
+local function ZoomTapListener( event )
+    local self = event.target;
+        
+    -- checks for double tap event
+    if (event.numTaps >= 2 ) then
+        
+        -- checks to make sure image isn't already zoomed
+        if tapCounter == 0 then
+            self.orgX, self.orgY = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
+            self.xScale = 4 -- resize is relative to original size
+            self.yScale = 4
+            self:removeEventListener("touch", HandMovementListener)
+            mainGroup:insert(self)
+            overlay.isHitTestable = true -- Only needed if alpha is 0
+            overlay:addEventListener("touch", function() return true end)
+            overlay:addEventListener("tap", function() return true end)
+            overlay:toFront()
+            self:toFront()
+            self.y = display.contentHeight/2    -- Location of image once it is zoomed
+            self.x = display.contentWidth/2    
+            scrollView.isVisible = false
+            tapCounter = 1 -- sets flag to indicate zoomed image
+            
+            print( "The object was double-tapped." )
+        else
+            self.xScale = 1 -- reset size
+            self.yScale = 1
+            
+            
+            if self.orgY > display.contentHeight - GLOB.cardHeight then--it came from the hand
+                scrollView:insert(self)
+                self:addEventListener("touch", HandMovementListener)
+                scene:AdjustScroller()
+            else -- else kick back to position on playfield
+                --todo add field movement listener
+                self.x = self.orgX
+                self.y = self.orgY                        
+                        
+                gameLogic:BringToFront(self.cardData.ID, activeEnvs) -- aww
+                -- if on playfield, bring everything below it to front
+                -- else on discard don't need to do this'
+
+            end               
+            
+            scrollView.isVisible = true
+            overlay:toBack()
+            tapCounter = 0 -- reset flag
+        end 
+    end
+    -- ecm end
+
+    --  ** single tap event **
+    -- elseif (event.numTaps == 1 ) then
+       -- print("The object was tapped once.")
+    return true
+end
+
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
 function scene:drawCards( num, myHand, who )    
@@ -234,12 +397,14 @@ function scene:drawCards( num, myHand, who )
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                myImg:addEventListener( "touch", HandMovementListener )
+                myImg:addEventListener( "touch", HandMovementListener )                
+                myImg:addEventListener( "tap", ZoomTapListener )
             else                
                 -- do anything cpu player might need
             end            
 
-            print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            scene:GameLogAdd(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            --print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
             
@@ -759,11 +924,7 @@ function scene:ShowOpponentCards(oppNum)
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
             for j = 1, 2 do
-                if j == 1 then
-                    myChain = "chain1"
-                else
-                    myChain = "chain2"
-                end                
+                myChain = "chain"..j             
                 
                 if cpuActiveEnvs[oppNum][i][myChain] then
                     for k = 1, #cpuActiveEnvs[oppNum][i][myChain] do
@@ -836,6 +997,67 @@ function scene:InitializeGame()
     
 end
 
+-- aww
+function scene:GameLogAdd(logText)
+    -- multiline text will be split and looped through, adding a max number of characters each line until completion
+    -- todo make multiline text break at whole words rather than just split it
+    
+--    local strMaxLen = 110
+--    local textWidth = scrollRectWidth
+    local textHeight = 20    
+--    local outputDone = false
+--    local charCount = 0
+--    
+--    -- indent the text if it it not indicating whose turn it is
+--    if not string.find(logText, "'s turn") then
+--        logText = "   "..logText
+--    end
+        
+    
+    --while not outputDone do
+        --local multiLine = ""
+        --charCount = string.len(logText)
+
+        --if charCount > strMaxLen then            
+            --multiLine = string.sub(logText, strMaxLen + 1)
+            --logText = string.sub(logText, 0, strMaxLen)
+        --end    
+
+       local logOptions = {
+            text = logText,
+            --x = 150,--textWidth/2 + 5,
+            y = scrollY,
+            width = 150,--textWidth,
+            height = 20,--textHeight,
+            font = native.systemFont,
+            fontSize = 14,
+            align = "left"    
+        }  
+
+        scrollY = scrollY + textHeight
+
+        local itemLabel = display.newText(logOptions)
+        itemLabel:setFillColor(1,1,1) 
+
+        --newScrollHeight = newScrollHeight + textHeight 
+        logScroll:insert(itemLabel)
+        --scrollArea.height = newScrollHeight * 2
+        --scrollView:setScrollHeight(newScrollHeight)  
+        
+--        if charCount > strMaxLen then
+--            logText = "   "..multiLine
+--        else
+--            outputDone = true
+--        end    
+    --end
+    
+    -- once the visible area of the scroller is filled, new events will be added to the bottom and will give appearance of scrolling up
+--    if newScrollHeight >= visibleScroll then
+        logScroll:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right
+--    end      
+    
+end
+
 function scene:create( event )
 
     --scene:SetLocs()
@@ -850,11 +1072,44 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
     mainGroup:insert(background)
+    
+    overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
+    mainGroup:insert(overlay)
+    overlay:setFillColor(0,0,0)    
+    overlay.alpha = .5
+    overlay:toBack()
+    
+    -- aww log scroller
+    logScroll = widget.newScrollView
+    {
+        --left = 37.5,
+        --top = 225,
+        width = 300,--scrollRectWidth,
+        height = 150,--visibleScroll,
+        --scrollWidth = scrollRectWidth, -- width of scrollable area
+        --scrollHeight = newScrollHeight, -- height of scrollable area
+        horizontalScrollDisabled = true,
+        isBounceEnabled = false,
+        --listener = scrollListener,
+        hideScrollBar = false,
+        backgroundColor = {.5,.5,.5},
+        friction = 0
+    }
+    
+    logScroll.x = GLOB.gameLogXLoc
+    logScroll.y = GLOB.gameLogYLoc
+    
+
+    --scrollArea = display.newContainer(scrollRectWidth * 2, 0) -- had to double rectWidth here for some reason?
+
+    mainGroup:insert(logScroll)
+    --myScene:insert(scrollView)    
+    
     
     scrollView = widget.newScrollView
     {
@@ -871,14 +1126,42 @@ function scene:create( event )
     
     sceneGroup:insert(scrollView)
     
+    local function right_scroll_listener ()
+        -- aww added local to newX, newY
+        local newX, newY = scrollView:getContentPosition();
+        newX = newX - GLOB.cardWidth;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        -- aww added local to newX, newY
+        local newX, newY = scrollView:getContentPosition();
+        newX = newX + GLOB.cardWidth;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
 
+    mainGroup:insert(left_arrow)
+    mainGroup:insert(right_arrow)
     -- create a rectangle for each card
     -- attach card data to the image as a table
     -- insert into main group
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, GLOB.cardWidth, GLOB.cardHeight)
+        deck[i] = display.newRect(GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -909,7 +1192,8 @@ function scene:create( event )
     cardBack.fill = paint
     mainGroup:insert(cardBack)
        
-    local btnY = 50
+    -- aww moved these near bottom of screen
+    local btnY = 500
     
     -- touch demo
     local frontObject = display.newRect( 75, btnY, 100, 100 )
@@ -953,7 +1237,7 @@ function scene:create( event )
     showMainLabel:setTextColor( 1 )
     
     local function tapListener( event )
-        local object = event.target
+        --local object = event.target
         --print( object.name.." TAPPED!" )
         scene:HideOpponentCards()
     end
@@ -963,7 +1247,7 @@ function scene:create( event )
     oppGroup:insert(showMain)
     oppGroup:insert(showMainLabel)       
     
-    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    local endTurnBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-end-turn.jpg"
     
@@ -993,35 +1277,14 @@ function scene:create( event )
         filename = imgString
     }
     
-    --drawCardBtn.fill = paint       
-    
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand, "Player")
+        return true
     end    
     
-    --drawCardBtn:addEventListener( "tap", drawCardListener )
     cardBack:addEventListener( "tap", drawCardListener ) 
-    --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
-    
-    imgString = "/images/button-discard-card.jpg"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    discardBtn.fill = paint         
-    
-    local function discardListener( event )
-        --local object = event.target
-        scene:DiscardHand(hand)
-    end    
-    
-    discardBtn:addEventListener( "tap", discardListener )  
-    mainGroup:insert(discardBtn)
     --
 end
 

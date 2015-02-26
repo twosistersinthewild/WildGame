@@ -37,6 +37,8 @@ local oppGroup -- display's opponent cards
 local scrollView
 local overlay
 
+
+
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -197,23 +199,24 @@ local function HandMovementListener(event)
     return true
 end 
 
-local function tapListener( event )
+local function ZoomTapListener( event )
     local self = event.target;
         
     -- checks for double tap event
     if (event.numTaps >= 2 ) then
+        local orgX, orgY
+        
         -- checks to make sure image isn't already zoomed
         if tapCounter == 0 then
+            self.orgX, self.orgY = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
             self.xScale = 4 -- resize is relative to original size
             self.yScale = 4
             self:removeEventListener("touch", HandMovementListener)
-            mainGroup:insert(self)  
-            mainGroup:insert(overlay)
+            mainGroup:insert(self)
+            overlay.isHitTestable = true -- Only needed if alpha is 0
+            overlay:addEventListener("touch", function() return true end)
+            overlay:addEventListener("tap", function() return true end)
             overlay:toFront()
-            overlay.y = display.contentHeight/2    -- Location of image once it is zoomed
-            overlay.x = display.contentWidth/2
-            overlay.xScale = 10
-            overlay.yScale = 10
             self:toFront()
             self.y = display.contentHeight/2    -- Location of image once it is zoomed
             self.x = display.contentWidth/2    
@@ -224,9 +227,19 @@ local function tapListener( event )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
-            scrollView:insert(self)
-            self:addEventListener("touch", HandMovementListener)
-            scene:AdjustScroller()
+            
+            
+            if self.orgY > display.contentHeight - GLOB.cardHeight then--it came from the hand
+                scrollView:insert(self)
+                self:addEventListener("touch", HandMovementListener)
+                scene:AdjustScroller()
+            else -- else kick back to position on playfield
+                --todo add field movement listener
+            
+                self.x = self.orgX
+                self.y = self.orgY
+            end               
+            
             scrollView.isVisible = true
             overlay:toBack()
             tapCounter = 0 -- reset flag
@@ -277,8 +290,8 @@ function scene:drawCards( num, myHand, who )
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                myImg:addEventListener( "touch", HandMovementListener )
-                myImg:addEventListener( "tap", tapListener )
+                myImg:addEventListener( "touch", HandMovementListener )                
+                myImg:addEventListener( "tap", ZoomTapListener )
             else                
                 -- do anything cpu player might need
             end            
@@ -894,15 +907,16 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
     mainGroup:insert(background)
     
-    --ecm e/b
-    overlay = display.newImage("images/overlay.png")
+    overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
     mainGroup:insert(overlay)
+    overlay:setFillColor(0,0,0)    
+    overlay.alpha = .5
     overlay:toBack()
     
     scrollView = widget.newScrollView
@@ -920,14 +934,40 @@ function scene:create( event )
     
     sceneGroup:insert(scrollView)
     
+    local function right_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX - 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX + 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
 
+    mainGroup:insert(left_arrow)
+    mainGroup:insert(right_arrow)
     -- create a rectangle for each card
     -- attach card data to the image as a table
     -- insert into main group
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, GLOB.cardWidth, GLOB.cardHeight)
+        deck[i] = display.newRect(GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -1047,13 +1087,14 @@ function scene:create( event )
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand, "Player")
+        return true
     end    
     
     --drawCardBtn:addEventListener( "tap", drawCardListener )
     cardBack:addEventListener( "tap", drawCardListener ) 
     --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
+    local discardBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-discard-card.jpg"
     
