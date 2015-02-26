@@ -1,83 +1,78 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
-
+local widget = require( "widget" )
 ---------------------------------------------------------------------------------
 -- All code outside of the listener functions will only be executed ONCE
 -- unless "composer.removeScene()" is called.
 ---------------------------------------------------------------------------------
+
 -- local forward references should go here
-
----------------------------------------------------------------------------------
-function scene:doIt ()
--- ** Tasks **
--- bind together in a group and rotate all as one (adjustments need to be made)
--- get objects bound within screen space
-
--- ** Locking into Place **
--- x threshold, moves onto another card and locks ?
-
-
--- create object
-local myObject = display.newRect( 300, 430, 75, 75 )
-     
-
--- create second object
-local anotherObject = display.newImage("/images/assets/v2-Back.jpg",50, 800)
+local scrollView
+local icons = {}
 local tapCounter = 0
-
--- store x pos
-local xPos 
+local xPos
 local yPos
-
--- stores orientation text
 local orientation = system.orientation
-
--- updates with orientation changes
 local displayText = display.newText(orientation, 300, 200, font, 50)
 
--- touch listener function 
-function anotherObject:touch( event )
+local detect = display.newRect(50, 50, 150, 75 )
+    detect:setFillColor(0,0,0)
+    detect.strokeWidth = 5
+    detect:setStrokeColor(250,0,0)
+physics.addBody(detect, "static", {isSensor = true})
+
+
+---------------------------------------------------------------------------------
+function scene:doit() 
+    local group = display.newGroup();
     
-    if event.phase == "began" then
+    local function movementListener(event)
         
-        print(tapCounter)
-        self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object
-                   	
-    elseif event.phase == "moved" then
+        local self = event.target;
+        physics.addBody(self, "static")
+        
+        if event.phase == "began" then
+                
+            
+            self.markX = self.x    -- store x location of object
+            self.markY = self.y    -- store y location of object
+            
+            print(self.markX, self.markY, self.x, self.y);
 	
-        local x = (event.x - event.xStart) + self.markX
-        local y = (event.y - event.yStart) + self.markY
+        elseif event.phase == "moved"  then
+                                
+            if ((event.x - event.xStart) + self.markX > 15) and 
+                ((event.x - event.xStart) + self.markX < 940) and
+                ((event.y - event.yStart) + self.markY < 560) and
+                ((event.y - event.yStart) + self.markY > 130)
+                then
+            local x = (event.x - event.xStart) + self.markX
+            local y = (event.y - event.yStart) + self.markY
         
-        self.x, self.y = x, y    -- move object based on calculations above
-    end
+        
+            self.x, self.y = x, y    -- move object based on calculations above
+            end
+        end;
     
-    return true
-end
+        return true;
+    end;
 
--- tap listener function (generic example)
-function myObject:tap( event )
-if (event.numTaps >= 2 ) then
-print( "The object was double-tapped." )
-return true;
-elseif (event.numTaps == 1 ) then
-print("The object was tapped once.")
-end
-return true
-end
-
--- tap function with resizing
-function anotherObject:tap( event )
+function tapListener( event )
+    local self = event.target;
+        
     -- checks for double tap event
     if (event.numTaps >= 2 ) then
         -- checks to make sure image isn't already zoomed
         if tapCounter == 0 then
-            self.xScale = 3.5 -- resize is relative to original size
-            self.yScale = 3.5
+            self.xScale = 2 -- resize is relative to original size
+            self.yScale = 2
             xPos = self.x   -- store original position
             yPos = self.y
-            self.y = 480    -- center y pos to give max viewable area
+            self:toFront()
+            self.y = 200    -- Location of image once it is zoomed
+            self.x = 500    
             tapCounter = 1 -- sets flag to indicate zoomed image
+             print( "The object was double-tapped." )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
@@ -85,42 +80,116 @@ function anotherObject:tap( event )
             self.y = yPos
             tapCounter = 0 -- reset flag
         end
-            print( "The object was double-tapped." )
+           
     end
 
     --  ** single tap event **
     -- elseif (event.numTaps == 1 ) then
        -- print("The object was tapped once.")
-return true
-end
-
-
-
-function myObject:touch( event )
-    if event.phase == "began" then
-	
-        self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object
-	
-    elseif event.phase == "moved"  then
-	
-        local x = (event.x - event.xStart) + self.markX
-        local y = (event.y - event.yStart) + self.markY
-        
-        
-        self.x, self.y = x, y    -- move object based on calculations above
-        
-        
-    end
-    
     return true
 end
 
+local function iconListener( event )
+    local id = event.target.id
+    if ( event.phase == "moved" ) then
+        local dx = math.abs( event.x - event.xStart ) 
+        if ( dx > 5 ) then
+            scrollView:takeFocus( event ) 
+        end
+    elseif ( event.phase == "ended" ) then
+        --take action if an object was touched
+        print( "object", id, "was touched" )
+        --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
+        --icons[id]:removeSelf();
+        icons[id]:removeEventListener('touch', iconListener )
+        icons[id]:addEventListener('touch', movementListener)
+        icons[id]:addEventListener('tap', tapListener)
+        group:insert(icons[id]);
+        print('x');
 
-local group = display.newGroup()
-group:insert( myObject )
-group:insert( anotherObject )
-group: insert( displayText)
+    end
+    return true
+end
+    
+    
+    local function generateIcons()
+        for i = 1, 10 do
+            --originals
+            --icons[i] = display.newCircle( i * 56, 50, 22 )
+            --icons[i]:setFillColor( math.random(), math.random(), math.random() )
+            local padding = 5;
+            if i == 1 then
+                icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 200, 80 )
+            elseif i ~= 1 then
+                icons[i] = display.newImage("images/assets/v2-Back.jpg",i * 200 + padding , 80 )
+            end
+            
+            icons[i].id = i
+            icons[i]:addEventListener( "touch", iconListener )
+        end
+    end
+    
+    local function insertIntoScrollView()
+        for i = 1, #icons do
+            scrollView:insert( icons[i] )
+        end
+    end
+    
+    local function showSlidingMenu( event )
+        if ( "ended" == event.phase ) then
+           
+            
+                
+
+                scrollView = widget.newScrollView
+                {
+                    --Originals
+                    --left = 37.5,
+                    --top = 225,
+                    --width = 460,
+                    --height = 100,
+                    --scrollWidth = 1200,
+                    --scrollHeight = 100,
+                    --verticalScrollDisabled = true
+
+                    --left = 0,
+                    --top = 225,
+                    --dimensions of scroll window
+                    width = display.contentWidth,
+                    height = 169,
+
+                    verticalScrollDisabled = true,
+                    backgroundColor = {.5,.5,.5}
+                }
+                --location
+                scrollView.x = display.contentCenterX
+                scrollView.y = display.contentHeight - 80
+                --Original scrollView.y = display.contentCenterY
+            
+            --Background
+            --local scrollViewBackground = display.newRect( 600, 50, 1200, 100 )
+            --scrollViewBackground:setFillColor( 1, 1, 1 )
+           -- scrollView:insert( scrollViewBackground )
+            --generate icons
+            generateIcons();
+            insertIntoScrollView();
+        end
+        return true
+    end
+    --showSlidingMenu()
+    local obj;
+    obj = display.newCircle( display.contentCenterX, display.contentCenterY, 10 )
+    print("hello")
+    obj:setFillColor( 1, 1, 1)
+    --Runtime:addEventListener("touch", showSlidingMenu)
+    obj:addEventListener("touch", showSlidingMenu)
+
+
+
+
+end
+
+
 
 function onRotation( event )
     displayText.text = event.type
@@ -131,19 +200,6 @@ function onRotation( event )
     -- myObject.rotation = myObject.rotation - event.delta
 end
 
--- make 'myObject' listen for touch events
-myObject:addEventListener( "touch", myObject )
-myObject:addEventListener( "tap")
-anotherObject:addEventListener("touch", anotherObject)
-anotherObject:addEventListener( "tap")
-
-Runtime:addEventListener("orientation", onRotation)
-
-
-
-
-
-end
 -- "scene:create()"
 function scene:create( event )
 
@@ -160,7 +216,8 @@ function scene:show( event )
    local phase = event.phase
 
    if ( phase == "will" ) then
-      scene: doIt()
+      -- Called when the scene is still off screen (but is about to come on screen).
+      scene:doit()
    elseif ( phase == "did" ) then
        composer.removeScene("screens.Start")
       -- Called when the scene is now on screen.
@@ -176,6 +233,7 @@ function scene:hide( event )
    local phase = event.phase
 
    if ( phase == "will" ) then
+       
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
@@ -183,6 +241,15 @@ function scene:hide( event )
       -- Called immediately after scene goes off screen.
    end
 end
+
+local function onCollision(event)
+    if event.phase == "began" then
+        print("touching")
+    end
+end
+
+detect:addEventListener( "collision", onCollision )
+Runtime:addEventListener("orientation", onRotation)
 
 -- "scene:destroy()"
 function scene:destroy( event )

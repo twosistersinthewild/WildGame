@@ -48,9 +48,13 @@ function scene:doit()
             print( "object", id, "was touched" )
             --timer.performWithDelay( 10, function() scrollView:removeSelf(); scrollView = nil; end )
             --icons[id]:removeSelf();
+            icons[id].x = event.target.x;
+            icons[id].y = display.contentHeight - event.target.y;
+            print(event.target.x);
             icons[id]:removeEventListener('touch', iconListener )
             icons[id]:addEventListener('touch', movementListener)
             group:insert(icons[id]);
+            group:toFront();
             print('x');
             
         end

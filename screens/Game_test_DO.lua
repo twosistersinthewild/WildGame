@@ -73,12 +73,53 @@ function scene:shuffleDeck(myTable)
     end
 end
 
+-- from damian's code'            
+local function movementListener(event)
+
+    local self = event.target
+
+    if event.phase == "began" then
+        --new
+        self.x = event.target.x;
+        self.y = display.contentHeight - (cardHeight / 2)
+
+        self.markX = self.x    -- store x location of object
+        self.markY = self.y    -- store y location of object  
+
+        --new
+        mainGroup:insert(self)
+        self:toFront()
+        scrollView.isVisible = false
+        print(self.markX, self.markY, self.x, self.y);
+    elseif event.phase == "moved"  then
+        local x = (event.x - event.xStart) + self.markX
+        local y = (event.y - event.yStart) + self.markY
+        self.x, self.y = x, y    -- move object based on calculations above    
+    elseif event.phase == "ended" then
+        -- try to click into place
+            -- make sure to move card to appropriate table (env, discard, etc)
+            -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
+        -- or snap back to hand if not in a valid area
+
+        -- may need to remove the listener here?
+
+        local validLoc = false
+
+        -- if card hasn't been moved to a valid place, snap it back to the hand
+        if not validLoc then
+            scrollView:insert(self)
+            scene:AdjustScroller()
+        end
+
+        scrollView.isVisible = true
+    end
+
+    return true
+end 
+
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
-function scene:drawCards( num, myHand )
-    
-    -- todo: make sure there is a card to draw or this will crash. i think this is fixed
-    
+function scene:drawCards( num, myHand )    
     local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
     
     for i = deckIndex, numDraw, 1 do -- start from deckIndex and draw the number passed in. third param is step
@@ -101,21 +142,18 @@ function scene:drawCards( num, myHand )
             
             local myImg = myHand[#myHand]
             myImg.fill = paint    
-
             
             scrollView:insert(myHand[#myHand])
             
             myImg.x = scrollXPos
             myImg.y = scrollYPos
             scrollXPos = scrollXPos + cardWidth
-            --mainGroup:insert(myHand[#myHand])
-            --myImg.x = 0
-            --myImg.y = 0          
-            --myImg:toFront()
             
-            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")
-            --print("Locataion: " .. deck[i].x .. ","..deck[i].y)
-            --deck[i]:removeSelf()
+            print("You have been dealt the " .. deck[i]["cardData"].Name .. " card.")     
+            
+            myImg:addEventListener( "touch", movementListener )
+            -- end from damian's code'
+            
             deck[i] = nil
         else
             -- the draw pile is empty
@@ -212,8 +250,42 @@ function scene:Discard(myHand)
         discardPile[#discardPile].y = 100
     end
     
+    print("All cards in hand have been discarded") 
+end
+
+function scene:DiscardCard(myCard)
+
+    
+    table.insert(discardPile, myCard) -- insert the first card in hand to the last available position on discard
+    --myHand[i]:removeSelf()
+    mainGroup:insert(discardPile[#discardPile])
+    discardPile[#discardPile].x = 850
+    discardPile[#discardPile].y = 100
+    scene:AdjustHandTable(myCard)
+    
     print("All cards in hand have been discarded")
 end
+
+function scene:AdjustHandTable(myCard)
+    local index = 0
+    
+     for i = 1, #hand do
+            if hand[i]["cardData"].ID == myCard["cardData"].ID then
+                print (myCard["cardData"].Name.. " is the same as "..hand[i]["cardData"].Name)
+                index = i
+                hand[i] = nil
+                break
+            end   
+        end
+    
+    while hand[index + 1] do
+            hand[index] = hand[index + 1]
+            --hand[curCard + 1]:removeSelf()
+            hand[index + 1] = nil
+            index = index + 1
+        end
+end
+
 
 function scene:PlayCard()
         -- todo change this so that a click will try to play a certain card
@@ -534,7 +606,8 @@ end
 function scene:AdjustScroller()    
     scrollXPos = cardWidth / 2    
     
-    for i = 1, #hand do        
+    for i = 1, #hand do  
+        hand[i].y = scrollYPos
         hand[i].x = scrollXPos
         scrollXPos = scrollXPos + cardWidth
     end
@@ -593,7 +666,8 @@ function scene:create( event )
     local imgString, paint, filename
  
     --local background = display.newRect(display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight)
-    local background = display.newImage("images/background-create-cafe.jpg")
+    --local background = display.newImage("images/background-create-cafe.jpg")
+    local background = display.newImage("images/ORIGINAL-background.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
     --background:setFillColor(.3,.3,.3)
@@ -615,7 +689,8 @@ function scene:create( event )
         --left = 0,
         --top = 225,
         --dimensions of scroll window
-        width = display.contentWidth,
+        --width = display.contentWidth,
+        width = cardWidth * 5,
         height = cardHeight,
 
         verticalScrollDisabled = true,
@@ -623,8 +698,9 @@ function scene:create( event )
     }
                 
     --location
-    scrollView.x = display.contentCenterX
-    scrollView.y = display.contentHeight - 80    
+    --scrollView.x = display.contentCenterX + 100
+    scrollView.x = display.contentWidth / 2;
+    scrollView.y = display.contentHeight - 80;    
     
     sceneGroup:insert(scrollView)
     
@@ -635,7 +711,8 @@ function scene:create( event )
     -- they will sit on the draw pile for now
     -- actual card image will be shown once the card is put into play
     for i = 1, #GLOB.deck do
-        deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
+        --deck[i] = display.newRect(725, 100, cardWidth, cardHeight)
+        deck[i] = display.newRect(425, 100, cardWidth, cardHeight)
         deck[i]["cardData"] = GLOB.deck[i]
         mainGroup:insert(deck[i])
     end    
@@ -650,14 +727,16 @@ function scene:create( event )
     -- initialize the discard pile image and add to scene group
     -- no image shown currently, just a white rect
     -- todo change this
-    discardImage = display.newRect(850, 100, 100, 160) 
+    --discardImage = display.newRect(850, 100, 100, 160) 
+    discardImage = display.newRect(575, 100, 100, 160) 
     --discardImage.Whatever = "hello"
     --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
     mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
-    local cardBack = display.newRect( 725, 100, 100, 160 )
+    --local cardBack = display.newRect( 725, 100, 100, 160 )
+    local cardBack = display.newRect( 425, 100, 100, 160 )
     paint = {
         type = "image",
         filename = "/images/assets/v2-Back.jpg"
@@ -711,7 +790,7 @@ function scene:create( event )
     mainGroup:insert(frontObject)
     mainGroup:insert(frontLabel)
     
-    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    local endTurnBtn = display.newRect( 220 - 175, btnY + 525, 200 * .75, 109 * .75)
     
     imgString = "/images/button-end-turn.jpg"
     
@@ -732,7 +811,7 @@ function scene:create( event )
     mainGroup:insert(endTurnBtn)    
     --
     
-    local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
+    --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-draw-a-card.jpg"
     
@@ -741,17 +820,18 @@ function scene:create( event )
         filename = imgString
     }
     
-    drawCardBtn.fill = paint       
+    --drawCardBtn.fill = paint       
     
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand)
     end    
     
-    drawCardBtn:addEventListener( "tap", drawCardListener )    
-    mainGroup:insert(drawCardBtn)
+    --drawCardBtn:addEventListener( "tap", drawCardListener )
+    cardBack:addEventListener( "tap", drawCardListener ) 
+    --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 580, btnY, 200 * .75, 109 * .75 )
+    local discardBtn = display.newRect( 580 + 250, btnY + 525, 200 * .75, 109 * .75 )
     
     imgString = "/images/button-discard-card.jpg"
     
@@ -769,6 +849,31 @@ function scene:create( event )
     
     discardBtn:addEventListener( "tap", discardListener )  
     mainGroup:insert(discardBtn)
+    
+    local function right_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX - 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local function left_scroll_listener ()
+        newX, newY = scrollView:getContentPosition();
+        newX = newX + 100;
+        scrollView:scrollToPosition{
+        x = newX;
+        y = newY;
+        }
+    end
+    
+    local left_arrow = display.newRect(200, 580, 50, 50);
+    left_arrow:addEventListener("tap" , left_scroll_listener)
+    
+    --local right_arrow = display.newRect(800, 580, 50, 50);
+    local right_arrow = display.newRect(800, 500, 50, 50);
+    right_arrow:addEventListener("tap" , right_scroll_listener)
     --
 end
 
