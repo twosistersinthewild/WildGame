@@ -1,4 +1,4 @@
-
+require "CiderDebugger";
 local composer = require "composer"
 
 
