@@ -36,7 +36,12 @@ local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
 local overlay
-
+local logScroll -- aww
+--local visibleScroll = 100 -- the visible area of the scrollview
+--local scrollRectWidth = 725
+--local scrollArea
+local scrollY = 10 -- this will allow the first item added to be in the right position
+--local newScrollHeight = 0
 
 
 ---------------------------------------------------------------------------------
@@ -303,7 +308,6 @@ local function ZoomTapListener( event )
         
     -- checks for double tap event
     if (event.numTaps >= 2 ) then
-        local orgX, orgY
         
         -- checks to make sure image isn't already zoomed
         if tapCounter == 0 then
@@ -334,9 +338,13 @@ local function ZoomTapListener( event )
                 scene:AdjustScroller()
             else -- else kick back to position on playfield
                 --todo add field movement listener
-            
                 self.x = self.orgX
-                self.y = self.orgY
+                self.y = self.orgY                        
+                        
+                gameLogic:BringToFront(self.cardData.ID, activeEnvs) -- aww
+                -- if on playfield, bring everything below it to front
+                -- else on discard don't need to do this'
+
             end               
             
             scrollView.isVisible = true
@@ -395,7 +403,8 @@ function scene:drawCards( num, myHand, who )
                 -- do anything cpu player might need
             end            
 
-            print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            scene:GameLogAdd(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            --print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
             
@@ -915,11 +924,7 @@ function scene:ShowOpponentCards(oppNum)
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
             for j = 1, 2 do
-                if j == 1 then
-                    myChain = "chain1"
-                else
-                    myChain = "chain2"
-                end                
+                myChain = "chain"..j             
                 
                 if cpuActiveEnvs[oppNum][i][myChain] then
                     for k = 1, #cpuActiveEnvs[oppNum][i][myChain] do
@@ -992,6 +997,67 @@ function scene:InitializeGame()
     
 end
 
+-- aww
+function scene:GameLogAdd(logText)
+    -- multiline text will be split and looped through, adding a max number of characters each line until completion
+    -- todo make multiline text break at whole words rather than just split it
+    
+--    local strMaxLen = 110
+--    local textWidth = scrollRectWidth
+    local textHeight = 20    
+--    local outputDone = false
+--    local charCount = 0
+--    
+--    -- indent the text if it it not indicating whose turn it is
+--    if not string.find(logText, "'s turn") then
+--        logText = "   "..logText
+--    end
+        
+    
+    --while not outputDone do
+        --local multiLine = ""
+        --charCount = string.len(logText)
+
+        --if charCount > strMaxLen then            
+            --multiLine = string.sub(logText, strMaxLen + 1)
+            --logText = string.sub(logText, 0, strMaxLen)
+        --end    
+
+       local logOptions = {
+            text = logText,
+            --x = 150,--textWidth/2 + 5,
+            y = scrollY,
+            width = 150,--textWidth,
+            height = 20,--textHeight,
+            font = native.systemFont,
+            fontSize = 14,
+            align = "left"    
+        }  
+
+        scrollY = scrollY + textHeight
+
+        local itemLabel = display.newText(logOptions)
+        itemLabel:setFillColor(1,1,1) 
+
+        --newScrollHeight = newScrollHeight + textHeight 
+        logScroll:insert(itemLabel)
+        --scrollArea.height = newScrollHeight * 2
+        --scrollView:setScrollHeight(newScrollHeight)  
+        
+--        if charCount > strMaxLen then
+--            logText = "   "..multiLine
+--        else
+--            outputDone = true
+--        end    
+    --end
+    
+    -- once the visible area of the scroller is filled, new events will be added to the bottom and will give appearance of scrolling up
+--    if newScrollHeight >= visibleScroll then
+        logScroll:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right
+--    end      
+    
+end
+
 function scene:create( event )
 
     --scene:SetLocs()
@@ -1018,6 +1084,33 @@ function scene:create( event )
     overlay.alpha = .5
     overlay:toBack()
     
+    -- aww log scroller
+    logScroll = widget.newScrollView
+    {
+        --left = 37.5,
+        --top = 225,
+        width = 300,--scrollRectWidth,
+        height = 150,--visibleScroll,
+        --scrollWidth = scrollRectWidth, -- width of scrollable area
+        --scrollHeight = newScrollHeight, -- height of scrollable area
+        horizontalScrollDisabled = true,
+        isBounceEnabled = false,
+        --listener = scrollListener,
+        hideScrollBar = false,
+        backgroundColor = {.5,.5,.5},
+        friction = 0
+    }
+    
+    logScroll.x = GLOB.gameLogXLoc
+    logScroll.y = GLOB.gameLogYLoc
+    
+
+    --scrollArea = display.newContainer(scrollRectWidth * 2, 0) -- had to double rectWidth here for some reason?
+
+    mainGroup:insert(logScroll)
+    --myScene:insert(scrollView)    
+    
+    
     scrollView = widget.newScrollView
     {
         width = GLOB.cardWidth * 5,
@@ -1034,7 +1127,8 @@ function scene:create( event )
     sceneGroup:insert(scrollView)
     
     local function right_scroll_listener ()
-        newX, newY = scrollView:getContentPosition();
+        -- aww added local to newX, newY
+        local newX, newY = scrollView:getContentPosition();
         newX = newX - GLOB.cardWidth;
         scrollView:scrollToPosition{
         x = newX;
@@ -1043,7 +1137,8 @@ function scene:create( event )
     end
     
     local function left_scroll_listener ()
-        newX, newY = scrollView:getContentPosition();
+        -- aww added local to newX, newY
+        local newX, newY = scrollView:getContentPosition();
         newX = newX + GLOB.cardWidth;
         scrollView:scrollToPosition{
         x = newX;
@@ -1097,7 +1192,8 @@ function scene:create( event )
     cardBack.fill = paint
     mainGroup:insert(cardBack)
        
-    local btnY = 50
+    -- aww moved these near bottom of screen
+    local btnY = 500
     
     -- touch demo
     local frontObject = display.newRect( 75, btnY, 100, 100 )

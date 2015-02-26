@@ -306,36 +306,66 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
     end 
 end
 
-function BringToFront(myID, myEnvs)
+-- called after a card is zoomed out from
+-- finds the card that was zoomed, places it back on the playfield in the front
+-- then it brings each card below it on the chain to the front
+function gameLogic:BringToFront(myID, myEnvs)
     
     local found = false
     
     for i = 1, 3 do
-        local myChain = ""
+        local myChain = ""        
         
-        if myEnvs[i]["activeEnv"]["cardData"].ID == myID then            
+        -- if the card matches and is an environment, bring it to front
+        -- then bring all other cards on its chain forward
+        if myEnvs[i] and myEnvs[i]["activeEnv"] and myEnvs[i]["activeEnv"]["cardData"].ID == myID then            
             found = true
+            
+            if found then
+                myEnvs[i]["activeEnv"]:toFront()
+            
+                for j = 1, 2 do
+                    myChain = "chain"..j
+                    
+                    if myEnvs[i][myChain] then
+                        for k = 1, #myEnvs[i][myChain] do
+                            myEnvs[i][myChain][k]:toFront()
+                        end
+                    end
+                end
+                
+                break
+            end
         end
         
-        
-        
-        for j = 1, 2 do
-            if j == 1 then
-                myChain = "chain1"
-            else
-                myChain = "chain2"
-            end    
-        
-        
-        
-        
-        
+        -- if not an environment, find the card
+        -- once matched, bring to front, then any other cards below on its chain
+        if not found then
+            for j = 1, 2 do
+                myChain = "chain"..j 
+                
+                if myEnvs[i] and myEnvs[i][myChain] then   
+                    for k = 1, #myEnvs[i][myChain] do                        
+                        if myEnvs[i][myChain][k] and myEnvs[i][myChain][k]["cardData"].ID == myID then
+                            found = true  
+                        end  
+                        
+                        if found then                            
+                            myEnvs[i][myChain][k]:toFront()
+                        end
+                    end
+                    
+                    if found then
+                        break
+                    end
+                end
+            end
         end
         
-        
+        if found then
+            break
+        end        
     end
-    
-    
 end
 
 
