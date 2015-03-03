@@ -15,7 +15,7 @@ function scene:create( event )
 
    local sceneGroup = self.view
    
-          local endTurnBtn = display.newRect( 75, 75, 150, 150 )
+    local endTurnBtn = display.newRect( 75, 75, 150, 150 )
     endTurnBtn.alpha = 0.8
     endTurnBtn.name = "Front Object"
    
@@ -32,13 +32,13 @@ end
     local sliderDemo = display.newRect( 75, 250, 150, 150 )
     sliderDemo.alpha = 0.8
     sliderDemo.name = "Front Object"
-    local sliderDemoLbl = display.newText( { text = "sliderDemo", x = 75, y = 250, fontSize = 28 } )
+    local sliderDemoLbl = display.newText( { text = "Menu Demo", x = 75, y = 250, fontSize = 28 } )
     sliderDemoLbl:setTextColor( 1 )
     
     local function sliderDemoListener( event )
         local object = event.target
         --print( object.name.." TAPPED!" )
-    composer.gotoScene("screens.scrollViewDemo")
+    composer.gotoScene("screens.MainMenu")
 end    
     
     sliderDemo:addEventListener( "tap", sliderDemoListener )
@@ -54,7 +54,7 @@ end
         local function logicDemoListener( event )
             local object = event.target
             --print( object.name.." TAPPED!" )
-            composer.gotoScene("screens.Game_test_aw")
+            composer.gotoScene("screens.game_test_DO")
         end    
 
         logicDemo:addEventListener( "tap", logicDemoListener )
