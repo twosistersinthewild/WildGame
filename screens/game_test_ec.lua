@@ -820,7 +820,7 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            
+            -- ecm
             audio.play(cardSlide)
             transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
            -- cpuActiveEnvs[oppNum][i]["activeEnv"].x = GLOB.envLocs[i]["xLoc"]
@@ -840,6 +840,7 @@ function scene:ShowOpponentCards(oppNum)
                     local myCard = cpuActiveEnvs[oppNum][i][myChain][k]
                     
                     oppGroup:insert(myCard)
+                    -- ecm
                     transition.moveTo( myCard, {x = GLOB.chainLocs[i][myChain]["xLoc"], y = GLOB.chainLocs[i][myChain]["yLoc"] + (k * 35), time = 1000})
                     
                     end
