@@ -57,7 +57,6 @@ function gameLogic:RemoveFromHand(myCard, myHand)
     
     for i = 1, #myHand do
         if myHand[i]["cardData"].ID == myCard["cardData"].ID then
-            --print (myCard["cardData"].Name.. " is the same as "..myHand[i]["cardData"].Name)
             index = i
             myHand[i] = nil
             break
@@ -71,13 +70,20 @@ function gameLogic:RemoveFromHand(myCard, myHand)
     end
 end
 
+
+function gameLogic:RemoveFromPlayfield(myEnv, myPlayfield)
+
+end
+
+
 --------------------------
 -- try to play an environment card
 --------------------------    
 --params: myCard is the card object, myHand is the hand table that the card will be pulled from,  
 --myEnvs is the player's cards on the field, index is the index of the env, who is a string for text output
 function gameLogic:PlayEnvironment(myCard, myHand, myEnvs, index, who)
-    local played = false          
+    local played = false       
+    local playedString = ""
          
     if myCard["cardData"].Type == "Environment" then
         if not myEnvs[index] then
@@ -94,18 +100,21 @@ function gameLogic:PlayEnvironment(myCard, myHand, myEnvs, index, who)
                 myEnvs[index]["activeEnv"].rotation = 270                        
             end
             
-            print(who.." has played "..myEnvs[index]["activeEnv"]["cardData"].Name .. " environment card.") 
+            playedString = who.." has played "..myEnvs[index]["activeEnv"]["cardData"].Name .. " environment card." 
 
             played = true
             myEnvs[index]["activeEnv"]["cardData"].Played = true
         end
     end 
     
+    
+    
     if played then
         gameLogic:RemoveFromHand(myCard, myHand)
-        return true
+        return true, playedString
     else
-        return false
+        playedString = myCard["cardData"]["Name"].." could not be played."
+        return false, playedString
     end
 end
 -------------------------------------------------
@@ -116,6 +125,7 @@ function gameLogic:PlayPlant(myCard, myHand, myEnvs, index, availChain, who)
     if myCard["cardData"].Type == "Small Plant" or myCard["cardData"].Type == "Large Plant" then
         -- must have an environment to play on
         local played = false
+        local playedString = ""
 
         -- make sure an environment has already been played in this spot
         if myEnvs[index] then             
@@ -159,19 +169,20 @@ function gameLogic:PlayPlant(myCard, myHand, myEnvs, index, availChain, who)
                         myCard.y = GLOB.chainLocs[index][availChain]["yLoc"] + (tabLen * 35)                           
                     end
                     
-                    print(who.." has played "..myEnvs[index][availChain][1]["cardData"].Name .. " card on top of " .. myEnvs[index]["activeEnv"]["cardData"].Name .. ".") 
+                    playedString = who.." has played "..myEnvs[index][availChain][1]["cardData"].Name .. " card on top of " .. myEnvs[index]["activeEnv"]["cardData"].Name .. "."
                 
                     played = true
                     myCard["cardData"].Played = true
                 end
             end
-        end   
+        end      
         
         if played then
             gameLogic:RemoveFromHand(myCard, myHand)
-            return true
+            return true, playedString
         else
-            return false  
+            playedString = myCard["cardData"]["Name"].." could not be played."
+            return false, playedString 
         end        
     end
 end
@@ -188,8 +199,8 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
         -- check environment
         -- if ok add to chain and set value appropriately
 
+        local playedString = ""
         local played = false
-
         local space = false
         local tabLen = 0
         local dietValue = 0
@@ -219,9 +230,7 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
                                         dietValue = diet
                                         break
                                 end                                        
-                        end                                
-                else
-                        print("No card was in that position. You have an Error.")
+                        end  
                 end 
             end
 
@@ -292,16 +301,17 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
                         myCard.y = GLOB.chainLocs[index][availChain]["yLoc"] + ((tabLen + 1) * 35)
                     end
 
-                    print(who.." has played "..myEnvs[index][availChain][tabLen + 1]["cardData"]["Name"] .. " card on top of " .. myEnvs[index][availChain][tabLen]["cardData"]["Name"] .. ".") 
+                    playedString = who.." has played "..myEnvs[index][availChain][tabLen + 1]["cardData"]["Name"] .. " card on top of " .. myEnvs[index][availChain][tabLen]["cardData"]["Name"] .. "."
                 end
             end
         end 
 
         if played then
             gameLogic:RemoveFromHand(myCard, myHand)
-            return true
+            return true, playedString
         else
-            return false  
+            playedString = myCard["cardData"]["Name"].." could not be played."
+            return false, playedString
         end
     end 
 end
@@ -366,6 +376,90 @@ function gameLogic:BringToFront(myID, myEnvs)
             break
         end        
     end
+end
+
+
+
+-- aww
+-- determine what environment and chain a card is on
+-- card and player's environments who owns card are passed in
+-- returns a number for the environment and a string for the chain
+-- ex: (0, "") would be returned if the card was not found
+function gameLogic:GetMyEnv(myCard, myEnvs)
+    local found = false
+    local envNum = 0
+    local myChain = ""
+    local myIndex = 0
+    
+    for i = 1, 3 do     
+        
+        -- determine if it's an environment
+        if myEnvs[i] and myEnvs[i]["activeEnv"] and myEnvs[i]["activeEnv"]["cardData"].ID == myCard["cardData"]["ID"] then            
+            found = true
+            
+            if found then
+                envNum = i                
+                break
+            end
+        end
+        
+        -- if not an environment, find the card
+        if not found then
+            for j = 1, 2 do
+                myChain = "chain"..j 
+                
+                if myEnvs[i] and myEnvs[i][myChain] then   
+                    for k = 1, #myEnvs[i][myChain] do                        
+                        if myEnvs[i][myChain][k] and myEnvs[i][myChain][k]["cardData"].ID == myCard["cardData"]["ID"] then
+                            found = true 
+                            envNum = i
+                            myIndex = k
+                            break
+                        end  
+                    end
+                    
+                    if found then
+                        break
+                    end
+                end
+            end
+            
+            if not found then
+                myChain = ""
+            end
+        end
+        
+        if found then -- break the outer loop
+            break
+        end        
+    end    
+    
+    return envNum, myChain, myIndex
+end
+
+
+
+
+
+-- aww
+-- get the value of a card from any available stat
+-- this references the data from the excel sheet/json data
+function gameLogic:GetStat(myCard, stat)
+    
+    local retVal = nil
+    
+    if myCard["cardData"][stat] then -- make sure there is a value there
+        retVal = myCard["cardData"][stat] 
+    end
+    
+    -- return the stat or nil
+    return retVal
+end
+
+
+-- set the value of a card from any available stat
+function gameLogic:SetStat(myCard, stat, newValue)  
+    myCard["cardData"][stat] = newValue
 end
 
 

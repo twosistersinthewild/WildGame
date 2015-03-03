@@ -10,7 +10,7 @@ globals.discardXLoc = 570
 globals.discardYLoc = 140
 globals.drawPileXLoc = 425
 globals.drawPileYLoc = 140
-globals.gameLogXLoc = 225
+globals.gameLogXLoc = 200
 globals.gameLogYLoc = 100
 
 -- tables for locations for where cards should be played on the field
