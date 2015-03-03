@@ -23,7 +23,8 @@ local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
 local tapCounter = 0 -- flag
-
+local strohm = false -- flag for when strohmstead is on playfield
+-- todo make sure strohm flag is set properly when strohmstead is played and set when it is discarded
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -31,18 +32,17 @@ local scrollXPos = GLOB.cardWidth / 2--display.contentWidth / 2
 
 --controls
 local discardImage
-local testLabel
 local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
 local overlay
 local logScroll -- aww
---local visibleScroll = 100 -- the visible area of the scrollview
---local scrollRectWidth = 725
---local scrollArea
+local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
---local newScrollHeight = 0
 
+
+
+local HandMovementListener
 
 ---------------------------------------------------------------------------------
 
@@ -79,14 +79,36 @@ function scene:shuffleDeck(myTable)
     end
 end
 
+
 -- activated when a *single* card has been dropped onto the discard pile
 -- can be used by player and cpu
-function scene:DiscardCard(myCard, myHand)
+-- aww
+function scene:DiscardCard(myCard, myHand, origin)
     table.insert(discardPile, myCard) -- insert the card in the last available position on discard
     mainGroup:insert(discardPile[#discardPile])
     discardPile[#discardPile]["x"] = GLOB.discardXLoc
     discardPile[#discardPile]["y"] = GLOB.discardYLoc    
-    gameLogic:RemoveFromHand(myCard, myHand)
+    
+    -- aww
+    -- when discarded, return the card to its original value since it might have changed if it had been played
+    -- plants will become a 2 or 3, everything else will get a default value of 1
+    if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
+        discardPile[#discardPile]["cardData"]["Value"] = 2
+    elseif discardPile[#discardPile]["cardData"]["Type"] == "Large Plant" then        
+        discardPile[#discardPile]["cardData"]["Value"] = 3
+    else
+        discardPile[#discardPile]["cardData"]["Value"] = 1
+    end
+    
+    -- aww
+    scene:GameLogAdd(discardPile[#discardPile]["cardData"]["Name"].." has been discarded.")	
+	
+        
+    
+    -- aww
+    if origin == "hand" then
+        gameLogic:RemoveFromHand(myCard, myHand)
+    end
 end
 
 -- discard the *entire current hand* and add it to the discard pile table
@@ -99,29 +121,53 @@ function scene:DiscardHand(myHand)
         mainGroup:insert(discardPile[#discardPile])
         discardPile[#discardPile]["x"] = GLOB.discardXLoc
         discardPile[#discardPile]["y"] = GLOB.discardYLoc
+        
+        -- aww
+        -- when discarded, return the card to its original value since it might have changed if it had been played
+        -- plants will become a 2 or 3, everything else will get a default value of 1
+        if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
+            discardPile[#discardPile]["cardData"]["Value"] = 2
+        elseif discardPile[#discardPile]["cardData"]["Type"] == "Large Plant" then        
+            discardPile[#discardPile]["cardData"]["Value"] = 3
+        else
+            discardPile[#discardPile]["cardData"]["Value"] = 1
+        end
     end
     
-    print("All cards in hand have been discarded")
+    scene:GameLogAdd("All cards in hand have been discarded")
 end
 
 
+-- aww
+-- for moving a card out of discard
+local function DiscardMovementListener(event)
+    
+    
+    
+end
+
+
+-- aww
+-- listener for cards out on the playfield to move them around
 local function FieldMovementListener(event)
 
     local self = event.target
 
     if event.phase == "began" then
         --self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
-
+        self.originalX = self.x -- store starting x. needed if card will snap back
+        self.originalY = self.y -- store starting y
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
 
-        --mainGroup:insert(self)
-        --self:toFront()
-        --scrollView.isVisible = false
+        -- figure out type and where in chain then drag rest of cards
+        -- todo: can plants be brought off at all?
+
+        self:toFront()
+        display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
     elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
         local x, y
-        
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
         -- before adding that check it would sometimes crash and say that mark x or y had a nil value
         
@@ -138,67 +184,334 @@ local function FieldMovementListener(event)
         end
         
         self.x, self.y = x, y    -- move object based on calculations above    
-    elseif event.phase == "moved" and self.x<0 and self.x>display.contentWidth and (self.y - self.height/2)< 0 and self.y > (display.contentHeight - self.height/2.5)then
-        event.phase = "ended" -- explicitely end the event if the border is reached
-    elseif event.phase == "ended" then
-        -- try to click into place
-            -- make sure to move card to appropriate table (env, discard, etc)
-            -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
+    elseif event.phase == "ended" then -- try to click into place
+        display.getCurrentStage():setFocus(nil)
+        
+         -- make sure to move card to appropriate table (env, discard, etc)
         -- or snap back to hand if not in a valid area
 
         -- may need to remove the listener here?
 
         local validLoc = ""
         local played = false
+        local playedString = ""
         
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self)
         
+        -- need to know
+        -- type, env, chain
         
-        if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
-            scrollView:insert(self)
+        local envNum, myChain, myIndex
+        
+        if not validLoc then
+            self.x = self.originalX
+            self.y = self.originalY
         elseif validLoc == "discard" then
-            self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
-            scene:DiscardCard(self, hand)
-        elseif validLoc ~= "" then
-            for i = 1, 3 do
-                if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
-                    -- try to play an env card
-                   if self["cardData"].Type == "Environment" then
-                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
-                        break
-                   -- try to play a plant card
-                   elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
-                       if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
-                            break
-                       elseif validLoc == "env"..i.."chain2" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
-                            break
-                       end
-                   elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
-                       if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
-                            break
-                       elseif validLoc == "env"..i.."chain2" then
-                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
-                           break
-                       end                       
-                   end                   
-                end
+            -- any card on playfield can be put in discard
+            -- when discarded, the lowest level card is compared when in a chain
+            -- if it is an environment, then it and any plant will be discarded.
+            -- if it is an environment, any animals on its chain will be put in hand
+            
+            self:removeEventListener("touch", FieldMovementListener)
+            
+            if gameLogic:GetStat(self, "Value") == 1 then  -- rotate image to appear properly
+                self["rotation"] = 0
             end            
-        end   
+            
+            --
+            envNum, myChain, myIndex = gameLogic:GetMyEnv(self, activeEnvs)
+            
+            if gameLogic:GetStat(self, "Value") == 1 then
+                if activeEnvs[envNum] then
+                    
+                    -- if the env has chains on it, move the cards to hand or discard
+                    for i = 1, 2 do
+                        if activeEnvs[envNum]["chain"..i] then
+                            
+                            local chainSize = #activeEnvs[envNum]["chain"..i]
+                            local chainCount = 0
+                            
+                           -- it will work backwards through the chain from highest played card 
+                            while chainSize > chainCount do                               
+                                
+                                local ind = chainSize - chainCount
+                                local myCard = activeEnvs[envNum]["chain"..i][ind]
+                                
+                                -- do what needs to be done to card here
+                                -- if plant move to discard
+                                -- if animal, move to hand    
+                                
+                                myCard:removeEventListener("touch", FieldMovementListener)
 
-        if not played and validLoc and validLoc ~= "discard" then
-            scrollView:insert(self)
-        elseif played then
-            mainGroup:insert(self) 
-            self:removeEventListener("touch", HandMovementListener)
-            -- todo add any new listener that the card may need
+                                if myCard["cardData"]["Type"] == "Small Plant" or myCard["cardData"]["Type"] == "Large Plant" then
+                                    
+                                    -- add to discard pile                                    
+                                    scene:DiscardCard(myCard, hand, "field")
+                                    myCard:addEventListener( "touch", DiscardMovementListener )   
+                                    
+                                    activeEnvs[envNum]["chain"..i][ind] = nil
+                                
+                                else -- **other cards can be put back in hand
+                                    
+                                    -- set value back to default 1
+                                    gameLogic:SetStat(myCard, "Value", 1) 
+                                    
+                                    -- insert card into hand
+                                    table.insert(hand, activeEnvs[envNum]["chain"..i][ind])
+                                    local myImg = hand[#hand]
+                                    scrollView:insert(hand[#hand])
+                                    myImg.x = scrollXPos
+                                    myImg.y = scrollYPos
+                                    scrollXPos = scrollXPos + GLOB.cardWidth 
+
+                                    myImg:addEventListener( "touch", HandMovementListener )                
+                                    --myImg:addEventListener( "tap", ZoomTapListener )
+
+
+                                    activeEnvs[envNum]["chain"..i][ind] = nil  
+
+                                    scene:AdjustScroller()
+
+                                end
+                                
+                                chainCount = chainCount + 1
+                            end                           
+                            
+                            -- nil chain here
+                            activeEnvs[envNum]["chain"..i] = nil
+                        end
+                    end                                    
+                    
+                    -- add env card to discard pile                                    
+                    scene:DiscardCard(activeEnvs[envNum]["activeEnv"], hand, "field")
+                    self:addEventListener( "touch", DiscardMovementListener )   
+
+
+                    -- nil env card here
+                    activeEnvs[envNum]["activeEnv"] = nil                    
+                    
+                    -- nil out the playfield table so that a new environment can be played
+                    activeEnvs[envNum] = nil
+                end                
+            elseif gameLogic:GetStat(self, "Value") == 2 or gameLogic:GetStat(self, "Value") == 3 then
+                if activeEnvs[envNum][myChain] then                    
+                    local chainSize = #activeEnvs[envNum][myChain]
+                    local chainCount = 0 
+                    
+                    -- it will work backwards through the chain from highest played card 
+                    while chainSize > chainCount do  
+                         local ind = chainSize - chainCount
+                         local myCard = activeEnvs[envNum][myChain][ind]
+
+                         -- do what needs to be done to card here
+                         -- if plant move to discard
+                         -- if animal, move to hand
+                         --activeEnvs[envNum]["chain"..i][ind]
+
+                        myCard:removeEventListener("touch", FieldMovementListener)
+
+                        if myCard["cardData"]["Type"] == "Small Plant" or myCard["cardData"]["Type"] == "Large Plant" then
+                            -- add to discard pile                                    
+                            scene:DiscardCard(myCard, hand, "field")
+                            myCard:addEventListener( "touch", DiscardMovementListener )   
+
+                            activeEnvs[envNum][myChain][ind] = nil
+                        else
+                            -- set value back to default 1
+                            gameLogic:SetStat(myCard, "Value", 1) 
+
+                            -- insert card into hand
+                            table.insert(hand, activeEnvs[envNum][myChain][ind])
+                            local myImg = hand[#hand]
+                            scrollView:insert(hand[#hand])
+                            myImg.x = scrollXPos
+                            myImg.y = scrollYPos
+                            scrollXPos = scrollXPos + GLOB.cardWidth 
+
+                            myImg:addEventListener( "touch", HandMovementListener )                
+                            --myImg:addEventListener( "tap", ZoomTapListener )
+
+                            activeEnvs[envNum][myChain][ind] = nil  
+
+                            scene:AdjustScroller()
+                        
+                        end
+
+                        chainCount = chainCount + 1
+                    end   
+                    
+                    activeEnvs[envNum][myChain] = nil -- nil chain here      
+                end                
+            else -- animals
+                if activeEnvs[envNum][myChain] then                    
+                    local chainSize = #activeEnvs[envNum][myChain]
+                    local chainCount = 0 
+                    
+                    -- it will work backwards through the chain from highest played card 
+                    while chainSize - myIndex >= chainCount do  
+                         local ind = chainSize - chainCount
+                         local myCard = activeEnvs[envNum][myChain][ind]
+
+                         -- do what needs to be done to card here
+                         -- if plant move to discard
+                         -- if animal, move to hand
+                         --activeEnvs[envNum]["chain"..i][ind]
+
+                        myCard:removeEventListener("touch", FieldMovementListener)
+
+                        -- set value back to default 1
+                        gameLogic:SetStat(myCard, "Value", 1) 
+
+                        if self["cardData"]["ID"] == activeEnvs[envNum][myChain][ind]["cardData"]["ID"] then
+                            -- add to discard pile                                    
+                            scene:DiscardCard(myCard, hand, "field")
+                            myCard:addEventListener( "touch", DiscardMovementListener )
+                        else
+                            -- insert card into hand
+                            table.insert(hand, activeEnvs[envNum][myChain][ind])
+                            local myImg = hand[#hand]
+                            scrollView:insert(hand[#hand])
+                            myImg.x = scrollXPos
+                            myImg.y = scrollYPos
+                            scrollXPos = scrollXPos + GLOB.cardWidth 
+
+                            myImg:addEventListener( "touch", HandMovementListener )                
+                            --myImg:addEventListener( "tap", ZoomTapListener )
+                            scene:AdjustScroller()                        
+                        end
+                        
+                        activeEnvs[envNum][myChain][ind] = nil 
+                        chainCount = chainCount + 1
+                    end    
+                end                
+            end
+            
+            -- before doing this, need to nil out all cards below it as well as its env table
+            -- animals can be sent back to hand
+            -- plants will be discarded
+            
+            -- todo remove this from here
+            -- aww
+            --scene:DiscardCard(self, hand, "chain") 
+        elseif validLoc == "hand" then
+            -- envs cannot return to hand unless their type is not env
+            -- plants can only return to hand if strohm active
+            -- all others can return
+            
+            -- need to send their chain as well
+            if gameLogic:GetStat(self, "Value") == 1 then
+                scene:GameLogAdd("Environments cannot be moved back into the hand.")
+                self["rotation"] = 0
+                self.x = self.originalX
+                self.y = self.originalY   
+                self["rotation"] = 270
+                gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
+            elseif gameLogic:GetStat(self, "Value") == 2 or gameLogic:GetStat(self, "Value") == 3 then    
+                if not strohm then
+                    scene:GameLogAdd("Plants cannot be moved back into the hand.")
+                    self.x = self.originalX
+                    self.y = self.originalY  
+                    gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
+                else
+                    -- todo write this
+                    
+                    -- plants can be migrated
+                    
+                end
+            else -- they can move back to hand
+                envNum, myChain, myIndex = gameLogic:GetMyEnv(self, activeEnvs)
+                
+                if activeEnvs[envNum][myChain] then                    
+                    local chainSize = #activeEnvs[envNum][myChain]
+                    local chainCount = 0 
+                    
+                    -- it will work backwards through the chain from highest played card 
+                    while chainSize - myIndex >= chainCount do  
+                         local ind = chainSize - chainCount
+                         local myCard = activeEnvs[envNum][myChain][ind]
+
+                         -- do what needs to be done to card here
+                         -- if plant move to discard
+                         -- if animal, move to hand
+                         --activeEnvs[envNum]["chain"..i][ind]
+
+                        myCard:removeEventListener("touch", FieldMovementListener)
+
+                        -- set value back to default 1
+                        gameLogic:SetStat(myCard, "Value", 1) 
+                        
+                        -- insert card into hand
+                        table.insert(hand, activeEnvs[envNum][myChain][ind])
+                        local myImg = hand[#hand]
+                        scrollView:insert(hand[#hand])
+                        myImg.x = scrollXPos
+                        myImg.y = scrollYPos
+                        scrollXPos = scrollXPos + GLOB.cardWidth 
+
+                        myImg:addEventListener( "touch", HandMovementListener )                
+                        --myImg:addEventListener( "tap", ZoomTapListener )
+                        scene:AdjustScroller()        
+                        
+                        activeEnvs[envNum][myChain][ind] = nil 
+                        chainCount = chainCount + 1
+                    end    
+                end                   
+                
+            end
+            
+        
+        elseif validLoc ~= "" then
+            
+            
         end
+        
+        
 
-        scrollView.isVisible = true
-        scene:AdjustScroller()
+--        if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
+--            scrollView:insert(self)
+--        
+--            self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
+--            scene:DiscardCard(self, hand)
+--        elseif validLoc ~= "" then
+--            for i = 1, 3 do
+--                if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
+--                    -- try to play an env card
+--                   if self["cardData"].Type == "Environment" then
+--                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+--                        break
+--                   -- try to play a plant card
+--                   elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
+--                       if validLoc == "env"..i.."chain1" then
+--                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
+--                            break
+--                       elseif validLoc == "env"..i.."chain2" then
+--                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
+--                            break
+--                       end
+--                   elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
+--                       if validLoc == "env"..i.."chain1" then
+--                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
+--                            break
+--                       elseif validLoc == "env"..i.."chain2" then
+--                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
+--                           break
+--                       end                       
+--                   end                   
+--                end
+--            end            
+--        end   
+--
+--        if not played and validLoc and validLoc ~= "discard" then
+--            scrollView:insert(self)
+--        elseif played then
+--            mainGroup:insert(self) 
+--            self:removeEventListener("touch", HandMovementListener)
+--            -- todo add any new listener that the card may need
+--        end
+--
+--        scrollView.isVisible = true
+--        scene:AdjustScroller()
     end
 
     return true
@@ -206,7 +519,7 @@ end
 
 
 -- movement of a card from the hand out onto the playfield
-local function HandMovementListener(event)
+function HandMovementListener(event)
 
     local self = event.target
 
@@ -218,6 +531,9 @@ local function HandMovementListener(event)
 
         mainGroup:insert(self)
         self:toFront()
+        
+        --aww
+        display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
     elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
@@ -238,7 +554,10 @@ local function HandMovementListener(event)
             y = display.contentWidth/2
         end
         
-        self.x, self.y = x, y    -- move object based on calculations above  
+        self.x, self.y = x, y    -- move object based on calculations above 
+        print(self.x, "   ", self.y)
+        event.phase = "ended"
+        
     elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
@@ -247,8 +566,12 @@ local function HandMovementListener(event)
 
         -- may need to remove the listener here?
 
+        --aww
+        display.getCurrentStage():setFocus(nil)
+
         local validLoc = ""
         local played = false
+        local playedString = ""
         
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self)
@@ -258,29 +581,29 @@ local function HandMovementListener(event)
             scrollView:insert(self)
         elseif validLoc == "discard" then
             self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
-            scene:DiscardCard(self, hand)
+            scene:DiscardCard(self, hand, "hand")
         elseif validLoc ~= "" then
             for i = 1, 3 do
                 if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
                     -- try to play an env card
                    if self["cardData"].Type == "Environment" then
-                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+                        played, playedString = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
                         break
                    -- try to play a plant card
                    elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
                        if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
+                            played, playedString = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
+                            played, playedString = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
                             break
                        end
                    elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
                        if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
+                            played, playedString = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
-                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
+                           played, playedString = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
                            break
                        end                       
                    end                   
@@ -293,7 +616,15 @@ local function HandMovementListener(event)
         elseif played then
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
+            --aww
+            event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
+            self:addEventListener("touch", FieldMovementListener)
             -- todo add any new listener that the card may need
+        end
+        
+        -- aww moved this down
+        if playedString ~= "" then
+            scene:GameLogAdd(playedString)
         end
 
         scrollView.isVisible = true
@@ -373,13 +704,12 @@ function scene:drawCards( num, myHand, who )
             table.insert(myHand, deck[i])
 
         -- if the player is being dealt a card, put the image on screen
-
-            local imgString = "/images/assets/"
+        
+            --aww images
+            local imgString = "assets/"
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
             imgString = imgString..filenameString
 
-            --print(imgString)
-            --print(myHand[#myHand].x)
             local paint = {
                 type = "image",
                 filename = imgString
@@ -403,8 +733,8 @@ function scene:drawCards( num, myHand, who )
                 -- do anything cpu player might need
             end            
 
-            scene:GameLogAdd(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
-            --print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            -- aww
+            scene:GameLogAdd(who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
             
@@ -414,7 +744,7 @@ function scene:drawCards( num, myHand, who )
         else
             -- the draw pile is empty
             -- todo: deal with this by either reshuffling discard or ending game
-            print("There are no cards left to draw.")
+            scene:GameLogAdd("There are no cards left to draw.")
         end
         
     end
@@ -469,13 +799,13 @@ function scene:CalculateScore()
         end 
     end
     
-    print("Current Score:")
+    scene:GameLogAdd("Current Score:")
     
     for i = 1, 10 do
         if curEco[i] then
-            print(i..": ",curEco[i]) -- needed to use , here to concatenate a boolean value
+            scene:GameLogAdd(i..": ",curEco[i]) -- needed to use , here to concatenate a boolean value
         else
-            print(i..": false")
+            scene:GameLogAdd(i..": false")
         end
         
         
@@ -525,7 +855,7 @@ function scene:PlayCard()
                         activeEnvs[j]["activeEnv"].rotation = 270                        
                         
                         hand[ind] = nil
-                        print(activeEnvs[j]["activeEnv"]["cardData"].Name .. " environment card has been played.") 
+                        scene:GameLogAdd(activeEnvs[j]["activeEnv"]["cardData"].Name .. " environment card has been played.") 
 
 
                         space = true
@@ -605,7 +935,7 @@ function scene:PlayCard()
                                 
                                 -- remove the card from the hand
                                 hand[ind] = nil
-                                print(activeEnvs[j][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"]["cardData"].Name .. ".") 
+                                scene:GameLogAdd(activeEnvs[j][availChain][1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j]["activeEnv"]["cardData"].Name .. ".") 
                             end
                         end
 
@@ -659,7 +989,7 @@ function scene:PlayCard()
                                     end                                        
                                 end                                
                             else
-                                print("No card was in that position. You have an Error.")
+                                scene:GameLogAdd("No card was in that position. You have an Error.")
                             end 
                         end
 
@@ -688,7 +1018,7 @@ function scene:PlayCard()
                                     end                                        
                                 end                                
                             else
-                                print("No card was in that position. You have an Error.")
+                                scene:GameLogAdd("No card was in that position. You have an Error.")
                             end 
                         end
 
@@ -762,7 +1092,7 @@ function scene:PlayCard()
                                 
                                 -- remove the card from the hand
                                 hand[ind] = nil
-                                print(activeEnvs[j][availChain][tabLen + 1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen]["cardData"].Name .. ".") 
+                                scene:GameLogAdd(activeEnvs[j][availChain][tabLen + 1]["cardData"].Name .. " card has been played on top of " .. activeEnvs[j][availChain][tabLen]["cardData"].Name .. ".") 
                             end
                         end
 
@@ -797,7 +1127,7 @@ function scene:PlayCard()
     end
     
     if not played then
-        print("No card to play.")    
+        scene:GameLogAdd("No card to play.")    
     else
         
     end
@@ -831,6 +1161,7 @@ function scene:EndTurn()
     if numOpp > 0 then       
         for i = 1, numOpp do
             local whoString = "Opponent"..i
+            local playedString = ""
             -- todo check discard pile for a card to draw from
             scene:drawCards(2,cpuHand[i], whoString)
                       
@@ -843,8 +1174,12 @@ function scene:EndTurn()
 
                 if cpuHand[i][ind]["cardData"].Type == "Environment" then -- try to play an environment card
                     for j = 1, 3 do                            
-                        cardPlayed = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
-
+                        cardPlayed, playedString = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
+                        
+                        if playedString ~= "" then
+                            scene:GameLogAdd(playedString)
+                        end
+                        
                         if cardPlayed then -- break the for loop if a card has been played
                             break
                         end
@@ -853,12 +1188,16 @@ function scene:EndTurn()
                     for j = 1, 3 do -- try all 3 environments                        
                         if cardPlayed then
                             break
-                        end
+                        end                        
                         
                         for k = 1, 2 do -- try both chains on each env
                             local chainString = "chain"..k
                                                                            
-                            cardPlayed = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                            cardPlayed, playedString = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                        
+                            if playedString ~= "" then
+                                scene:GameLogAdd(playedString)
+                            end
                         
                             if cardPlayed then -- break the for loop if a card has been played
                                 break
@@ -874,7 +1213,11 @@ function scene:EndTurn()
                         for k = 1, 2 do -- try both chains on each env
                             local chainString = "chain"..k
                                                                            
-                            cardPlayed = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                            cardPlayed, playedString = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                        
+                            if playedString ~= "" then
+                                scene:GameLogAdd(playedString)
+                            end
                         
                             if cardPlayed then -- break the for loop if a card has been played
                                 break
@@ -1002,33 +1345,36 @@ function scene:GameLogAdd(logText)
     -- multiline text will be split and looped through, adding a max number of characters each line until completion
     -- todo make multiline text break at whole words rather than just split it
     
---    local strMaxLen = 110
---    local textWidth = scrollRectWidth
+    -- todo remove this
+    print(logText) -- also show in console output for debugging
+    
+    local strMaxLen = 48
+    local textWidth = logScrollWidth
     local textHeight = 20    
---    local outputDone = false
---    local charCount = 0
---    
---    -- indent the text if it it not indicating whose turn it is
---    if not string.find(logText, "'s turn") then
---        logText = "   "..logText
---    end
+    local outputDone = false
+    local charCount = 0
+    
+    -- indent the text if it it not indicating whose turn it is
+    --if not string.find(logText, "'s turn") then
+    --    logText = "   "..logText
+    --end
         
     
-    --while not outputDone do
-        --local multiLine = ""
-        --charCount = string.len(logText)
+    while not outputDone do
+        local multiLine = ""
+        charCount = string.len(logText)
 
-        --if charCount > strMaxLen then            
-            --multiLine = string.sub(logText, strMaxLen + 1)
-            --logText = string.sub(logText, 0, strMaxLen)
-        --end    
+        if charCount > strMaxLen then            
+            multiLine = string.sub(logText, strMaxLen + 1)
+            logText = string.sub(logText, 0, strMaxLen)
+        end    
 
        local logOptions = {
             text = logText,
-            --x = 150,--textWidth/2 + 5,
+            x = textWidth/2 + 5,
             y = scrollY,
-            width = 150,--textWidth,
-            height = 20,--textHeight,
+            width = textWidth,
+            height = textHeight,
             font = native.systemFont,
             fontSize = 14,
             align = "left"    
@@ -1044,12 +1390,12 @@ function scene:GameLogAdd(logText)
         --scrollArea.height = newScrollHeight * 2
         --scrollView:setScrollHeight(newScrollHeight)  
         
---        if charCount > strMaxLen then
---            logText = "   "..multiLine
---        else
---            outputDone = true
---        end    
-    --end
+        if charCount > strMaxLen then
+            logText = "   "..multiLine
+        else
+            outputDone = true
+        end    
+    end
     
     -- once the visible area of the scroller is filled, new events will be added to the bottom and will give appearance of scrolling up
 --    if newScrollHeight >= visibleScroll then
@@ -1089,7 +1435,7 @@ function scene:create( event )
     {
         --left = 37.5,
         --top = 225,
-        width = 300,--scrollRectWidth,
+        width = logScrollWidth,
         height = 150,--visibleScroll,
         --scrollWidth = scrollRectWidth, -- width of scrollable area
         --scrollHeight = newScrollHeight, -- height of scrollable area
@@ -1103,12 +1449,9 @@ function scene:create( event )
     
     logScroll.x = GLOB.gameLogXLoc
     logScroll.y = GLOB.gameLogYLoc
-    
-
-    --scrollArea = display.newContainer(scrollRectWidth * 2, 0) -- had to double rectWidth here for some reason?
 
     mainGroup:insert(logScroll)
-    --myScene:insert(scrollView)    
+  
     
     
     scrollView = widget.newScrollView
@@ -1124,7 +1467,8 @@ function scene:create( event )
     scrollView.x = display.contentWidth / 2;    
     scrollView.y = display.contentHeight - 80;    
     
-    sceneGroup:insert(scrollView)
+    -- aww
+    mainGroup:insert(scrollView)
     
     local function right_scroll_listener ()
         -- aww added local to newX, newY
@@ -1177,8 +1521,6 @@ function scene:create( event )
     -- no image shown currently, just a white rect
     -- todo change this
     discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight) 
-    --discardImage.Whatever = "hello"
-    --print(discardImage.Whatever)
     discardImage:setFillColor(.5,.5,.5)
     mainGroup:insert(discardImage)             
         
@@ -1186,7 +1528,8 @@ function scene:create( event )
     local cardBack = display.newRect( GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight )
     paint = {
         type = "image",
-        filename = "/images/assets/v2-Back.jpg"
+        -- aww
+        filename = "assets/v2-Back.jpg"
     }    
     
     cardBack.fill = paint
@@ -1249,7 +1592,8 @@ function scene:create( event )
     
     local endTurnBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
-    imgString = "/images/button-end-turn.jpg"
+    -- aww
+    imgString = "images/button-end-turn.jpg"
     
     local paint = {
         type = "image",
@@ -1270,7 +1614,8 @@ function scene:create( event )
     
     --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
     
-    imgString = "/images/button-draw-a-card.jpg"
+    --aww
+    imgString = "images/button-draw-a-card.jpg"
     
     local paint = {
         type = "image",
