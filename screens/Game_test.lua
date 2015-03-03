@@ -39,6 +39,9 @@ local overlay
 local logScroll
 local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
+local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
+local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
+
 
 local HandMovementListener
 
@@ -250,6 +253,7 @@ local function HandMovementListener(event)
 
         scrollView.isVisible = true
         scene:AdjustScroller()
+        scene:CalculateScore()
     end
 
     return true
@@ -421,14 +425,93 @@ function scene:CalculateScore()
     
     for i = 1, 10 do
         if curEco[i] then
+            if i == 1 then
+                one_on.isVisible = true
+                one_off.isVisible = false
+            end
+            if i == 2 then
+                two_on.isVisible = true
+                two_off.isVisible = false
+            end
+            if i == 3 then
+                three_on.isVisible = true
+                three_off.isVisible = false
+            end
+            if i == 4 then
+                four_on.isVisible = true
+                four_off.isVisible = false
+            end
+            if i == 5 then
+                five_on.isVisible = true
+                five_off.isVisible = false
+            end
+            if i == 6 then
+                six_on.isVisible = true
+                six_off.isVisible = false
+            end
+            if i == 7 then
+                seven_on.isVisible = true
+                seven_off.isVisible = false
+            end
+            if i == 8 then
+                eight_on.isVisible = true
+                eight_off.isVisible = false
+            end
+            if i == 9 then
+                nine_on.isVisible = true
+                nine_off.isVisible = false
+            end
+            if i == 10 then
+                ten_on.isVisible = true
+                ten_off.isVisible = false
+            end
+            
             print(i..": ",curEco[i]) -- needed to use , here to concatenate a boolean value
         else
+            if i == 1 then
+                one_on.isVisible = false
+                one_off.isVisible = true
+            end
+            if i == 2 then
+                two_on.isVisible = false
+                two_off.isVisible = true
+            end
+            if i == 3 then
+                three_on.isVisible = false
+                three_off.isVisible = true
+            end
+            if i == 4 then
+                four_on.isVisible = false
+                four_off.isVisible = true
+            end
+            if i == 5 then
+                five_on.isVisible = false
+                five_off.isVisible = true
+            end
+            if i == 6 then
+                six_on.isVisible = false
+                six_off.isVisible = true
+            end
+            if i == 7 then
+                seven_on.isVisible = false
+                seven_off.isVisible = true
+            end
+            if i == 8 then
+                eight_on.isVisible = false
+                eight_off.isVisible = true
+            end
+            if i == 9 then
+                nine_on.isVisible = false
+                nine_off.isVisible = true
+            end
+            if i == 10 then
+                ten_on.isVisible = false
+                ten_off.isVisible = true
+            end
+            
             print(i..": false")
         end
-        
-        
     end
-    
 end
 
 
@@ -851,7 +934,7 @@ function scene:EndTurn()
     
     
     -- determine current score    
-    --scene:CalculateScore()
+    scene:CalculateScore()
     
         
     -- if there's a winner do something
@@ -1013,7 +1096,7 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/ORIGINAL-background.jpg")
+    local background = display.newImage("images/bg.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -1195,6 +1278,239 @@ function scene:create( event )
     end    
 
     cardBack:addEventListener( "tap", drawCardListener )
+    
+    
+    one_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/1a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    one_off.fill = paint
+    
+    one_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/1.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    one_on.fill = paint
+    
+    two_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/2a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    two_off.fill = paint
+    
+    two_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/2.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    two_on.fill = paint
+    
+    three_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/3a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    three_off.fill = paint
+    
+    three_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/3.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    three_on.fill = paint
+    
+     four_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/4a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    four_off.fill = paint
+    
+    four_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/4.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    four_on.fill = paint
+    
+    five_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/5a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    five_off.fill = paint
+    
+    five_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 5,GLOB.scoreImages["row1"],44,44)
+     imgString = "/images/5.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    five_on.fill = paint
+        
+    six_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/6a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    six_off.fill = paint
+    
+    six_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/6.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    six_on.fill = paint
+    
+    seven_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/7a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    seven_off.fill = paint
+    
+    seven_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/7.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    seven_on.fill = paint
+    
+    eight_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/8a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    eight_off.fill = paint
+    
+    eight_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/8.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    eight_on.fill = paint
+    
+    nine_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/9a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    nine_off.fill = paint
+    
+    nine_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/9.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    nine_on.fill = paint
+    
+    ten_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/10a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    ten_off.fill = paint
+    
+    ten_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
+     imgString = "/images/10.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    ten_on.fill = paint
+    
+    one_on.isVisible = false;
+    two_on.isVisible = false;
+    three_on.isVisible = false;
+    four_on.isVisible = false;
+    five_on.isVisible = false;
+    six_on.isVisible = false;
+    seven_on.isVisible = false;
+    eight_on.isVisible = false;
+    nine_on.isVisible = false;
+    ten_on.isVisible = false;    
+    
+    mainGroup:insert(one_on)
+    mainGroup:insert(one_off)
+    mainGroup:insert(two_on)
+    mainGroup:insert(two_off)
+    mainGroup:insert(three_on)
+    mainGroup:insert(three_off)
+    mainGroup:insert(four_on)
+    mainGroup:insert(four_off)
+    mainGroup:insert(five_on)
+    mainGroup:insert(five_off)
+    mainGroup:insert(six_on)
+    mainGroup:insert(six_off)
+    mainGroup:insert(seven_on)
+    mainGroup:insert(seven_off)
+    mainGroup:insert(eight_on)
+    mainGroup:insert(eight_off)
+    mainGroup:insert(nine_on)
+    mainGroup:insert(nine_off)
+    mainGroup:insert(ten_on)
+    mainGroup:insert(ten_off)    
 end
 
 -- "scene:show()"

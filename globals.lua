@@ -13,6 +13,13 @@ globals.drawPileYLoc = 140
 globals.gameLogXLoc = 200
 globals.gameLogYLoc = 100
 
+-- score button image locs
+globals.scoreImages = {}
+globals.scoreImages["row1"] = 35 -- y value
+globals.scoreImages["col1"] = 675 -- x value
+
+
+
 -- tables for locations for where cards should be played on the field
 globals.chainY = 300
 globals.envLocs = {}    
