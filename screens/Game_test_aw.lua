@@ -36,11 +36,9 @@ local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
 local overlay
-local logScroll -- aww
+local logScroll
 local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
-
-
 
 local HandMovementListener
 
@@ -66,7 +64,7 @@ function scene:tableLength(myTable)
     return count
 end
 
--- test this
+-- shuffle elements in table
 function scene:shuffleDeck(myTable)
     local rand = math.random 
     --assert( myTable, "shuffleTable() expected a table, got nil" )
@@ -79,17 +77,14 @@ function scene:shuffleDeck(myTable)
     end
 end
 
-
 -- activated when a *single* card has been dropped onto the discard pile
 -- can be used by player and cpu
--- aww
 function scene:DiscardCard(myCard, myHand, origin)
     table.insert(discardPile, myCard) -- insert the card in the last available position on discard
     mainGroup:insert(discardPile[#discardPile])
     discardPile[#discardPile]["x"] = GLOB.discardXLoc
     discardPile[#discardPile]["y"] = GLOB.discardYLoc    
     
-    -- aww
     -- when discarded, return the card to its original value since it might have changed if it had been played
     -- plants will become a 2 or 3, everything else will get a default value of 1
     if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
@@ -100,12 +95,8 @@ function scene:DiscardCard(myCard, myHand, origin)
         discardPile[#discardPile]["cardData"]["Value"] = 1
     end
     
-    -- aww
     scene:GameLogAdd(discardPile[#discardPile]["cardData"]["Name"].." has been discarded.")	
-	
-        
-    
-    -- aww
+	    
     if origin == "hand" then
         gameLogic:RemoveFromHand(myCard, myHand)
     end
@@ -122,7 +113,6 @@ function scene:DiscardHand(myHand)
         discardPile[#discardPile]["x"] = GLOB.discardXLoc
         discardPile[#discardPile]["y"] = GLOB.discardYLoc
         
-        -- aww
         -- when discarded, return the card to its original value since it might have changed if it had been played
         -- plants will become a 2 or 3, everything else will get a default value of 1
         if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
@@ -137,8 +127,6 @@ function scene:DiscardHand(myHand)
     scene:GameLogAdd("All cards in hand have been discarded")
 end
 
-
--- aww
 -- for moving a card out of discard
 local function DiscardMovementListener(event)
     
@@ -531,8 +519,6 @@ function HandMovementListener(event)
 
         mainGroup:insert(self)
         self:toFront()
-        
-        --aww
         display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
@@ -554,10 +540,7 @@ function HandMovementListener(event)
             y = display.contentWidth/2
         end
         
-        self.x, self.y = x, y    -- move object based on calculations above 
-        print(self.x, "   ", self.y)
-        event.phase = "ended"
-        
+        self.x, self.y = x, y    -- move object based on calculations above
     elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
@@ -566,7 +549,6 @@ function HandMovementListener(event)
 
         -- may need to remove the listener here?
 
-        --aww
         display.getCurrentStage():setFocus(nil)
 
         local validLoc = ""
@@ -616,13 +598,11 @@ function HandMovementListener(event)
         elseif played then
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
-            --aww
             event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
             self:addEventListener("touch", FieldMovementListener)
             -- todo add any new listener that the card may need
         end
         
-        -- aww moved this down
         if playedString ~= "" then
             scene:GameLogAdd(playedString)
         end
@@ -672,7 +652,7 @@ local function ZoomTapListener( event )
                 self.x = self.orgX
                 self.y = self.orgY                        
                         
-                gameLogic:BringToFront(self.cardData.ID, activeEnvs) -- aww
+                gameLogic:BringToFront(self.cardData.ID, activeEnvs)
                 -- if on playfield, bring everything below it to front
                 -- else on discard don't need to do this'
 
@@ -705,7 +685,6 @@ function scene:drawCards( num, myHand, who )
 
         -- if the player is being dealt a card, put the image on screen
         
-            --aww images
             local imgString = "assets/"
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
             imgString = imgString..filenameString
@@ -715,10 +694,8 @@ function scene:drawCards( num, myHand, who )
                 filename = imgString
             }
 
-
             local myImg = myHand[#myHand]
-            myImg.fill = paint              
-            
+            myImg.fill = paint  
 
             if who == "Player" then 
 
@@ -733,7 +710,6 @@ function scene:drawCards( num, myHand, who )
                 -- do anything cpu player might need
             end            
 
-            -- aww
             scene:GameLogAdd(who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
@@ -751,8 +727,6 @@ function scene:drawCards( num, myHand, who )
     
     -- increment the deck index for next deal. it should stop incrementing if deck is empty
     deckIndex = deckIndex + numPlayed
-
-    
 end
 
 
@@ -1340,25 +1314,17 @@ function scene:InitializeGame()
     
 end
 
--- aww
 function scene:GameLogAdd(logText)
     -- multiline text will be split and looped through, adding a max number of characters each line until completion
     -- todo make multiline text break at whole words rather than just split it
     
-    -- todo remove this
-    print(logText) -- also show in console output for debugging
+    print(logText) -- also show in console output for debugging    -- todo remove this
     
     local strMaxLen = 48
     local textWidth = logScrollWidth
     local textHeight = 20    
     local outputDone = false
     local charCount = 0
-    
-    -- indent the text if it it not indicating whose turn it is
-    --if not string.find(logText, "'s turn") then
-    --    logText = "   "..logText
-    --end
-        
     
     while not outputDone do
         local multiLine = ""
@@ -1381,14 +1347,9 @@ function scene:GameLogAdd(logText)
         }  
 
         scrollY = scrollY + textHeight
-
         local itemLabel = display.newText(logOptions)
         itemLabel:setFillColor(1,1,1) 
-
-        --newScrollHeight = newScrollHeight + textHeight 
         logScroll:insert(itemLabel)
-        --scrollArea.height = newScrollHeight * 2
-        --scrollView:setScrollHeight(newScrollHeight)  
         
         if charCount > strMaxLen then
             logText = "   "..multiLine
@@ -1396,12 +1357,8 @@ function scene:GameLogAdd(logText)
             outputDone = true
         end    
     end
-    
-    -- once the visible area of the scroller is filled, new events will be added to the bottom and will give appearance of scrolling up
---    if newScrollHeight >= visibleScroll then
-        logScroll:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right
---    end      
-    
+
+    logScroll:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right
 end
 
 function scene:create( event )
@@ -1430,18 +1387,12 @@ function scene:create( event )
     overlay.alpha = .5
     overlay:toBack()
     
-    -- aww log scroller
     logScroll = widget.newScrollView
     {
-        --left = 37.5,
-        --top = 225,
         width = logScrollWidth,
-        height = 150,--visibleScroll,
-        --scrollWidth = scrollRectWidth, -- width of scrollable area
-        --scrollHeight = newScrollHeight, -- height of scrollable area
+        height = 150,
         horizontalScrollDisabled = true,
         isBounceEnabled = false,
-        --listener = scrollListener,
         hideScrollBar = false,
         backgroundColor = {.5,.5,.5},
         friction = 0
@@ -1466,12 +1417,10 @@ function scene:create( event )
     --location
     scrollView.x = display.contentWidth / 2;    
     scrollView.y = display.contentHeight - 80;    
-    
-    -- aww
+
     mainGroup:insert(scrollView)
     
     local function right_scroll_listener ()
-        -- aww added local to newX, newY
         local newX, newY = scrollView:getContentPosition();
         newX = newX - GLOB.cardWidth;
         scrollView:scrollToPosition{
@@ -1481,7 +1430,6 @@ function scene:create( event )
     end
     
     local function left_scroll_listener ()
-        -- aww added local to newX, newY
         local newX, newY = scrollView:getContentPosition();
         newX = newX + GLOB.cardWidth;
         scrollView:scrollToPosition{
@@ -1528,14 +1476,12 @@ function scene:create( event )
     local cardBack = display.newRect( GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight )
     paint = {
         type = "image",
-        -- aww
         filename = "assets/v2-Back.jpg"
     }    
     
     cardBack.fill = paint
     mainGroup:insert(cardBack)
-       
-    -- aww moved these near bottom of screen
+
     local btnY = 500
     
     -- touch demo
@@ -1580,8 +1526,6 @@ function scene:create( event )
     showMainLabel:setTextColor( 1 )
     
     local function tapListener( event )
-        --local object = event.target
-        --print( object.name.." TAPPED!" )
         scene:HideOpponentCards()
     end
     
@@ -1592,7 +1536,6 @@ function scene:create( event )
     
     local endTurnBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
-    -- aww
     imgString = "images/button-end-turn.jpg"
     
     local paint = {
@@ -1603,24 +1546,11 @@ function scene:create( event )
     endTurnBtn.fill = paint   
     
     local function endTurnListener( event )
-        local object = event.target
-        --print( object.name.." TAPPED!" )
         scene:EndTurn()
     end    
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
     mainGroup:insert(endTurnBtn)    
-    --
-    
-    --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
-    
-    --aww
-    imgString = "images/button-draw-a-card.jpg"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
     
     local function drawCardListener( event )
         local object = event.target
@@ -1628,9 +1558,7 @@ function scene:create( event )
         return true
     end    
     
-    cardBack:addEventListener( "tap", drawCardListener ) 
-    
-    --
+    cardBack:addEventListener( "tap", drawCardListener )
 end
 
 -- "scene:show()"
