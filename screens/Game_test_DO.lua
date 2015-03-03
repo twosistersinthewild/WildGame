@@ -38,7 +38,26 @@ local oppGroup -- display's opponent cards
 local scrollView
 local overlay
 
-
+local one_on
+local one_off
+local two_on
+local two_off
+local three_on
+local three_off
+local four_on
+local four_off
+local five_on
+local five_off
+local six_on
+local six_off
+local seven_on
+local seven_off
+local eight_on
+local eight_off
+local nine_on
+local nine_off
+local ten_on
+local ten_off
 
 ---------------------------------------------------------------------------------
 
@@ -141,7 +160,7 @@ local function HandMovementListener(event)
             -- make sure to move card to appropriate table (env, discard, etc)
             -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
         -- or snap back to hand if not in a valid area
-
+        scene:CalculateScore()
         -- may need to remove the listener here?
 
         local validLoc = ""
@@ -153,6 +172,7 @@ local function HandMovementListener(event)
         
         if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
             scrollView:insert(self)
+        
         elseif validLoc == "discard" then
             self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
             scene:DiscardCard(self, hand)
@@ -195,8 +215,9 @@ local function HandMovementListener(event)
 
         scrollView.isVisible = true
         scene:AdjustScroller()
+        scene:CalculateScore()
     end
-
+    scene:CalculateScore()
     return true
 end 
 
@@ -366,14 +387,96 @@ function scene:CalculateScore()
     
     for i = 1, 10 do
         if curEco[i] then
+            if i == 1 then
+                one_on.isVisible = true
+                one_off.isVisible = false
+            end
+            if i == 2 then
+                two_on.isVisible = true
+                two_off.isVisible = false
+            end
+            if i == 3 then
+                three_on.isVisible = true
+                three_off.isVisible = false
+            end
+            if i == 4 then
+                four_on.isVisible = true
+                four_off.isVisible = false
+            end
+            if i == 5 then
+                five_on.isVisible = true
+                five_off.isVisible = false
+            end
+            if i == 6 then
+                six_on.isVisible = true
+                six_off.isVisible = false
+            end
+            if i == 7 then
+                seven_on.isVisible = true
+                seven_off.isVisible = false
+            end
+            if i == 8 then
+                eight_on.isVisible = true
+                eight_off.isVisible = false
+            end
+            if i == 9 then
+                nine_on.isVisible = true
+                nine_off.isVisible = false
+            end
+            if i == 10 then
+                ten_on.isVisible = true
+                ten_off.isVisible = false
+            end
+            
             print(i..": ",curEco[i]) -- needed to use , here to concatenate a boolean value
         else
+            if i == 1 then
+                one_on.isVisible = false
+                one_off.isVisible = true
+            end
+            if i == 2 then
+                two_on.isVisible = false
+                two_off.isVisible = true
+            end
+            if i == 3 then
+                three_on.isVisible = false
+                three_off.isVisible = true
+            end
+            if i == 4 then
+                four_on.isVisible = false
+                four_off.isVisible = true
+            end
+            if i == 5 then
+                five_on.isVisible = false
+                five_off.isVisible = true
+            end
+            if i == 6 then
+                six_on.isVisible = false
+                six_off.isVisible = true
+            end
+            if i == 7 then
+                seven_on.isVisible = false
+                seven_off.isVisible = true
+            end
+            if i == 8 then
+                eight_on.isVisible = false
+                eight_off.isVisible = true
+            end
+            if i == 9 then
+                nine_on.isVisible = false
+                nine_off.isVisible = true
+            end
+            if i == 10 then
+                ten_on.isVisible = false
+                ten_off.isVisible = true
+            end
+            
             print(i..": false")
         end
         
         
     end
-    
+        
 end
 
 
@@ -695,6 +798,7 @@ function scene:PlayCard()
         
     end
     
+    scene:CalculateScore()
     scene:AdjustScroller()
 end
 
@@ -794,7 +898,7 @@ function scene:EndTurn()
     
     
     -- determine current score    
-    --scene:CalculateScore()
+    scene:CalculateScore()
     
         
     -- if there's a winner do something
@@ -908,7 +1012,7 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/ORIGINAL-background.jpg")
+    local background = display.newImage("images/bg.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -1104,8 +1208,220 @@ function scene:create( event )
         filename = imgString
     }
     
-    discardBtn.fill = paint         
+    discardBtn.fill = paint     
     
+    one_off = display.newRect(675,35,44,44)
+     imgString = "/images/1a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    one_off.fill = paint
+    
+    one_on = display.newRect(675,35,44,44)
+     imgString = "/images/1.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    one_on.fill = paint
+    
+    two_off = display.newRect(725,35,44,44)
+     imgString = "/images/2a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    two_off.fill = paint
+    
+    two_on = display.newRect(725,35,44,44)
+     imgString = "/images/2.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    two_on.fill = paint
+    
+    three_off = display.newRect(775,35,44,44)
+     imgString = "/images/3a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    three_off.fill = paint
+    
+    three_on = display.newRect(775,35,44,44)
+     imgString = "/images/3.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    three_on.fill = paint
+    
+     four_off = display.newRect(825,35,44,44)
+     imgString = "/images/4a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    four_off.fill = paint
+    
+    four_on = display.newRect(825,35,44,44)
+     imgString = "/images/4.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    four_on.fill = paint
+    
+    five_off = display.newRect(875,35,44,44)
+     imgString = "/images/5a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    five_off.fill = paint
+    
+    five_on = display.newRect(875,35,44,44)
+     imgString = "/images/5.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    five_on.fill = paint
+        
+    six_off = display.newRect(675,85,44,44)
+     imgString = "/images/6a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    six_off.fill = paint
+    
+    six_on = display.newRect(675,85,44,44)
+     imgString = "/images/6.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    six_on.fill = paint
+    
+    seven_off = display.newRect(725,85,44,44)
+     imgString = "/images/7a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    seven_off.fill = paint
+    
+    seven_on = display.newRect(725,85,44,44)
+     imgString = "/images/7.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    seven_on.fill = paint
+    
+    eight_off = display.newRect(775,85,44,44)
+     imgString = "/images/8a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    eight_off.fill = paint
+    
+    eight_on = display.newRect(775,85,44,44)
+     imgString = "/images/8.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    eight_on.fill = paint
+    
+    nine_off = display.newRect(825,85,44,44)
+     imgString = "/images/9a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    nine_off.fill = paint
+    
+    nine_on = display.newRect(825,85,44,44)
+     imgString = "/images/9.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    nine_on.fill = paint
+    
+    ten_off = display.newRect(875,85,44,44)
+     imgString = "/images/10a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    ten_off.fill = paint
+    
+    ten_on = display.newRect(875,85,44,44)
+     imgString = "/images/10.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    ten_on.fill = paint
+    
+    one_on.isVisible = false;
+    two_on.isVisible = false;
+    three_on.isVisible = false;
+    four_on.isVisible = false;
+    five_on.isVisible = false;
+    six_on.isVisible = false;
+    seven_on.isVisible = false;
+    eight_on.isVisible = false;
+    nine_on.isVisible = false;
+    ten_on.isVisible = false;
+    
+        
     local function discardListener( event )
         --local object = event.target
         scene:DiscardHand(hand)

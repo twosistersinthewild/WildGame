@@ -5,6 +5,10 @@
     "fileAlias" : {
     },
     "plugin_props" : {
+      "corona" : {
+        "panelStorage" : {
+        }
+      }
     },
     "excludedFiles" : [ ],
     "sdkselect" : "track_selection",
