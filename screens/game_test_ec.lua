@@ -38,7 +38,10 @@ local scrollView
 local rect = display.newRect(0, 0, 960, 640)
 rect:toBack()
 
-
+--ecm
+-- sound effects
+local cardSlide = audio.loadSound("sounds/cardSlide.wav")
+local click = audio.loadSound("sounds/click.wav")
 
 ---------------------------------------------------------------------------------
 
@@ -111,8 +114,9 @@ local function HandMovementListener(event)
         self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object  
-
+        self.markY = self.y    -- store y location of object 
+        -- ecm
+        audio.play(cardSlide)
         mainGroup:insert(self)
         self:toFront()
         scrollView.isVisible = false
@@ -159,24 +163,31 @@ local function HandMovementListener(event)
         elseif validLoc ~= "" then
             for i = 1, 3 do
                 if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
+                    --ecm click
                     -- try to play an env card
                    if self["cardData"].Type == "Environment" then
                         played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+                        -- ecm
+                        audio.play(click)
                         break
                    -- try to play a plant card
                    elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
                        if validLoc == "env"..i.."chain1" then
+                            
                             played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
+                            
                             played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
                             break
                        end
                    elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
                        if validLoc == "env"..i.."chain1" then
+                           
                             played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
+                        
                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
                            break
                        end                       
@@ -188,6 +199,8 @@ local function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
+            -- ecm
+            audio.play(click)
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
             -- todo add any new listener that the card may need
@@ -226,7 +239,7 @@ local function tapListener( event )
             rect:addEventListener("touch", function() return true end)
             rect:addEventListener("tap", function() return true end)
             self:toFront()
-            
+          
             
             print( "The object was double-tapped." )
         else
@@ -795,6 +808,7 @@ function scene:EndTurn()
     
 end
 
+-- todoecm: transtions for cpu cards 
 function scene:ShowOpponentCards(oppNum)
     
     -- hide the player's hand and cards
@@ -806,8 +820,11 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            cpuActiveEnvs[oppNum][i]["activeEnv"].x = GLOB.envLocs[i]["xLoc"]
-            cpuActiveEnvs[oppNum][i]["activeEnv"].y = GLOB.envLocs[i]["yLoc"]
+            
+            audio.play(cardSlide)
+            transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
+           -- cpuActiveEnvs[oppNum][i]["activeEnv"].x = GLOB.envLocs[i]["xLoc"]
+           -- cpuActiveEnvs[oppNum][i]["activeEnv"].y = GLOB.envLocs[i]["yLoc"]
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
             for j = 1, 2 do
@@ -823,8 +840,8 @@ function scene:ShowOpponentCards(oppNum)
                     local myCard = cpuActiveEnvs[oppNum][i][myChain][k]
                     
                     oppGroup:insert(myCard)
-                    myCard.x = GLOB.chainLocs[i][myChain]["xLoc"]
-                    myCard.y = GLOB.chainLocs[i][myChain]["yLoc"] + (k * 35)
+                    transition.moveTo( myCard, {x = GLOB.chainLocs[i][myChain]["xLoc"], y = GLOB.chainLocs[i][myChain]["yLoc"] + (k * 35), time = 1000})
+                    
                     end
                 end  
             end
@@ -998,6 +1015,7 @@ function scene:create( event )
         scene:ShowOpponentCards(1)
     end
     
+    
     showOpp:addEventListener( "tap", tapListener )
 
     mainGroup:insert(showOpp)
@@ -1035,6 +1053,7 @@ function scene:create( event )
         local object = event.target
         --print( object.name.." TAPPED!" )
         scene:EndTurn()
+        scene:ShowOpponentCards(1)
     end    
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
