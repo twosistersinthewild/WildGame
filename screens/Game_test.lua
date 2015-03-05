@@ -1048,7 +1048,7 @@ function scene:create( event )
     
     
     one_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/1a.png"
+     imgString = "images/1a.png"
     
     local paint = {
         type = "image",
@@ -1058,7 +1058,7 @@ function scene:create( event )
     one_off.fill = paint
     
     one_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/1.png"
+     imgString = "images/1.png"
     
     local paint = {
         type = "image",
@@ -1068,7 +1068,7 @@ function scene:create( event )
     one_on.fill = paint
     
     two_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/2a.png"
+     imgString = "images/2a.png"
     
     local paint = {
         type = "image",
@@ -1078,7 +1078,7 @@ function scene:create( event )
     two_off.fill = paint
     
     two_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/2.png"
+     imgString = "images/2.png"
     
     local paint = {
         type = "image",
@@ -1088,7 +1088,7 @@ function scene:create( event )
     two_on.fill = paint
     
     three_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/3a.png"
+     imgString = "images/3a.png"
     
     local paint = {
         type = "image",
@@ -1098,7 +1098,7 @@ function scene:create( event )
     three_off.fill = paint
     
     three_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/3.png"
+     imgString = "images/3.png"
     
     local paint = {
         type = "image",
@@ -1108,7 +1108,7 @@ function scene:create( event )
     three_on.fill = paint
     
      four_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/4a.png"
+     imgString = "images/4a.png"
     
     local paint = {
         type = "image",
@@ -1118,7 +1118,7 @@ function scene:create( event )
     four_off.fill = paint
     
     four_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/4.png"
+     imgString = "images/4.png"
     
     local paint = {
         type = "image",
@@ -1128,7 +1128,7 @@ function scene:create( event )
     four_on.fill = paint
     
     five_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/5a.png"
+     imgString = "images/5a.png"
     
     local paint = {
         type = "image",
@@ -1138,7 +1138,7 @@ function scene:create( event )
     five_off.fill = paint
     
     five_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"],44,44)
-     imgString = "/images/5.png"
+     imgString = "images/5.png"
     
     local paint = {
         type = "image",
@@ -1148,7 +1148,7 @@ function scene:create( event )
     five_on.fill = paint
         
     six_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/6a.png"
+     imgString = "images/6a.png"
     
     local paint = {
         type = "image",
@@ -1158,7 +1158,7 @@ function scene:create( event )
     six_off.fill = paint
     
     six_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/6.png"
+     imgString = "images/6.png"
     
     local paint = {
         type = "image",
@@ -1168,7 +1168,7 @@ function scene:create( event )
     six_on.fill = paint
     
     seven_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/7a.png"
+     imgString = "images/7a.png"
     
     local paint = {
         type = "image",
@@ -1178,7 +1178,7 @@ function scene:create( event )
     seven_off.fill = paint
     
     seven_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/7.png"
+     imgString = "images/7.png"
     
     local paint = {
         type = "image",
@@ -1188,7 +1188,7 @@ function scene:create( event )
     seven_on.fill = paint
     
     eight_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/8a.png"
+     imgString = "images/8a.png"
     
     local paint = {
         type = "image",
@@ -1198,7 +1198,7 @@ function scene:create( event )
     eight_off.fill = paint
     
     eight_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/8.png"
+     imgString = "images/8.png"
     
     local paint = {
         type = "image",
@@ -1208,7 +1208,7 @@ function scene:create( event )
     eight_on.fill = paint
     
     nine_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/9a.png"
+     imgString = "images/9a.png"
     
     local paint = {
         type = "image",
@@ -1218,7 +1218,7 @@ function scene:create( event )
     nine_off.fill = paint
     
     nine_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/9.png"
+     imgString = "images/9.png"
     
     local paint = {
         type = "image",
@@ -1228,7 +1228,7 @@ function scene:create( event )
     nine_on.fill = paint
     
     ten_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/10a.png"
+     imgString = "images/10a.png"
     
     local paint = {
         type = "image",
@@ -1238,7 +1238,7 @@ function scene:create( event )
     ten_off.fill = paint
     
     ten_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
-     imgString = "/images/10.png"
+     imgString = "images/10.png"
     
     local paint = {
         type = "image",
