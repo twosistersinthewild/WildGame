@@ -692,6 +692,11 @@ local function ZoomTapListener( event )
             overlay:addEventListener("tap", function() return true end)
             overlay:toFront()
             self:toFront()
+            
+            if self["cardData"].Type == "Environment" and self.rotation ~= 270 then
+                self.rotation = 270
+            end            
+            
             self.y = display.contentHeight/2    -- Location of image once it is zoomed
             self.x = display.contentWidth/2    
             scrollView.isVisible = false
@@ -702,6 +707,9 @@ local function ZoomTapListener( event )
             self.xScale = 1 -- reset size
             self.yScale = 1
             
+            if self["cardData"].Type == "Environment" and self.orgY > display.contentHeight - GLOB.cardHeight then
+                self.rotation = 0
+            end
             
             if self.orgY > display.contentHeight - GLOB.cardHeight then--it came from the hand
                 scrollView:insert(self)
