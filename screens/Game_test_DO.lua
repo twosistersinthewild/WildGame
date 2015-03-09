@@ -5,7 +5,6 @@ local utilities = require "functions.Utilities"
 local gameLogic = require "functions.GameLogic"
 local scene = composer.newScene()
 
-
 ---------------------------------------------------------------------------------
 -- All code outside of the listener functions will only be executed ONCE
 -- unless "composer.removeScene()" is called.
@@ -24,7 +23,8 @@ local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
 local tapCounter = 0 -- flag
-
+local strohm = false -- flag for when strohmstead is on playfield
+-- todo make sure strohm flag is set properly when strohmstead is played and set when it is discarded
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -32,32 +32,22 @@ local scrollXPos = GLOB.cardWidth / 2--display.contentWidth / 2
 
 --controls
 local discardImage
-local testLabel
 local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
 local overlay
+local logScroll
+local logScrollWidth = 350
+local scrollY = 10 -- this will allow the first item added to be in the right position
+local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
+local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 
-local one_on
-local one_off
-local two_on
-local two_off
-local three_on
-local three_off
-local four_on
-local four_off
-local five_on
-local five_off
-local six_on
-local six_off
-local seven_on
-local seven_off
-local eight_on
-local eight_off
-local nine_on
-local nine_off
-local ten_on
-local ten_off
+
+local HandMovementListener
+
+-- sound effects
+local cardSlide
+local click
 
 ---------------------------------------------------------------------------------
 
@@ -81,7 +71,7 @@ function scene:tableLength(myTable)
     return count
 end
 
--- test this
+-- shuffle elements in table
 function scene:shuffleDeck(myTable)
     local rand = math.random 
     --assert( myTable, "shuffleTable() expected a table, got nil" )
@@ -96,12 +86,27 @@ end
 
 -- activated when a *single* card has been dropped onto the discard pile
 -- can be used by player and cpu
-function scene:DiscardCard(myCard, myHand)
+function scene:DiscardCard(myCard, myHand, origin)
     table.insert(discardPile, myCard) -- insert the card in the last available position on discard
     mainGroup:insert(discardPile[#discardPile])
     discardPile[#discardPile]["x"] = GLOB.discardXLoc
     discardPile[#discardPile]["y"] = GLOB.discardYLoc    
-    gameLogic:RemoveFromHand(myCard, myHand)
+
+    -- when discarded, return the card to its original value since it might have changed if it had been played
+    -- plants will become a 2 or 3, everything else will get a default value of 1
+    if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
+        discardPile[#discardPile]["cardData"]["Value"] = 2
+    elseif discardPile[#discardPile]["cardData"]["Type"] == "Large Plant" then        
+        discardPile[#discardPile]["cardData"]["Value"] = 3
+    else
+        discardPile[#discardPile]["cardData"]["Value"] = 1
+    end
+
+    scene:GameLogAdd(discardPile[#discardPile]["cardData"]["Name"].." has been discarded.")	
+
+    if origin == "hand" then
+        gameLogic:RemoveFromHand(myCard, myHand)
+    end
 end
 
 -- discard the *entire current hand* and add it to the discard pile table
@@ -114,11 +119,33 @@ function scene:DiscardHand(myHand)
         mainGroup:insert(discardPile[#discardPile])
         discardPile[#discardPile]["x"] = GLOB.discardXLoc
         discardPile[#discardPile]["y"] = GLOB.discardYLoc
+
+        -- when discarded, return the card to its original value since it might have changed if it had been played
+        -- plants will become a 2 or 3, everything else will get a default value of 1
+        if discardPile[#discardPile]["cardData"].Type == "Small Plant" then
+            discardPile[#discardPile]["cardData"]["Value"] = 2
+        elseif discardPile[#discardPile]["cardData"]["Type"] == "Large Plant" then        
+            discardPile[#discardPile]["cardData"]["Value"] = 3
+        else
+            discardPile[#discardPile]["cardData"]["Value"] = 1
+        end
     end
     
-    print("All cards in hand have been discarded")
+    scene:GameLogAdd("All cards in hand have been discarded")
 end
 
+-- for moving a card out of discard
+local function DiscardMovementListener(event)
+    
+    
+    
+end
+
+-- todo needs code
+local function FieldMovementListener(event)
+    
+    
+end
 
 -- from damian's code'
 -- movement of a card from the hand out onto the playfield
@@ -131,9 +158,10 @@ local function HandMovementListener(event)
 
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-
+        audio.play(cardSlide)
         mainGroup:insert(self)
         self:toFront()
+        display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
     elseif event.phase == "moved" and self.x>0 and self.x<display.contentWidth and (self.y - self.height/2)> 0 and self.y < (display.contentHeight - self.height/2.5)then
@@ -154,17 +182,20 @@ local function HandMovementListener(event)
             y = display.contentWidth/2
         end
         
-        self.x, self.y = x, y    -- move object based on calculations above    
+        self.x, self.y = x, y    -- move object based on calculations above
     elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
             -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
         -- or snap back to hand if not in a valid area
-        scene:CalculateScore()
+
         -- may need to remove the listener here?
+
+        display.getCurrentStage():setFocus(nil)
 
         local validLoc = ""
         local played = false
+        local playedString = ""
         
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self)
@@ -172,32 +203,31 @@ local function HandMovementListener(event)
         
         if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
             scrollView:insert(self)
-        
         elseif validLoc == "discard" then
             self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this
-            scene:DiscardCard(self, hand)
+            scene:DiscardCard(self, hand, "hand")
         elseif validLoc ~= "" then
             for i = 1, 3 do
                 if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
                     -- try to play an env card
                    if self["cardData"].Type == "Environment" then
-                        played = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
+                        played, playedString = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
                         break
                    -- try to play a plant card
                    elseif self["cardData"].Type == "Small Plant" or self["cardData"].Type == "Large Plant" then
                        if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
+                            played, playedString = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
-                            played = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
+                            played, playedString = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
                             break
                        end
                    elseif self["cardData"].Type == "Invertebrate" or self["cardData"].Type == "Small Animal" or self["cardData"].Type == "Large Animal" or self["cardData"].Type == "Apex" then
                        if validLoc == "env"..i.."chain1" then
-                            played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
+                            played, playedString = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain1", "Player")
                             break
                        elseif validLoc == "env"..i.."chain2" then
-                           played = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
+                           played, playedString = gameLogic:PlayAnimal(self, hand, activeEnvs, i, "chain2", "Player")
                            break
                        end                       
                    end                   
@@ -208,16 +238,24 @@ local function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
+            audio.play(click)
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
+            event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
+            self:addEventListener("touch", FieldMovementListener)
             -- todo add any new listener that the card may need
         end
+        
+        if playedString ~= "" then
+            scene:GameLogAdd(playedString)
+        end
+
 
         scrollView.isVisible = true
         scene:AdjustScroller()
         scene:CalculateScore()
     end
-    scene:CalculateScore()
+
     return true
 end 
 
@@ -260,6 +298,10 @@ local function ZoomTapListener( event )
             
                 self.x = self.orgX
                 self.y = self.orgY
+                
+                gameLogic:BringToFront(self.cardData.ID, activeEnvs)
+                -- if on playfield, bring everything below it to front
+                -- else on discard don't need to do this'                
             end               
             
             scrollView.isVisible = true
@@ -289,7 +331,7 @@ function scene:drawCards( num, myHand, who )
 
         -- if the player is being dealt a card, put the image on screen
 
-            local imgString = "/images/assets/"
+            local imgString = "assets/"
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
             imgString = imgString..filenameString
 
@@ -300,10 +342,8 @@ function scene:drawCards( num, myHand, who )
                 filename = imgString
             }
 
-
             local myImg = myHand[#myHand]
-            myImg.fill = paint              
-            
+            myImg.fill = paint  
 
             if who == "Player" then 
 
@@ -318,7 +358,7 @@ function scene:drawCards( num, myHand, who )
                 -- do anything cpu player might need
             end            
 
-            print(who.." has been dealt the " .. deck[i]["cardData"].Name .. " card.")
+            scene:GameLogAdd(who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
             
@@ -335,8 +375,6 @@ function scene:drawCards( num, myHand, who )
     
     -- increment the deck index for next deal. it should stop incrementing if deck is empty
     deckIndex = deckIndex + numPlayed
-
-    
 end
 
 
@@ -473,10 +511,7 @@ function scene:CalculateScore()
             
             print(i..": false")
         end
-        
-        
     end
-        
 end
 
 
@@ -798,7 +833,6 @@ function scene:PlayCard()
         
     end
     
-    scene:CalculateScore()
     scene:AdjustScroller()
 end
 
@@ -834,13 +868,14 @@ function scene:EndTurn()
             -- opponent tries to play cards
             -- cycle through their entire hand
             local ind = 1
+            local playedString = ""
+            
             while cpuHand[i][ind] do
                 local cardPlayed = false
 
-
                 if cpuHand[i][ind]["cardData"].Type == "Environment" then -- try to play an environment card
                     for j = 1, 3 do                            
-                        cardPlayed = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
+                        cardPlayed, playedString = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
 
                         if cardPlayed then -- break the for loop if a card has been played
                             break
@@ -855,7 +890,7 @@ function scene:EndTurn()
                         for k = 1, 2 do -- try both chains on each env
                             local chainString = "chain"..k
                                                                            
-                            cardPlayed = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                            cardPlayed, playedString = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
                         
                             if cardPlayed then -- break the for loop if a card has been played
                                 break
@@ -871,7 +906,7 @@ function scene:EndTurn()
                         for k = 1, 2 do -- try both chains on each env
                             local chainString = "chain"..k
                                                                            
-                            cardPlayed = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
+                            cardPlayed, playedString = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
                         
                             if cardPlayed then -- break the for loop if a card has been played
                                 break
@@ -885,8 +920,9 @@ function scene:EndTurn()
                  -- the hand's index has been changed
                 if not cardPlayed then
                     ind = ind + 1
-                end
-                
+                elseif playedString ~= "" then
+                    scene:GameLogAdd(playedString)
+                end                
             end
             
             -- discard remaining hand after playing
@@ -916,8 +952,8 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            cpuActiveEnvs[oppNum][i]["activeEnv"].x = GLOB.envLocs[i]["xLoc"]
-            cpuActiveEnvs[oppNum][i]["activeEnv"].y = GLOB.envLocs[i]["yLoc"]
+            audio.play(cardSlide)
+            transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
             for j = 1, 2 do
@@ -928,13 +964,10 @@ function scene:ShowOpponentCards(oppNum)
                 end                
                 
                 if cpuActiveEnvs[oppNum][i][myChain] then
-                    for k = 1, #cpuActiveEnvs[oppNum][i][myChain] do
-                    
-                    local myCard = cpuActiveEnvs[oppNum][i][myChain][k]
-                    
-                    oppGroup:insert(myCard)
-                    myCard.x = GLOB.chainLocs[i][myChain]["xLoc"]
-                    myCard.y = GLOB.chainLocs[i][myChain]["yLoc"] + (k * 35)
+                    for k = 1, #cpuActiveEnvs[oppNum][i][myChain] do                    
+                        local myCard = cpuActiveEnvs[oppNum][i][myChain][k]                    
+                        oppGroup:insert(myCard)
+                        transition.moveTo( myCard, {x = GLOB.chainLocs[i][myChain]["xLoc"], y = GLOB.chainLocs[i][myChain]["yLoc"] + (k * 35), time = 1000})
                     end
                 end  
             end
@@ -998,9 +1031,60 @@ function scene:InitializeGame()
     
 end
 
+function scene:GameLogAdd(logText)
+    -- multiline text will be split and looped through, adding a max number of characters each line until completion
+    -- todo make multiline text break at whole words rather than just split it
+    
+    print(logText) -- also show in console output for debugging. todo remove this
+    
+    local strMaxLen = 48
+    local textWidth = logScrollWidth
+    local textHeight = 20    
+    local outputDone = false
+    local charCount = 0
+    
+    while not outputDone do
+        local multiLine = ""
+        charCount = string.len(logText)
+
+        if charCount > strMaxLen then            
+            multiLine = string.sub(logText, strMaxLen + 1)
+            logText = string.sub(logText, 0, strMaxLen)
+        end    
+
+       local logOptions = {
+            text = logText,
+            x = textWidth/2 + 5,
+            y = scrollY,
+            width = textWidth,
+            height = textHeight,
+            font = native.systemFont,
+            fontSize = 14,
+            align = "left"    
+        }  
+
+        scrollY = scrollY + textHeight
+
+        local itemLabel = display.newText(logOptions)
+        itemLabel:setFillColor(1,1,1) 
+        logScroll:insert(itemLabel)
+        
+        if charCount > strMaxLen then
+            logText = "   "..multiLine
+        else
+            outputDone = true
+        end    
+    end
+
+    logScroll:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right 
+end
+
+
 function scene:create( event )
 
-    --scene:SetLocs()
+    -- initialize sounds
+    cardSlide = audio.loadSound("sounds/cardSlide.wav")
+    click = audio.loadSound("sounds/click.wav")
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
@@ -1024,6 +1108,22 @@ function scene:create( event )
     overlay.alpha = .5
     overlay:toBack()
     
+    logScroll = widget.newScrollView
+    {
+        width = logScrollWidth,
+        height = 150,
+        horizontalScrollDisabled = true,
+        isBounceEnabled = false,
+        hideScrollBar = false,
+        backgroundColor = {.5,.5,.5},
+        friction = 0
+    }
+    
+    logScroll.x = GLOB.gameLogXLoc
+    logScroll.y = GLOB.gameLogYLoc
+
+    mainGroup:insert(logScroll)
+    
     scrollView = widget.newScrollView
     {
         width = GLOB.cardWidth * 5,
@@ -1037,10 +1137,10 @@ function scene:create( event )
     scrollView.x = display.contentWidth / 2;    
     scrollView.y = display.contentHeight - 80;    
     
-    sceneGroup:insert(scrollView)
+    mainGroup:insert(scrollView)
     
     local function right_scroll_listener ()
-        newX, newY = scrollView:getContentPosition();
+        local newX, newY = scrollView:getContentPosition();
         newX = newX - 100;
         scrollView:scrollToPosition{
         x = newX;
@@ -1049,7 +1149,7 @@ function scene:create( event )
     end
     
     local function left_scroll_listener ()
-        newX, newY = scrollView:getContentPosition();
+        local newX, newY = scrollView:getContentPosition();
         newX = newX + 100;
         scrollView:scrollToPosition{
         x = newX;
@@ -1087,9 +1187,7 @@ function scene:create( event )
     -- initialize the discard pile image and add to scene group
     -- no image shown currently, just a white rect
     -- todo change this
-    discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight) 
-    --discardImage.Whatever = "hello"
-    --print(discardImage.Whatever)
+    discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight)
     discardImage:setFillColor(.5,.5,.5)
     mainGroup:insert(discardImage)             
         
@@ -1097,13 +1195,13 @@ function scene:create( event )
     local cardBack = display.newRect( GLOB.drawPileXLoc, GLOB.drawPileYLoc, GLOB.cardWidth, GLOB.cardHeight )
     paint = {
         type = "image",
-        filename = "/images/assets/v2-Back.jpg"
+        filename = "assets/v2-Back.jpg"
     }    
     
     cardBack.fill = paint
     mainGroup:insert(cardBack)
        
-    local btnY = 50
+    local btnY = 500
     
     -- touch demo
     local frontObject = display.newRect( 75, btnY, 100, 100 )
@@ -1147,8 +1245,6 @@ function scene:create( event )
     showMainLabel:setTextColor( 1 )
     
     local function tapListener( event )
-        local object = event.target
-        --print( object.name.." TAPPED!" )
         scene:HideOpponentCards()
     end
     
@@ -1157,9 +1253,9 @@ function scene:create( event )
     oppGroup:insert(showMain)
     oppGroup:insert(showMainLabel)       
     
-    local endTurnBtn = display.newRect( 220, btnY, 200 * .75, 109 * .75)
+    local endTurnBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
     
-    imgString = "/images/button-end-turn.jpg"
+    imgString = "images/button-end-turn.jpg"
     
     local paint = {
         type = "image",
@@ -1169,48 +1265,22 @@ function scene:create( event )
     endTurnBtn.fill = paint   
     
     local function endTurnListener( event )
-        local object = event.target
-        --print( object.name.." TAPPED!" )
         scene:EndTurn()
     end    
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
-    mainGroup:insert(endTurnBtn)    
-    --
-    
-    --local drawCardBtn = display.newRect( 400, btnY, 200 * .75, 109 * .75 )
-    
-    imgString = "/images/button-draw-a-card.jpg"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    --drawCardBtn.fill = paint       
+    mainGroup:insert(endTurnBtn)   
     
     local function drawCardListener( event )
         local object = event.target
         scene:drawCards(1,hand, "Player")
         return true
     end    
+
+    cardBack:addEventListener( "tap", drawCardListener )
     
-    --drawCardBtn:addEventListener( "tap", drawCardListener )
-    cardBack:addEventListener( "tap", drawCardListener ) 
-    --mainGroup:insert(drawCardBtn)
     
-    local discardBtn = display.newRect( 830, 575, 200 * .75, 109 * .75 )
-    
-    imgString = "/images/button-discard-card.jpg"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    discardBtn.fill = paint     
-    
-    one_off = display.newRect(675,35,44,44)
+    one_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
      imgString = "/images/1a.png"
     
     local paint = {
@@ -1220,7 +1290,7 @@ function scene:create( event )
     
     one_off.fill = paint
     
-    one_on = display.newRect(675,35,44,44)
+    one_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
      imgString = "/images/1.png"
     
     local paint = {
@@ -1230,7 +1300,7 @@ function scene:create( event )
     
     one_on.fill = paint
     
-    two_off = display.newRect(725,35,44,44)
+    two_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/2a.png"
     
     local paint = {
@@ -1240,7 +1310,7 @@ function scene:create( event )
     
     two_off.fill = paint
     
-    two_on = display.newRect(725,35,44,44)
+    two_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/2.png"
     
     local paint = {
@@ -1250,7 +1320,7 @@ function scene:create( event )
     
     two_on.fill = paint
     
-    three_off = display.newRect(775,35,44,44)
+    three_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/3a.png"
     
     local paint = {
@@ -1260,7 +1330,7 @@ function scene:create( event )
     
     three_off.fill = paint
     
-    three_on = display.newRect(775,35,44,44)
+    three_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/3.png"
     
     local paint = {
@@ -1270,7 +1340,7 @@ function scene:create( event )
     
     three_on.fill = paint
     
-     four_off = display.newRect(825,35,44,44)
+     four_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/4a.png"
     
     local paint = {
@@ -1280,7 +1350,7 @@ function scene:create( event )
     
     four_off.fill = paint
     
-    four_on = display.newRect(825,35,44,44)
+    four_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/4.png"
     
     local paint = {
@@ -1290,7 +1360,7 @@ function scene:create( event )
     
     four_on.fill = paint
     
-    five_off = display.newRect(875,35,44,44)
+    five_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/5a.png"
     
     local paint = {
@@ -1300,7 +1370,7 @@ function scene:create( event )
     
     five_off.fill = paint
     
-    five_on = display.newRect(875,35,44,44)
+    five_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 5,GLOB.scoreImages["row1"],44,44)
      imgString = "/images/5.png"
     
     local paint = {
@@ -1310,7 +1380,7 @@ function scene:create( event )
     
     five_on.fill = paint
         
-    six_off = display.newRect(675,85,44,44)
+    six_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/6a.png"
     
     local paint = {
@@ -1320,7 +1390,7 @@ function scene:create( event )
     
     six_off.fill = paint
     
-    six_on = display.newRect(675,85,44,44)
+    six_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/6.png"
     
     local paint = {
@@ -1330,7 +1400,7 @@ function scene:create( event )
     
     six_on.fill = paint
     
-    seven_off = display.newRect(725,85,44,44)
+    seven_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/7a.png"
     
     local paint = {
@@ -1340,7 +1410,7 @@ function scene:create( event )
     
     seven_off.fill = paint
     
-    seven_on = display.newRect(725,85,44,44)
+    seven_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/7.png"
     
     local paint = {
@@ -1350,7 +1420,7 @@ function scene:create( event )
     
     seven_on.fill = paint
     
-    eight_off = display.newRect(775,85,44,44)
+    eight_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/8a.png"
     
     local paint = {
@@ -1360,7 +1430,7 @@ function scene:create( event )
     
     eight_off.fill = paint
     
-    eight_on = display.newRect(775,85,44,44)
+    eight_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 2,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/8.png"
     
     local paint = {
@@ -1370,7 +1440,7 @@ function scene:create( event )
     
     eight_on.fill = paint
     
-    nine_off = display.newRect(825,85,44,44)
+    nine_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/9a.png"
     
     local paint = {
@@ -1380,7 +1450,7 @@ function scene:create( event )
     
     nine_off.fill = paint
     
-    nine_on = display.newRect(825,85,44,44)
+    nine_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 3,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/9.png"
     
     local paint = {
@@ -1390,7 +1460,7 @@ function scene:create( event )
     
     nine_on.fill = paint
     
-    ten_off = display.newRect(875,85,44,44)
+    ten_off = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/10a.png"
     
     local paint = {
@@ -1400,7 +1470,7 @@ function scene:create( event )
     
     ten_off.fill = paint
     
-    ten_on = display.newRect(875,85,44,44)
+    ten_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "/images/10.png"
     
     local paint = {
@@ -1419,17 +1489,28 @@ function scene:create( event )
     seven_on.isVisible = false;
     eight_on.isVisible = false;
     nine_on.isVisible = false;
-    ten_on.isVisible = false;
+    ten_on.isVisible = false;    
     
-        
-    local function discardListener( event )
-        --local object = event.target
-        scene:DiscardHand(hand)
-    end    
-    
-    discardBtn:addEventListener( "tap", discardListener )  
-    mainGroup:insert(discardBtn)
-    --
+    mainGroup:insert(one_on)
+    mainGroup:insert(one_off)
+    mainGroup:insert(two_on)
+    mainGroup:insert(two_off)
+    mainGroup:insert(three_on)
+    mainGroup:insert(three_off)
+    mainGroup:insert(four_on)
+    mainGroup:insert(four_off)
+    mainGroup:insert(five_on)
+    mainGroup:insert(five_off)
+    mainGroup:insert(six_on)
+    mainGroup:insert(six_off)
+    mainGroup:insert(seven_on)
+    mainGroup:insert(seven_off)
+    mainGroup:insert(eight_on)
+    mainGroup:insert(eight_off)
+    mainGroup:insert(nine_on)
+    mainGroup:insert(nine_off)
+    mainGroup:insert(ten_on)
+    mainGroup:insert(ten_off)    
 end
 
 -- "scene:show()"
@@ -1439,10 +1520,8 @@ function scene:show( event )
    local phase = event.phase
 
    if ( phase == "will" ) then
-       
       -- Called when the scene is still off screen (but is about to come on screen).
    elseif ( phase == "did" ) then
-       
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
