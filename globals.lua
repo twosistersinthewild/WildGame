@@ -7,16 +7,16 @@ local globals = {}
 globals.cardHeight = 160
 globals.cardWidth = 100
 globals.discardXLoc = 75
-globals.discardYLoc = 125
+globals.discardYLoc = 275
 globals.drawPileXLoc = 75
-globals.drawPileYLoc = 300
-globals.gameLogXLoc = 200
-globals.gameLogYLoc = display.contentHeight - 210
+globals.drawPileYLoc = 100
+globals.gameLogXLoc = 775
+globals.gameLogYLoc = display.contentHeight - 100
 
 -- score button image locs
 globals.scoreImages = {}
 globals.scoreImages["row1"] = 35 -- y value
-globals.scoreImages["col1"] = 925 -- x value
+globals.scoreImages["col1"] = 875 -- x value
 
 
 

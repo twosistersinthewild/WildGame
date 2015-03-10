@@ -281,42 +281,70 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
 
             envType = utilities:DetermineEnvType(myEnvs, index)
 
-            -- see if any of the animal's places to live match the environment played
-            -- loop through and check all 4 against the current environment
-            -- check first for The Strohmstead. If it is present, then the card can be played
-            -- todo fix this. the strohmstead will become whatever environments are supported                            
-            -- by the previous cards played. currently it just lets a card be played regardless of 
-            -- what is below
-
-            -- todo: this may need tweaked. i think that the first plant card played will determine strohmstead type. 
-            --may need to store this as an added field to the strohmstead card data
-            -- this would be done when the first plant is played onto strohmstead
             if envType == "ST" then                                
-                    -- determine envs supported by plant played (in a table)
-                    local supportedEnvs = {}
+                -- determine envs supported by plant played (in a table)
+                local supportedEnvs = {}
 
-                    for pos = 1, 4 do
-                            if myEnvs[index][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
-                                    table.insert(supportedEnvs, myEnvs[index][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
-                            end                                    
+                for pos = 1, 4 do
+                    if myEnvs[index][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
+                        table.insert(supportedEnvs, myEnvs[index][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
+                    end                                    
+                end
+
+                local stIndex = 2
+
+                -- if there are more cards in the chain, continue checking each one
+                        -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
+                while myEnvs[index][availChain][stIndex] do
+                    local found = false   
+                    local count = #supportedEnvs
+
+                    while count > 0  do
+                        for cardEnvs = 1, 4 do
+                            if  supportedEnvs[count] ~= "" then
+                                if myEnvs[index][availChain][stIndex]["cardData"]["Env"..cardEnvs] == supportedEnvs[count] then
+                                    found = true
+                                    break
+                                end
+                            end
+                        end
+
+                        if not found then
+                            supportedEnvs[count] = nil
+                            --table.remove(supportedEnvs, count)
+                        end
+
+                        count = count - 1
                     end
 
-                    -- if there are more cards in the chain, continue checking each one
-                            -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
-                            -- can probably use table.remove to take them out of supportedEnvs table to fill the hole properly
+                    stIndex = stIndex + 1
+                end
 
-                    -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
-                    -- both the creature being played and possible envs
-                    -- todo: make this a reusable function so that it works for wild cards as well                                
+                -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
+                -- both the creature being played and possible envs
+                -- todo: make this a reusable function so that it works for wild cards as well                                
 
-                    envMatch = true
+                for myEnv = 1, 4 do
+                    local myEnvSt = "Env"..myEnv                            
+
+                    for thisInd = 1, #supportedEnvs do
+                        if myCard["cardData"][myEnvSt] ~= "" and supportedEnvs[thisInd] ~= "" and myCard["cardData"][myEnvSt] == supportedEnvs[thisInd] then
+                            envMatch = true
+                            break
+                        end
+                    end
+                    
+                    if envMatch then
+                        break
+                    end      
+                end
             else
                 for myEnv = 1, 4 do
                     local myEnvSt = "Env"..myEnv                            
 
                     if myCard["cardData"][myEnvSt] and myCard["cardData"][myEnvSt] == envType then
-                            envMatch = true
-                            break
+                        envMatch = true
+                        break
                     end
                 end
             end
@@ -377,20 +405,20 @@ function gameLogic:MigrateAnimal(myCard, myHand, myEnvs, index, availChain, who,
 
                         -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
                         if foodType == "Small Plant" or foodType == "Large Plant" then
-                                foodType = "Plant"
+                            foodType = "Plant"
                         end
 
                         -- loop through the card's available diets and try to match the chain
                         for diet = 1, 5 do
-                                local dietString = "Diet"..diet.."_Type"
+                            local dietString = "Diet"..diet.."_Type"
 
-                                -- if this is true, there is space and the last card in the chain is edible
-                                if myCard["cardData"][dietString] and myCard["cardData"][dietString] == foodType then
-                                        space = true
-                                        dietValue = diet
-                                        break
-                                end                                        
-                        end  
+                            -- if this is true, there is space and the last card in the chain is edible
+                            if myCard["cardData"][dietString] and myCard["cardData"][dietString] == foodType then
+                                space = true
+                                dietValue = diet
+                                break
+                            end                                        
+                    end  
                 end 
             else
                 space = true -- if not the first card being migrated, assume it can eat what is in front of it on the chain
@@ -406,35 +434,63 @@ function gameLogic:MigrateAnimal(myCard, myHand, myEnvs, index, availChain, who,
 
             envType = utilities:DetermineEnvType(myEnvs, index)
 
-            -- see if any of the animal's places to live match the environment played
-            -- loop through and check all 4 against the current environment
-            -- check first for The Strohmstead. If it is present, then the card can be played
-            -- todo fix this. the strohmstead will become whatever environments are supported                            
-            -- by the previous cards played. currently it just lets a card be played regardless of 
-            -- what is below
-
-            -- todo: this may need tweaked. i think that the first plant card played will determine strohmstead type. 
-            --may need to store this as an added field to the strohmstead card data
-            -- this would be done when the first plant is played onto strohmstead
             if envType == "ST" then                                
-                    -- determine envs supported by plant played (in a table)
-                    local supportedEnvs = {}
+                -- determine envs supported by plant played (in a table)
+                local supportedEnvs = {}
 
-                    for pos = 1, 4 do
-                            if myEnvs[index][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
-                                    table.insert(supportedEnvs, myEnvs[index][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
-                            end                                    
+                for pos = 1, 4 do
+                    if myEnvs[index][availChain][1]["cardData"]["Env"..pos] then -- access the plant in the chain's environments
+                        table.insert(supportedEnvs, myEnvs[index][availChain][1]["cardData"]["Env"..pos]) -- insert the env string that the plant supports
+                    end                                    
+                end
+
+                local stIndex = 2
+
+                -- if there are more cards in the chain, continue checking each one
+                        -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
+                while myEnvs[index][availChain][stIndex] do
+                    local found = false   
+                    local count = #supportedEnvs
+
+                    while count > 0  do
+                        for cardEnvs = 1, 4 do
+                            if  supportedEnvs[count] ~= "" then
+                                if myEnvs[index][availChain][stIndex]["cardData"]["Env"..cardEnvs] == supportedEnvs[count] then
+                                    found = true
+                                    break
+                                end
+                            end
+                        end
+
+                        if not found then
+                            supportedEnvs[count] = nil
+                            --table.remove(supportedEnvs, count)
+                        end
+
+                        count = count - 1
                     end
 
-                    -- if there are more cards in the chain, continue checking each one
-                            -- if the next creature in the chain doesn't support everything that the original plant did, nil it and fix table
-                            -- can probably use table.remove to take them out of supportedEnvs table to fill the hole properly
+                    stIndex = stIndex + 1
+                end
 
-                    -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
-                    -- both the creature being played and possible envs
-                    -- todo: make this a reusable function so that it works for wild cards as well                                
+                -- once all creatures in chain are checked do check similar to below but may need to be nested loop in order to check
+                -- both the creature being played and possible envs
+                -- todo: make this a reusable function so that it works for wild cards as well                                
 
-                    envMatch = true
+                for myEnv = 1, 4 do
+                    local myEnvSt = "Env"..myEnv                            
+
+                    for thisInd = 1, #supportedEnvs do
+                        if myCard["cardData"][myEnvSt] ~= "" and supportedEnvs[thisInd] ~= "" and myCard["cardData"][myEnvSt] == supportedEnvs[thisInd] then
+                            envMatch = true
+                            break
+                        end
+                    end
+                    
+                    if envMatch then
+                        break
+                    end      
+                end
             else
                 for myEnv = 1, 4 do
                     local myEnvSt = "Env"..myEnv                            
