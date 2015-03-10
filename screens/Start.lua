@@ -54,7 +54,7 @@ end
         local function logicDemoListener( event )
             local object = event.target
             --print( object.name.." TAPPED!" )
-            composer.gotoScene("screens.Game_test")
+            composer.gotoScene("screens.Game_test_aw")
         end    
 
         logicDemo:addEventListener( "tap", logicDemoListener )

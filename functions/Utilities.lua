@@ -81,10 +81,9 @@ function utilities:DetermineEnvType(myEnvs, ind)
     elseif cardName == "The Strohmstead" then
         envStr = "ST"
     elseif myEnvs[ind]["activeEnv"]["cardData"]["Type"] == "Wild" then
-        --todo need to check to make sure that another active chain on this card
-        -- hasn't already determined the type for the wild card'
-
-        -- todo need to determine how this is chosen and accounted for
+        -- making the wild cards have the same value as strohmstead since they will operate similarly as environments
+        -- note: this has nothing to do with strohmstead's ability to allow plant migration
+        envStr = "ST"
     end    
     
     return envStr 

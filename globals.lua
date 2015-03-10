@@ -21,6 +21,7 @@ globals.scoreImages["col1"] = 925 -- x value
 
 
 -- tables for locations for where cards should be played on the field
+globals.cardOffset = 35 -- physical space between cards on chain on screen
 globals.chainY = 110
 globals.envLocs = {}    
 globals.chainLocs = {}    
