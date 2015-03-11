@@ -31,7 +31,7 @@ function scene:create( event )
             elseif self.name == "howToPlay" then
                 
             elseif self.name == "settings" then
-                
+                composer.gotoScene("screens.Settings")
             elseif self.name == "exit" then
                 os.exit();
             end

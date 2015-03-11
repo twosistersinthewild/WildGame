@@ -41,7 +41,8 @@ local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
 local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
-
+local settings_on
+local settings_off
 
 local HandMovementListener
 
@@ -836,6 +837,23 @@ function scene:PlayCard()
     scene:AdjustScroller()
 end
 
+local function settingsListener(event)
+   local self = event.target
+    if(event.phase == "began") then
+        print("Touch Start")
+        --self.isVisible = true
+        self.alpha = 1
+        display.getCurrentStage():setFocus(event.target)
+    elseif(event.phase == "ended") then
+        print("Touch End")
+        --self.isVisible = true
+        self.alpha = .1
+        display.getCurrentStage():setFocus(nil)    
+        composer.gotoScene("screens.Settings")
+        
+    end;
+end
+
 -- reset back to original position, then adjust each card's x value. 
 -- this seems to fill in gaps properly and adjust the size as desired. 
 function scene:AdjustScroller()    
@@ -1480,6 +1498,30 @@ function scene:create( event )
     
     ten_on.fill = paint
     
+    --settings_on = display.newRect(GLOB.scoreImages["col1"] + 50 * 4,GLOB.scoreImages["row1"] + 50,44,44)
+    settings_on = display.newRect(600,600,44,44)
+    imgString = "/images/settings.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settings_on.fill = paint
+    settings_on:addEventListener("touch", settingsListener)
+    
+    --settings_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
+    settings_off = display.newRect(600,400,44,44)
+    imgString = "/images/settings-a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settings_off.fill = paint
+    settings_off:addEventListener("touch", settingsListener)
+    
     one_on.isVisible = false;
     two_on.isVisible = false;
     three_on.isVisible = false;
@@ -1489,7 +1531,8 @@ function scene:create( event )
     seven_on.isVisible = false;
     eight_on.isVisible = false;
     nine_on.isVisible = false;
-    ten_on.isVisible = false;    
+    ten_on.isVisible = false;   
+    settings_on.isVisible = false;
     
     mainGroup:insert(one_on)
     mainGroup:insert(one_off)
@@ -1511,6 +1554,8 @@ function scene:create( event )
     mainGroup:insert(nine_off)
     mainGroup:insert(ten_on)
     mainGroup:insert(ten_off)    
+    mainGroup:insert(settings_on)
+    mainGroup:insert(settings_off)
 end
 
 -- "scene:show()"
