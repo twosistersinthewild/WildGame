@@ -1524,12 +1524,27 @@ function scene:create( event )
         }
     end
     
-    local left_arrow = display.newRect(25, 580, 50, 50);
+    local left_arrow = display.newRect(25, 580, 16, 57);
     left_arrow:addEventListener("tap" , left_scroll_listener)
     
+    paint = {
+    type = "image",
+    filename = "images/arrow.png"
+    }     
+    
+    left_arrow.fill = paint    
+    
     --local right_arrow = display.newRect(800, 580, 50, 50);
-    local right_arrow = display.newRect(GLOB.cardWidth * 5 + 75, 500, 50, 50);
+    local right_arrow = display.newRect(GLOB.cardWidth * 5 + 75, 580, 16, 57);
     right_arrow:addEventListener("tap" , right_scroll_listener)
+    
+    paint = {
+    type = "image",
+    filename = "images/arrow.png"
+    }     
+    
+    right_arrow.fill = paint 
+    right_arrow.rotation = 180
 
     mainGroup:insert(left_arrow)
     mainGroup:insert(right_arrow)
@@ -1555,7 +1570,12 @@ function scene:create( event )
     -- no image shown currently, just a white rect
     -- todo change this
     discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight)
-    discardImage:setFillColor(.5,.5,.5)
+    paint = {
+        type = "image",
+        filename = "images/discard-pile.png"
+    }     
+    
+    discardImage.fill = paint    
     mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
@@ -1571,10 +1591,10 @@ function scene:create( event )
     local btnY = 400
     
     -- touch demo
-    local frontObject = display.newRect( 850, btnY, 100, 100 )
+    local frontObject = display.newRect( 550, btnY, 100, 100 )
     frontObject:setFillColor(.5,.5,.5)
     frontObject.name = "Front Object"
-    local frontLabel = display.newText( { text = "Play Card", x = 850, y = btnY, fontSize = 16 } )
+    local frontLabel = display.newText( { text = "Play Card", x = 550, y = btnY, fontSize = 16 } )
     frontLabel:setTextColor( 1 )
     
     local function tapListener( event )
@@ -1644,8 +1664,8 @@ function scene:create( event )
 
     mainGroup:insert(getHuman)
     mainGroup:insert(getHumanLabel) 
-    
-    local endTurnBtnOff = display.newRect( 800, 300, 87, 22 )
+
+    local endTurnBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
     
     imgString = "images/end-turn-a.png"
     
@@ -1655,8 +1675,8 @@ function scene:create( event )
     }
     
     endTurnBtnOff.fill = paint
-    
-    local endTurnBtnOn = display.newRect( 800, 300, 87, 22 )
+
+    local endTurnBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
     
     imgString = "images/end-turn.png"
     
@@ -1666,27 +1686,63 @@ function scene:create( event )
     }
     
     endTurnBtnOn.fill = paint
-    endTurnBtnOn.alpha = 1
+    endTurnBtnOn.alpha = .1
     
     local function endTurnListener( event ) 
         local self = event.target
         if(event.phase == "began") then
-            print("Touch Start")
-            --self.isVisible = true
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
-            print("Touch End")
-            --self.isVisible = true
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
         end 
     end    
     
-    endTurnBtnOn:addEventListener( "tap", endTurnListener )
+    endTurnBtnOn:addEventListener( "touch", endTurnListener )
+    mainGroup:insert(endTurnBtnOff)
     mainGroup:insert(endTurnBtnOn)  
-    mainGroup:insert(endTurnBtnOff) 
+    
+    local settingsBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
+    
+    imgString = "images/settings-a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settingsBtnOff.fill = paint
+
+    local settingsBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
+    
+    imgString = "images/settings.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settingsBtnOn.fill = paint
+    settingsBtnOn.alpha = .1
+    
+    local function settingsBtnListener( event ) 
+        local self = event.target
+        if(event.phase == "began") then
+            self.alpha = 1
+            display.getCurrentStage():setFocus(event.target)
+        elseif(event.phase == "ended") then
+            self.alpha = .1
+            display.getCurrentStage():setFocus(nil)
+            -- todo do something ehere
+        end 
+    end    
+    
+    settingsBtnOn:addEventListener( "touch", settingsBtnListener )
+    mainGroup:insert(settingsBtnOff)
+    mainGroup:insert(settingsBtnOn)     
+     
     
     local function drawCardListener( event )
         local object = event.target
