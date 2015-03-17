@@ -505,7 +505,7 @@ function FieldMovementListener(event)
                                     if j == myIndex then
                                         played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "first")
                                     else
-                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "other")
+                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "other")
                                     end
 
                                     if not played then 
@@ -527,6 +527,10 @@ function FieldMovementListener(event)
                                 played, playedString = gameLogic:PlayAnimal(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")
                                 audio.play(click)
                                 scene:GameLogAdd(playedString)
+                                
+                                if not played then
+                                    break
+                                end
                             end                           
 
                             break
@@ -1459,7 +1463,7 @@ function scene:create( event )
     
     local imgString, paint, filename
  
-    local background = display.newImage("images/bg.png")
+    local background = display.newImage("images/ORIGINAL-background-green.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -1474,7 +1478,7 @@ function scene:create( event )
     logScroll = widget.newScrollView
     {
         width = logScrollWidth,
-        height = 80,
+        height = 100,
         horizontalScrollDisabled = true,
         isBounceEnabled = false,
         hideScrollBar = false,
@@ -1497,7 +1501,7 @@ function scene:create( event )
     }
                 
     --location
-    scrollView.x = display.contentWidth / 2;    
+    scrollView.x = GLOB.cardWidth * 2.5 + 50;    
     scrollView.y = display.contentHeight - 80;    
     
     mainGroup:insert(scrollView)
@@ -1520,12 +1524,27 @@ function scene:create( event )
         }
     end
     
-    local left_arrow = display.newRect(200, 580, 50, 50);
+    local left_arrow = display.newRect(25, 580, 16, 57);
     left_arrow:addEventListener("tap" , left_scroll_listener)
     
+    paint = {
+    type = "image",
+    filename = "images/arrow.png"
+    }     
+    
+    left_arrow.fill = paint    
+    
     --local right_arrow = display.newRect(800, 580, 50, 50);
-    local right_arrow = display.newRect(800, 500, 50, 50);
+    local right_arrow = display.newRect(GLOB.cardWidth * 5 + 75, 580, 16, 57);
     right_arrow:addEventListener("tap" , right_scroll_listener)
+    
+    paint = {
+    type = "image",
+    filename = "images/arrow.png"
+    }     
+    
+    right_arrow.fill = paint 
+    right_arrow.rotation = 180
 
     mainGroup:insert(left_arrow)
     mainGroup:insert(right_arrow)
@@ -1551,7 +1570,12 @@ function scene:create( event )
     -- no image shown currently, just a white rect
     -- todo change this
     discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight)
-    discardImage:setFillColor(.5,.5,.5)
+    paint = {
+        type = "image",
+        filename = "images/discard-pile.png"
+    }     
+    
+    discardImage.fill = paint    
     mainGroup:insert(discardImage)             
         
     -- show the back of the card for the draw pile
@@ -1567,10 +1591,10 @@ function scene:create( event )
     local btnY = 400
     
     -- touch demo
-    local frontObject = display.newRect( 850, btnY, 100, 100 )
+    local frontObject = display.newRect( 550, btnY, 100, 100 )
     frontObject:setFillColor(.5,.5,.5)
     frontObject.name = "Front Object"
-    local frontLabel = display.newText( { text = "Play Card", x = 850, y = btnY, fontSize = 16 } )
+    local frontLabel = display.newText( { text = "Play Card", x = 550, y = btnY, fontSize = 16 } )
     frontLabel:setTextColor( 1 )
     
     local function tapListener( event )
@@ -1595,7 +1619,7 @@ function scene:create( event )
         --print( object.name.." TAPPED!" )
         scene:ShowOpponentCards(1)
     end
-    
+
     showOpp:addEventListener( "tap", tapListener )
 
     mainGroup:insert(showOpp)
@@ -1616,9 +1640,9 @@ function scene:create( event )
     oppGroup:insert(showMain)
     oppGroup:insert(showMainLabel)       
     
-    local getHuman = display.newRect( 750, btnY + 100, 100, 100 )
+    local getHuman = display.newRect( 650, btnY, 100, 100 )
     getHuman:setFillColor(.5,.5,.5)
-    local getHumanLabel = display.newText( { text = "Get Human", x = 750, y = btnY + 100, fontSize = 16 } )
+    local getHumanLabel = display.newText( { text = "Get Human", x = 650, y = btnY, fontSize = 16 } )
     getHumanLabel:setTextColor( 1 )
     
     local function tapListener( event )
@@ -1629,33 +1653,96 @@ function scene:create( event )
         scene:DebugGetCard(1) -- env
         scene:DebugGetCard(26) -- plant
         scene:DebugGetCard(42) -- inv
-        scene:DebugGetCard(63)        
-        
+        scene:DebugGetCard(63)  
+        scene:DebugGetCard(60)
+        scene:DebugGetCard(36)
+        scene:DebugGetCard(29)
+        scene:DebugGetCard(69)
     end
     
     getHuman:addEventListener( "tap", tapListener )
 
     mainGroup:insert(getHuman)
-    mainGroup:insert(getHumanLabel)        
+    mainGroup:insert(getHumanLabel) 
+
+    local endTurnBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
     
-    
-    local endTurnBtn = display.newRect( 75, 575, 200 * .75, 109 * .75 )
-    
-    imgString = "images/button-end-turn.jpg"
+    imgString = "images/end-turn-a.png"
     
     local paint = {
         type = "image",
         filename = imgString
     }
     
-    endTurnBtn.fill = paint   
+    endTurnBtnOff.fill = paint
+
+    local endTurnBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
     
-    local function endTurnListener( event )
-        scene:EndTurn()
+    imgString = "images/end-turn.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    endTurnBtnOn.fill = paint
+    endTurnBtnOn.alpha = .1
+    
+    local function endTurnListener( event ) 
+        local self = event.target
+        if(event.phase == "began") then
+            self.alpha = 1
+            display.getCurrentStage():setFocus(event.target)
+        elseif(event.phase == "ended") then
+            self.alpha = .1
+            display.getCurrentStage():setFocus(nil)
+            scene:EndTurn()
+        end 
     end    
     
-    endTurnBtn:addEventListener( "tap", endTurnListener )
-    mainGroup:insert(endTurnBtn)   
+    endTurnBtnOn:addEventListener( "touch", endTurnListener )
+    mainGroup:insert(endTurnBtnOff)
+    mainGroup:insert(endTurnBtnOn)  
+    
+    local settingsBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
+    
+    imgString = "images/settings-a.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settingsBtnOff.fill = paint
+
+    local settingsBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
+    
+    imgString = "images/settings.png"
+    
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    
+    settingsBtnOn.fill = paint
+    settingsBtnOn.alpha = .1
+    
+    local function settingsBtnListener( event ) 
+        local self = event.target
+        if(event.phase == "began") then
+            self.alpha = 1
+            display.getCurrentStage():setFocus(event.target)
+        elseif(event.phase == "ended") then
+            self.alpha = .1
+            display.getCurrentStage():setFocus(nil)
+            -- todo do something ehere
+        end 
+    end    
+    
+    settingsBtnOn:addEventListener( "touch", settingsBtnListener )
+    mainGroup:insert(settingsBtnOff)
+    mainGroup:insert(settingsBtnOn)     
+     
     
     local function drawCardListener( event )
         local object = event.target
@@ -1675,6 +1762,7 @@ function scene:create( event )
     }
     
     one_off.fill = paint
+    one_off.alpha = .33
     
     one_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
     imgString = "images/1.png"
@@ -1686,7 +1774,7 @@ function scene:create( event )
     
     one_on.fill = paint
     
-    two_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+    two_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
      imgString = "images/2a.png"
     
     local paint = {
@@ -1695,8 +1783,9 @@ function scene:create( event )
     }
     
     two_off.fill = paint
+    two_off.alpha = .33
     
-    two_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+    two_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
      imgString = "images/2.png"
     
     local paint = {
@@ -1706,7 +1795,7 @@ function scene:create( event )
     
     two_on.fill = paint
     
-    three_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    three_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "images/3a.png"
     
     local paint = {
@@ -1715,8 +1804,9 @@ function scene:create( event )
     }
     
     three_off.fill = paint
+    three_off.alpha = .33
     
-    three_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    three_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "images/3.png"
     
     local paint = {
@@ -1726,7 +1816,7 @@ function scene:create( event )
     
     three_on.fill = paint
     
-     four_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
+     four_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "images/4a.png"
     
     local paint = {
@@ -1735,8 +1825,9 @@ function scene:create( event )
     }
     
     four_off.fill = paint
+    four_off.alpha = .33
     
-    four_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
+    four_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
      imgString = "images/4.png"
     
     local paint = {
@@ -1746,7 +1837,7 @@ function scene:create( event )
     
     four_on.fill = paint
     
-    five_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    five_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
      imgString = "images/5a.png"
     
     local paint = {
@@ -1755,8 +1846,9 @@ function scene:create( event )
     }
     
     five_off.fill = paint
+    five_off.alpha = .33
     
-    five_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    five_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
      imgString = "images/5.png"
     
     local paint = {
@@ -1766,7 +1858,7 @@ function scene:create( event )
     
     five_on.fill = paint
         
-    six_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 5,44,44)
+    six_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
      imgString = "images/6a.png"
     
     local paint = {
@@ -1775,8 +1867,9 @@ function scene:create( event )
     }
     
     six_off.fill = paint
+    six_off.alpha = .33
     
-    six_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 5,44,44)
+    six_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
      imgString = "images/6.png"
     
     local paint = {
@@ -1786,7 +1879,7 @@ function scene:create( event )
     
     six_on.fill = paint
     
-    seven_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 6,44,44)
+    seven_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
      imgString = "images/7a.png"
     
     local paint = {
@@ -1795,8 +1888,9 @@ function scene:create( event )
     }
     
     seven_off.fill = paint
+    seven_off.alpha = .33
     
-    seven_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 6,44,44)
+    seven_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
      imgString = "images/7.png"
     
     local paint = {
@@ -1806,7 +1900,7 @@ function scene:create( event )
     
     seven_on.fill = paint
     
-    eight_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 7,44,44)
+    eight_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
      imgString = "images/8a.png"
     
     local paint = {
@@ -1815,8 +1909,9 @@ function scene:create( event )
     }
     
     eight_off.fill = paint
+    eight_off.alpha = .33
     
-    eight_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 7,44,44)
+    eight_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
      imgString = "images/8.png"
     
     local paint = {
@@ -1826,7 +1921,7 @@ function scene:create( event )
     
     eight_on.fill = paint
     
-    nine_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 8,44,44)
+    nine_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
      imgString = "images/9a.png"
     
     local paint = {
@@ -1835,8 +1930,9 @@ function scene:create( event )
     }
     
     nine_off.fill = paint
+    nine_off.alpha = .33
     
-    nine_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 8,44,44)
+    nine_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
      imgString = "images/9.png"
     
     local paint = {
@@ -1846,7 +1942,7 @@ function scene:create( event )
     
     nine_on.fill = paint
     
-    ten_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 9,44,44)
+    ten_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
      imgString = "images/10a.png"
     
     local paint = {
@@ -1855,8 +1951,9 @@ function scene:create( event )
     }
     
     ten_off.fill = paint
+    ten_off.alpha = .33
     
-    ten_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 9,44,44)
+    ten_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
      imgString = "images/10.png"
     
     local paint = {
@@ -1896,7 +1993,8 @@ function scene:create( event )
     mainGroup:insert(nine_on)
     mainGroup:insert(nine_off)
     mainGroup:insert(ten_on)
-    mainGroup:insert(ten_off)    
+    mainGroup:insert(ten_off)  
+    
 end
 
 -- "scene:show()"
