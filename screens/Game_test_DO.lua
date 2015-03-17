@@ -49,6 +49,8 @@ local HandMovementListener
 -- sound effects
 local cardSlide
 local click
+local sound
+--local sound = event.params.pSound
 
 ---------------------------------------------------------------------------------
 
@@ -159,7 +161,9 @@ local function HandMovementListener(event)
 
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        if sound then
+            audio.play(cardSlide)
+        end
         mainGroup:insert(self)
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
@@ -239,7 +243,9 @@ local function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
             event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
@@ -842,14 +848,18 @@ local function settingsListener(event)
     if(event.phase == "began") then
         print("Touch Start")
         --self.isVisible = true
-        self.alpha = 1
+        self.alpha = .1
         display.getCurrentStage():setFocus(event.target)
     elseif(event.phase == "ended") then
         print("Touch End")
         --self.isVisible = true
-        self.alpha = .1
-        display.getCurrentStage():setFocus(nil)    
-        composer.gotoScene("screens.Settings")
+        self.alpha = 1
+        display.getCurrentStage():setFocus(nil)   
+        local options = 
+        {
+            params = {pSound = sound}
+        }
+        composer.gotoScene("screens.Settings", options)
         
     end;
 end
@@ -970,7 +980,9 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            audio.play(cardSlide)
+            if sound then
+                audio.play(cardSlide)
+            end
             transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
@@ -1099,11 +1111,14 @@ end
 
 
 function scene:create( event )
-
+ 
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
-
+    sound = event.params.pSound
+    
+    print(sound)
+    
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup)
@@ -1113,12 +1128,14 @@ function scene:create( event )
     oppGroup.isVisible = false
     
     local imgString, paint, filename
- 
-    local background = display.newImage("images/bg.png")
+    
+    --[[
+    local background = display.newImage("images/ORIGINAL-background-green.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
     mainGroup:insert(background)
+    ]]--
     
     overlay = display.newRect(display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight)    
     mainGroup:insert(overlay)

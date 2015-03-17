@@ -7,15 +7,22 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 -- local forward references should go here
-
+local sound
 ---------------------------------------------------------------------------------
 
 
 function scene:create( event )
     local sceneGroup = self.view
+    --sound = event.params.pSound
     
     local function menuListener(event)
         local self = event.target
+        
+        local options = 
+        {
+            params = {pSound = sound}
+        }
+        
         if(event.phase == "began") then
             print("Touch Start")
             --self.isVisible = true
@@ -27,11 +34,11 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             if self.name == "play" then
-                composer.gotoScene("screens.Game_test_DO")
+                composer.gotoScene("screens.Game_test_DO", options)
             elseif self.name == "howToPlay" then
                 
             elseif self.name == "settings" then
-                composer.gotoScene("screens.Settings")
+                composer.gotoScene("screens.Settings", options)
             elseif self.name == "exit" then
                 os.exit();
             end
