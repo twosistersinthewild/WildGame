@@ -36,15 +36,7 @@ function scene:create( event )
             if self.name == "play" then
                 composer.gotoScene("screens.Game_test_DO", options)
             elseif self.name == "howToPlay" then
-                local options = {
-                    feedName = "video.rss",
-                    feedURL = "http://gdata.youtube.com/feeds/mobile/users/CoronaLabs/uploads?max-results=20&alt=rss&orderby=published&format=1",
-                    icons = "fixed",
-                    displayMode = "videoviewer",
-                    pageTitle = "Corona Videos"
-                }
-                --composer.removeHidden()
-                composer.gotoScene("screens.tutorial", {time=250, effect="crossFade", params = options})
+                system.openURL( "https://www.youtube.com/watch?v=nlcIKh6sBtc" )
             elseif self.name == "settings" then
                 composer.gotoScene("screens.Settings", options)
             elseif self.name == "exit" then
