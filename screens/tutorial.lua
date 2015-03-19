@@ -1444,7 +1444,7 @@ function scene:ScoreImageChange(myEco)
 end
 
 function scene:runTutorial()
-  scene:pla  
+  --scene:pla  
 end
 
 function scene:create( event )
