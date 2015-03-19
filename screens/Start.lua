@@ -62,7 +62,7 @@ end
             {
                 params = {pSound = true}
             }
-            composer.gotoScene("screens.Game_test_DO", options)
+            composer.gotoScene("screens.Game_test", options)
         end    
 
         logicDemo:addEventListener( "tap", logicDemoListener )
