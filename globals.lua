@@ -10,6 +10,8 @@ globals.discardXLoc = 75
 globals.discardYLoc = 275
 globals.drawPileXLoc = 75
 globals.drawPileYLoc = 100
+globals.spCardXLoc = 75
+globals.spCardYLoc = 425
 globals.gameLogXLoc = 775
 globals.gameLogYLoc = display.contentHeight - 100
 

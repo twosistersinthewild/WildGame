@@ -23,6 +23,7 @@ local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
 local tapCounter = 0 -- flag
+local strohm = false -- flag for when strohmstead is on playfield
 -- todo make sure strohm flag is set properly when strohmstead is played and set when it is discarded
 
 -- variables for the scroller x and y
@@ -40,8 +41,7 @@ local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
 local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
-
-local cardMoving = false -- aww flag
+local settingsBtnOff, settingsBtnOn
 
 local HandMovementListener
 local FieldMovementListener
@@ -50,7 +50,7 @@ local DiscardMovementListener
 -- sound effects
 local cardSlide
 local click
-
+local sound
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -96,12 +96,13 @@ function DiscardMovementListener(event)
         self.originalY = self.y -- store starting y
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        if sound then
+            audio.play(cardSlide)
+        end
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
-        cardMoving = true --aww
-    elseif event.phase == "moved" and cardMoving then -- aww
+    elseif event.phase == "moved" then
         local myX, myY
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
         -- before adding that check it would sometimes crash and say that mark x or y had a nil value
@@ -137,7 +138,7 @@ function DiscardMovementListener(event)
         end
         
         self.x, self.y = myX, myY    -- move object based on calculations above 
-    elseif event.phase == "ended" and cardMoving then -- aww
+    elseif event.phase == "ended" then
         display.getCurrentStage():setFocus(nil)
 
         local validLoc = ""
@@ -160,7 +161,9 @@ function DiscardMovementListener(event)
             self.x = scrollXPos
             self.y = scrollYPos
             scrollXPos = scrollXPos + GLOB.cardWidth
-            audio.play(click)
+            if(sound) then
+                audio.play(click)
+            end
             scene:GameLogAdd(self["cardData"]["Name"].." was drawn from the discard pile.")
         else
             self.x = self.originalX
@@ -169,7 +172,6 @@ function DiscardMovementListener(event)
         end   
 
         scene:AdjustScroller()
-        cardMoving = false --aww
     end
 
     return true
@@ -193,8 +195,7 @@ function FieldMovementListener(event)
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
-        cardMoving = true -- aww
-    elseif event.phase == "moved" and cardMoving then -- aww
+    elseif event.phase == "moved" then
         local myX, myY
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
         -- before adding that check it would sometimes crash and say that mark x or y had a nil value
@@ -230,7 +231,7 @@ function FieldMovementListener(event)
         end
         
         self.x, self.y = myX, myY    -- move object based on calculations above 
-    elseif event.phase == "ended" and cardMoving then -- try to click into place -- aww
+    elseif event.phase == "ended" then -- try to click into place
         display.getCurrentStage():setFocus(nil)
         
         if self.x ~= self.originalX and self.y ~= self.originalY then
@@ -255,7 +256,7 @@ function FieldMovementListener(event)
 
             local envNum, myChain, myIndex
 
-            if not validLoc then -- snap back
+            if not validLoc or validLoc == "special" then -- snap back -- aww added special condition
                 self.x = self.originalX
                 self.y = self.originalY
             elseif validLoc == "discard" then
@@ -407,12 +408,18 @@ function FieldMovementListener(event)
                     self.y = self.originalY   
                     self["rotation"] = 270
                     gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
-                elseif (gameLogic:GetStat(self, "Type") == "Small Plant" or gameLogic:GetStat(self, "Type") == "Large Plant") and not scene:SearchForStrohm() then -- aww    
-                    -- plants will not migrate unless stromstead is active
-                    scene:GameLogAdd("Plants cannot be moved back into the hand.")
-                    self.x = self.originalX
-                    self.y = self.originalY  
-                    gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
+                elseif gameLogic:GetStat(self, "Value") == 2 or gameLogic:GetStat(self, "Value") == 3 then    
+                    if not strohm then
+                        scene:GameLogAdd("Plants cannot be moved back into the hand.")
+                        self.x = self.originalX
+                        self.y = self.originalY  
+                        gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
+                    else
+                        -- todo write this
+
+                        -- plants can be migrated
+
+                    end
                 else -- they can move back to hand
                     envNum, myChain, myIndex = gameLogic:GetMyEnv(self, activeEnvs)
 
@@ -432,7 +439,10 @@ function FieldMovementListener(event)
 
                             myCard:removeEventListener("touch", FieldMovementListener)
                             event.phase = nil
-                            
+
+                            -- set value back to default 1
+                            gameLogic:SetStat(myCard, "Value", 1) 
+
                             -- insert card into hand
                             table.insert(hand, activeEnvs[envNum][myChain][ind])
                             local myImg = hand[#hand]
@@ -445,18 +455,7 @@ function FieldMovementListener(event)
                             --myImg:addEventListener( "tap", ZoomTapListener )
                             scene:AdjustScroller()        
 
-                            -- aww whole rest of this part changed
-                            if gameLogic:GetStat(myCard, "Value") == 2 or gameLogic:GetStat(myCard, "Value") == 3 then
-                                activeEnvs[envNum][myChain] = nil -- nil out the chain if it is a plant or human working as plant
-                            else
-                                activeEnvs[envNum][myChain][ind] = nil -- else just nil the card from playfield
-                            end    
-
-                            -- set value back to default 1 if not a plant
-                            if not gameLogic:GetStat(self, "Type") == "Small Plant" and not gameLogic:GetStat(self, "Type") == "Large Plant" then -- aww
-                                gameLogic:SetStat(myCard, "Value", 1) 
-                            end            
-                             
+                            activeEnvs[envNum][myChain][ind] = nil 
                             chainCount = chainCount + 1
                         end    
                     end   
@@ -468,45 +467,33 @@ function FieldMovementListener(event)
                     self.x = self.originalX
                     self.y = self.originalY   
                     self["rotation"] = 270
-                elseif (gameLogic:GetStat(self, "Type") == "Small Plant" or gameLogic:GetStat(self, "Type") == "Large Plant") and not scene:SearchForStrohm() then -- aww    
-                    -- plants will not migrate unless stromstead is active
-                    scene:GameLogAdd("Plants cannot be moved back into the hand.")
-                    self.x = self.originalX
-                    self.y = self.originalY  
-                    gameLogic:BringToFront(self["cardData"]["ID"], activeEnvs)
-                else -- todo start here for plant migration
+                elseif gameLogic:GetStat(self, "Value") == 2 or gameLogic:GetStat(self, "Value") == 3 then    
+                    if not strohm then
+                        scene:GameLogAdd("Plants cannot migrate.")
+                        self.x = self.originalX
+                        self.y = self.originalY  
+                    else
+                        -- todo write this
+                        -- could just add additonal check for above and let plant migration behave like animals
+                        -- plants can be migrated
+
+                    end 
+                else
                     envNum, myChain, myIndex = gameLogic:GetMyEnv(self, activeEnvs)
                     local canMigrate = false
                     local iterations = #activeEnvs[envNum][myChain]-- - myIndex + 1 -- number of cards trying to be moved
                     local newChain = ""
-                    local plantPlayed = false -- aww
-                    
+
                     -- determine what chain is being played onto
-                    for i = 1, 3 do                          
+                    for i = 1, 3 do    
                         if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
                             if validLoc == "env"..i.."chain1" and (myChain ~= "chain1" or envNum ~= i) then                                
                                 newChain = "chain1"
                                 for j = myIndex, iterations do
-                                    if j == myIndex then -- aww
-                                        if activeEnvs[envNum][myChain][j]["cardData"]["Value"] == 2 or activeEnvs[envNum][myChain][j]["cardData"]["Value"] == 3 then
-                                            played = gameLogic:MigratePlant(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player")
-                                            
-                                            if played then -- aww
-                                                plantPlayed = true
-                                            end
-                                        else
-                                            if plantPlayed then
-                                                played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
-                                            else
-                                                played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "first")
-                                            end
-                                        end
+                                    if j == myIndex then
+                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "first")
                                     else
-                                        if plantPlayed then
-                                            played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
-                                        else
-                                            played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "other")
-                                        end
+                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "other")
                                     end
 
                                     if not played then 
@@ -519,26 +506,10 @@ function FieldMovementListener(event)
                             elseif validLoc == "env"..i.."chain2" and (myChain ~= "chain2" or envNum ~= i) then
                                 newChain = "chain2"
                                 for j = myIndex, iterations do
-                                    if j == myIndex then -- aww
-                                        if activeEnvs[envNum][myChain][j]["cardData"]["Value"] == 2 or activeEnvs[envNum][myChain][j]["cardData"]["Value"] == 3 then
-                                            played = gameLogic:MigratePlant(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player")
-                                            
-                                            if played then -- aww
-                                                plantPlayed = true
-                                            end 
-                                        else
-                                            if plantPlayed then
-						played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
-                                            else
-                                                played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "first")
-                                            end
-                                        end
+                                    if j == myIndex then
+                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "first")
                                     else
-                                        if plantPlayed then
-                                            played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
-                                        else                                        
-                                            played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "other")
-                                        end
+                                        played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "other")
                                     end
 
                                     if not played then 
@@ -556,24 +527,18 @@ function FieldMovementListener(event)
                             self.y = self.originalY  
                             print(self.x.." "..self.y)
                         else -- move all of the cards now    
-                            while activeEnvs[envNum][myChain] and activeEnvs[envNum][myChain][myIndex] do --aww 
-                                if activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 2 or activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 3 then -- aww
-                                    played, playedString = gameLogic:PlayPlant(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")                             
-                                else
-                                    played, playedString = gameLogic:PlayAnimal(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")                             
+                            while activeEnvs[envNum][myChain][myIndex] do  
+                                played, playedString = gameLogic:PlayAnimal(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")
+                                if sound then
+                                    audio.play(click)
                                 end
-                                audio.play(click)
                                 scene:GameLogAdd(playedString)
                                 
                                 if not played then
                                     break
                                 end
                             end                           
-                            
-                            if plantPlayed then
-                                activeEnvs[envNum][myChain] = nil -- nil the chain when the plant is migrated                                
-                            end
-                            
+
                             break
                         end                       
                     end  
@@ -585,8 +550,6 @@ function FieldMovementListener(event)
             scene:ScoreImageChange(curEco)
             gameLogic:RepositionCards(activeEnvs)
         end
-        
-        cardMoving = false -- aww
     end
     
     
@@ -603,16 +566,17 @@ function HandMovementListener(event)
         self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        self.markY = self.y    -- store y location of object
+        if sound then
+            audio.play(cardSlide)
+        end
         mainGroup:insert(self)
         self:toFront()
         -- todo see if getCurrentStage can be used to pass to another file to manipulate controls
         display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
         print(self.markX, self.markY, self.x, self.y);
-        cardMoving = true -- aww flag
-    elseif event.phase == "moved" and cardMoving then -- aww
+    elseif event.phase == "moved" then
         local myX, myY
         -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
         -- before adding that check it would sometimes crash and say that mark x or y had a nil value
@@ -648,7 +612,7 @@ function HandMovementListener(event)
         end
         
         self.x, self.y = myX, myY    -- move object based on calculations above 
-    elseif event.phase == "ended" and cardMoving then -- aww
+    elseif event.phase == "ended" then
         -- try to click into place
             -- make sure to move card to appropriate table (env, discard, etc)
             -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
@@ -661,17 +625,22 @@ function HandMovementListener(event)
         local validLoc = ""
         local played = false
         local playedString = ""
-
+        
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self, activeEnvs)
-
-
+        
+        
         if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
             scrollView:insert(self)
         elseif validLoc == "discard" then
             self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this                       
             event.phase = nil -- prevent the next listener added from activating its ended phase
             scene:DiscardCard(self, hand, "hand")
+        elseif validLoc == "special" then -- aww
+            -- try to put grandpa in special area
+            
+            
+            
         elseif validLoc ~= "" then
             for i = 1, 3 do
                 if validLoc == "env"..i.."chain1" or validLoc == "env"..i.."chain2" then
@@ -698,10 +667,10 @@ function HandMovementListener(event)
                        end
                    -- try to play a wild card in any available niche
                    elseif self["cardData"].Type == "Wild" then
-
+                       
                         -- try to play as env
                         played, playedString = gameLogic:PlayEnvironment(self, hand, activeEnvs, i, "Player")
-
+                        
                         if played then
                             break 
                         else
@@ -711,7 +680,7 @@ function HandMovementListener(event)
                             elseif validLoc == "env"..i.."chain2" then
                                  played, playedString = gameLogic:PlayPlant(self, hand, activeEnvs, i, "chain2", "Player")
                             end
-
+                            
                             if played then
                                 break
                             else
@@ -733,14 +702,16 @@ function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
             event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
             self:addEventListener("touch", FieldMovementListener)
             -- todo add any new listener that the card may need
         end
-
+        
         if playedString ~= "" then
             scene:GameLogAdd(playedString)
         end
@@ -750,8 +721,6 @@ function HandMovementListener(event)
         scene:AdjustScroller()
         local curEco = gameLogic:CalculateScore(activeEnvs)
         scene:ScoreImageChange(curEco)
-        
-        cardMoving = false -- aww
     end
 
     return true
@@ -943,20 +912,6 @@ function scene:drawCards( num, myHand, who )
     deckIndex = deckIndex + numPlayed
 end
 
--- aww
--- search for Strohmstead to see if it is in play
-function scene:SearchForStrohm()
-    for i = 1, 3 do
-        if activeEnvs[i] then
-            if activeEnvs[i]["activeEnv"]["cardData"]["ID"] == 22 then
-                return true
-            end            
-        end
-    end 
-    
-    return false
-end
-
 --for testing to get a specific card from deck
 function scene:DebugGetCard(id)
     --local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
@@ -1117,7 +1072,9 @@ function scene:PlayCard()
         if played then
             -- loop up through deck from where card was played to fill empty hole
             -- if the card played was the last card in hand
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(myCard) 
             myCard:removeEventListener("touch", HandMovementListener)
             myCard:addEventListener("touch", FieldMovementListener)
@@ -1283,7 +1240,9 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            audio.play(cardSlide)            
+            if sound then
+                audio.play(cardSlide)            
+            end
             transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
             cpuActiveEnvs[oppNum][i]["activeEnv"]:toFront()
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
@@ -1512,7 +1471,8 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
-
+    sound = event.params.pSound
+    
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup)
@@ -1647,6 +1607,26 @@ function scene:create( event )
     
     cardBack.fill = paint
     mainGroup:insert(cardBack)
+       
+    -- aww area for sp cards
+    local spCards = display.newRect( GLOB.spCardXLoc, GLOB.spCardYLoc, 100, 100 )
+    spCards:setFillColor(.5,.5,.5)
+    local spCardsLabel = display.newText( { text = "Special Cards", x = GLOB.spCardXLoc, y = GLOB.spCardYLoc, fontSize = 16 } )
+    spCardsLabel:setTextColor( 1 )
+    spCards.alpha = 0.5
+    
+    local function tapListener( event )
+        local object = event.target
+        --print( object.name.." TAPPED!" )
+        --scene:PlayCard()
+    end
+    
+    spCardsLabel:addEventListener( "tap", tapListener )
+
+    mainGroup:insert(spCards)
+    mainGroup:insert(spCardsLabel)       
+    -- aww end area for sp cards
+       
        
     local btnY = 400
     
@@ -1789,6 +1769,10 @@ function scene:create( event )
     
     local function settingsBtnListener( event ) 
         local self = event.target
+        local options = 
+        {
+            params = {psound = sound}
+        }
         if(event.phase == "began") then
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
@@ -1796,6 +1780,7 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             -- todo do something ehere
+            composer.gotoScene("screens.Settings", options)
         end 
     end    
     
@@ -2065,6 +2050,7 @@ function scene:show( event )
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
+      sound = event.params.pSound
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.

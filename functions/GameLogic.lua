@@ -25,6 +25,10 @@ function gameLogic:ValidLocation(myCard, myEnvs)
     if myCard.x >= GLOB.discardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.discardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.discardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.discardYLoc + GLOB.cardHeight/2 then
         hotspot = "discard"
         
+    -- over special card area
+    if myCard.x >= GLOB.spCardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.spCardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.spCardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.spCardYLoc + GLOB.cardHeight/2 then
+        hotspot = "special"    
+        
     -- over hand
     elseif myCard.x >= (display.contentWidth / 2 - GLOB.cardWidth * 2.5) and myCard.x <= (display.contentWidth / 2 + GLOB.cardWidth * 2.5) and myCard.y >= display.contentHeight - GLOB.cardHeight and myCard.y <= display.contentHeight then
         hotspot = "hand"
