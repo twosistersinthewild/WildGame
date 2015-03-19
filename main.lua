@@ -1,5 +1,4 @@
-require "CiderDebugger";
-local composer = require "composer"
+require "CiderDebugger";local composer = require "composer"
 
 
 -- can comment this out to get predicable values for testing
