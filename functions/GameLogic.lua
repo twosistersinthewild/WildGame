@@ -515,6 +515,74 @@ function gameLogic:MigrateAnimal(myCard, myHand, myEnvs, index, availChain, who,
     end
 end
 
+function gameLogic:MigratePlant(myCard, myHand, myEnvs, index, availChain, who)
+    -- must have an environment to play on
+    local played = false
+    local playedString = ""
+
+    -- make sure an environment has already been played in this spot
+    if myEnvs[index] then             
+        -- if the chain doesn't exist yet, a plant can be played on it
+        if not myEnvs[index][availChain] then
+            -- make sure types match
+            local envMatch = false
+
+            --todo might need to check 2 envs for nature bites back
+            local envType = ""
+            envType = utilities:DetermineEnvType(myEnvs, index)
+
+            -- see if any of the plants places to live match the environment played
+            -- loop through and check all 4 against the current environment
+            -- check first for The Strohmstead. If it is present, then the card can be played
+            -- todo might want to check here for when first plant is played on strohmstead. 
+            -- this plant will determine what can be played after it
+            if envType == "ST" then
+                envMatch = true
+            else
+                for myEnv = 1, 4 do
+                    local myEnvSt = "Env"..myEnv                            
+
+                    if myCard["cardData"][myEnvSt] and myCard["cardData"][myEnvSt] == envType then
+                        envMatch = true
+                        break
+                    end
+                end
+            end
+            if envMatch then
+                played = true
+            end
+        end
+    end      
+
+    if played then
+        return true
+    else
+        return false
+    end        
+end
+
+-- simply check to see if a card can play on a particular environment and return true or false
+function EnvTest(myCard, myEnvs, index)
+    local envType = ""
+
+    envType = utilities:DetermineEnvType(myEnvs, index)
+
+    if envType == "ST" then                                
+        return true
+    else
+        for myEnv = 1, 4 do
+            local myEnvSt = "Env"..myEnv                            
+
+            if myCard["cardData"][myEnvSt] and myCard["cardData"][myEnvSt] == envType then
+                return true
+            end
+        end
+    end    
+    
+    return false
+end
+
+
 -- explicitely move all cards to their appropriate place on the playfield
 function gameLogic:RepositionCards(myEnvs)
     local myChain = ""
