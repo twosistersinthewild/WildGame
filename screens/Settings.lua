@@ -56,8 +56,10 @@ function scene:create( event )
     {
         id = "checkbox", 
         x = display.contentWidth / 2 - 100,
-        y = 100
+        y = 100,
+        initialSwitchState = true
     }
+    --soundChkBox.isOn = sound
     
     local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
