@@ -41,7 +41,7 @@ local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
 local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
-
+local settingsBtnOff, settingsBtnOn
 
 local HandMovementListener
 local FieldMovementListener
@@ -50,7 +50,7 @@ local DiscardMovementListener
 -- sound effects
 local cardSlide
 local click
-
+local sound
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -96,7 +96,9 @@ function DiscardMovementListener(event)
         self.originalY = self.y -- store starting y
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        if sound then
+            audio.play(cardSlide)
+        end
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
@@ -159,7 +161,9 @@ function DiscardMovementListener(event)
             self.x = scrollXPos
             self.y = scrollYPos
             scrollXPos = scrollXPos + GLOB.cardWidth
-            audio.play(click)
+            if(sound) then
+                audio.play(click)
+            end
             scene:GameLogAdd(self["cardData"]["Name"].." was drawn from the discard pile.")
         else
             self.x = self.originalX
@@ -525,7 +529,9 @@ function FieldMovementListener(event)
                         else -- move all of the cards now    
                             while activeEnvs[envNum][myChain][myIndex] do  
                                 played, playedString = gameLogic:PlayAnimal(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")
-                                audio.play(click)
+                                if sound then
+                                    audio.play(click)
+                                end
                                 scene:GameLogAdd(playedString)
                                 
                                 if not played then
@@ -560,8 +566,10 @@ function HandMovementListener(event)
         self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        self.markY = self.y    -- store y location of object
+        if sound then
+            audio.play(cardSlide)
+        end
         mainGroup:insert(self)
         self:toFront()
         -- todo see if getCurrentStage can be used to pass to another file to manipulate controls
@@ -689,7 +697,9 @@ function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
             event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
@@ -1057,7 +1067,9 @@ function scene:PlayCard()
         if played then
             -- loop up through deck from where card was played to fill empty hole
             -- if the card played was the last card in hand
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(myCard) 
             myCard:removeEventListener("touch", HandMovementListener)
             myCard:addEventListener("touch", FieldMovementListener)
@@ -1223,7 +1235,9 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            audio.play(cardSlide)            
+            if sound then
+                audio.play(cardSlide)            
+            end
             transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
             cpuActiveEnvs[oppNum][i]["activeEnv"]:toFront()
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
@@ -1452,7 +1466,8 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
-
+    sound = event.params.pSound
+    
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup)
@@ -1729,6 +1744,10 @@ function scene:create( event )
     
     local function settingsBtnListener( event ) 
         local self = event.target
+        local options = 
+        {
+            params = {psound = sound}
+        }
         if(event.phase == "began") then
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
@@ -1736,6 +1755,7 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             -- todo do something ehere
+            composer.gotoScene("screens.Settings", options)
         end 
     end    
     

@@ -38,7 +38,11 @@ end
     local function sliderDemoListener( event )
         local object = event.target
         --print( object.name.." TAPPED!" )
-    composer.gotoScene("screens.MainMenu")
+        local options =
+            {
+                params = {pSound = true}
+            }
+    composer.gotoScene("screens.MainMenu", options)
 end    
     
     sliderDemo:addEventListener( "tap", sliderDemoListener )
@@ -54,7 +58,11 @@ end
         local function logicDemoListener( event )
             local object = event.target
             --print( object.name.." TAPPED!" )
-            composer.gotoScene("screens.Game_test_aw")
+            local options =
+            {
+                params = {pSound = true}
+            }
+            composer.gotoScene("screens.Game_test_DO", options)
         end    
 
         logicDemo:addEventListener( "tap", logicDemoListener )

@@ -9,6 +9,7 @@ local widget = require "widget"
 
 -- local forward references should go here
 local soundChkBox
+local sound 
 
 function checkSound(event)
     if(event.phase == "ended") then
@@ -44,6 +45,7 @@ end
 function scene:create( event )
 
     local sceneGroup = self.view
+    
     sound = event.params.pSound;
     
     local background = display.newImage("images/ORIGINAL-settings-screen.png")
@@ -54,10 +56,13 @@ function scene:create( event )
 
     soundChkBox = widget.newSwitch
     {
-        id = "checkbox", 
+        --style = "checkbox", 
         x = display.contentWidth / 2 - 100,
-        y = 100
+        y = 100,
+        initialSwitchState = sound
     }
+    
+    soundChkBox.isOn = sound
     
     local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
