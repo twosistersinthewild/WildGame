@@ -26,7 +26,7 @@ function gameLogic:ValidLocation(myCard, myEnvs)
         hotspot = "discard"
         
     -- over special card area
-    if myCard.x >= GLOB.spCardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.spCardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.spCardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.spCardYLoc + GLOB.cardHeight/2 then
+    elseif myCard.x >= GLOB.spCardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.spCardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.spCardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.spCardYLoc + GLOB.cardHeight/2 then
         hotspot = "special"    
         
     -- over hand
