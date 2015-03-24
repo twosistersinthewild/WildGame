@@ -40,7 +40,10 @@ end
         --print( object.name.." TAPPED!" )
         local options =
             {
-                params = {pSound = true}
+                params = {
+                    pSound = true,
+                    pMusic = true
+                    }
             }
     composer.gotoScene("screens.MainMenu", options)
 end    
@@ -60,7 +63,10 @@ end
             --print( object.name.." TAPPED!" )
             local options =
             {
-                params = {pSound = true}
+                params = {
+                    pSound = true,
+                    pMusic = true
+                    }
             }
             composer.gotoScene("screens.Game_test", options)
         end    

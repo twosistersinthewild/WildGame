@@ -20,7 +20,10 @@ function scene:create( event )
         
         local options = 
         {
-            params = {pSound = true}
+            params = {
+                pSound = true,
+                pMusic = true
+            }
         }
         
         if(event.phase == "began") then
@@ -36,7 +39,7 @@ function scene:create( event )
             if self.name == "play" then
                 composer.gotoScene("screens.Game_test_DO", options)
             elseif self.name == "howToPlay" then
-                system.openURL( "https://www.youtube.com/watch?v=nlcIKh6sBtc" )
+                system.openURL( "https://www.youtube.com/watch?v=labRYQFxJaE" )
             elseif self.name == "settings" then
                 composer.gotoScene("screens.Settings", options)
             elseif self.name == "exit" then

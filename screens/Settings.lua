@@ -9,6 +9,14 @@ local widget = require "widget"
 
 -- local forward references should go here
 local soundChkBox
+local musicChkBox
+local audio
+
+function toggleMusic (event)
+    if(event.phase == "ended") then
+        
+    end
+end
 
 function checkSound(event)
     if(event.phase == "ended") then
@@ -20,7 +28,10 @@ function jumpListener (event)
     local target = event.target;
     local options = 
         {
-            params = {pSound = soundChkBox.isOn}
+            params = {
+                pSound = soundChkBox.isOn,
+                pMusic = musicChkBox.isOn
+                }
         }
             
     if(event.phase == "began") then
@@ -45,6 +56,7 @@ function scene:create( event )
 
     local sceneGroup = self.view
     sound = event.params.pSound;
+    audio = event.params.pAudio
     
     local background = display.newImage("images/ORIGINAL-settings-screen.png")
     background.x = display.contentWidth / 2
@@ -61,12 +73,27 @@ function scene:create( event )
     }
     --soundChkBox.isOn = sound
     
+    musicChkBox = widget.newSwitch
+    {
+        id = "checkbox", 
+        x = display.contentWidth / 2 - 100,
+        y = 200,
+        initialSwitchState = true,
+        onpress = toggleMusic
+    }
+    
     local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
     soundLbl:addEventListener("touch", checkSound)
     
+    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200, fontSize = 28 } )
+    musicLbl:setTextColor( 1 )
+    
+    
     sceneGroup:insert(soundChkBox)
     sceneGroup:insert(soundLbl)
+    sceneGroup:insert(musicChkBox)
+    sceneGroup:insert(musicLbl)
     
     local play = display.newRect(665, 365, 314, 32);
    imgString = "/images/main-play.jpg"
