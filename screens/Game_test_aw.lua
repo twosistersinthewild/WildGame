@@ -860,8 +860,7 @@ function scene:DiscardHand(myHand)
 
     for i = 1, #myHand do
         table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
-                
-              
+                              
         mainGroup:insert(discardPile[#discardPile])
         myHand[i]:addEventListener( "tap", ZoomTapListener )
         myHand[i]:addEventListener("touch", DiscardMovementListener)        
