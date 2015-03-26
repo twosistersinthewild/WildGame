@@ -26,8 +26,9 @@ function gameLogic:ValidLocation(myCard, myEnvs)
         hotspot = "discard"
         
     -- over special card area
-    elseif myCard.x >= GLOB.spCardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.spCardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.spCardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.spCardYLoc + GLOB.cardHeight/2 then
-        hotspot = "special"    
+    -- todo uncomment and get this in game
+    --elseif myCard.x >= GLOB.spCardXLoc - GLOB.cardWidth/2 and myCard.x <= GLOB.spCardXLoc + GLOB.cardWidth/2 and myCard.y >= GLOB.spCardYLoc - GLOB.cardHeight/2 and myCard.y <= GLOB.spCardYLoc + GLOB.cardHeight/2 then
+        --hotspot = "special"    
         
     -- over hand
     elseif myCard.x >= (display.contentWidth / 2 - GLOB.cardWidth * 2.5) and myCard.x <= (display.contentWidth / 2 + GLOB.cardWidth * 2.5) and myCard.y >= display.contentHeight - GLOB.cardHeight and myCard.y <= display.contentHeight then
@@ -773,6 +774,8 @@ function gameLogic:CalculateScore(myEnvs)
     
     local envFound = false
     local tabLen = 0
+    local apexFound = false -- determine if an apex is in play. if it is and all 9 roles are filled player can win
+    local allNumsPlayed = true -- flag to see if 10 can be set to true. if this becomes false, there is no win
     
     -- todo: might want to deal with this differently
     local curEco = {} -- clear the table first so that we only mark true if they are currently there
@@ -782,7 +785,7 @@ function gameLogic:CalculateScore(myEnvs)
         if myEnvs[i] then
             if not envFound then -- only want to set this once, so once an env has been found this will not be true again
                 envFound = true
-                curEco[1] = true
+                curEco[1] = true -- hard coded to make it a 1 for env
             end
             
             -- todo: change this for loop if there are more than 2 possible chains
@@ -798,11 +801,32 @@ function gameLogic:CalculateScore(myEnvs)
                         for j = 1, tabLen do                        
                             cardValue = myEnvs[i][chainStr][j]["cardData"].Value
                             curEco[cardValue] = true
+                            
+                            if myEnvs[i][chainStr][j]["cardData"].Type == "Apex" then
+                                apexFound = true
+                            -- human can become apex if it is played as last in chain
+                            elseif myEnvs[i][chainStr][j]["cardData"].Type == "Wild" and not myEnvs[i][chainStr][j + 1] then
+                                apexFound = true
+                            end
                         end
                     end
                 end
             end            
         end 
+    end
+    
+    if apexFound then -- if there is an apex in play, see if all other numbers are present
+        for i = 1, 9 do
+            if not curEco[i] then
+                allNumsPlayed = false
+                break
+            end
+        end
+        
+        if allNumsPlayed then
+            curEco[10] = true -- explicitely set 10 (apex) to true
+        end
+        
     end
     
     return curEco
