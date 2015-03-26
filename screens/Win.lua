@@ -1,6 +1,5 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
-local widget = require "widget"
 
 ---------------------------------------------------------------------------------
 -- All code outside of the listener functions will only be executed ONCE
@@ -8,116 +7,85 @@ local widget = require "widget"
 ---------------------------------------------------------------------------------
 
 -- local forward references should go here
-local soundChkBox
-local musicChkBox
-local audio
-
-function toggleMusic (event)
-    if(event.phase == "ended") then
-        
-    end
-end
-
-function checkSound(event)
-    if(event.phase == "ended") then
-        print(soundChkBox.isOn)
-    end
-end
-
-function jumpListener (event)
-    local target = event.target;
-    local options = 
+local function menuListener (event)
+    local options =
+    {
+        params = 
         {
-            params = {
-                pSound = soundChkBox.isOn,
-                pMusic = musicChkBox.isOn
-                }
+            pSound = sound,
+            pMusic = music
         }
-            
-    if(event.phase == "began") then
-        display.getCurrentStage():setFocus(event.target)
-    end
-    if(event.phase == "ended") then
-        display.getCurrentStage():setFocus(nil)
-        if(target.name == "play")then
+    }
+    self = event.target
+    if event.phase == "ended" then
+        if self.name == "play" then
             composer.gotoScene("screens.Game_test_DO", options)
-        end
-        if(target.name == "menu") then
+        elseif self.name == "menu" then
             composer.gotoScene("screens.MainMenu", options)
+        elseif self.name == "exit" then
+            os.exit();
         end
     end
-    
-    
 end
 ---------------------------------------------------------------------------------
 
 -- "scene:create()"
 function scene:create( event )
 
-    local sceneGroup = self.view
-    sound = event.params.pSound;
-    audio = event.params.pAudio
-    
-    local background = display.newImage("images/ORIGINAL-settings-screen.png")
+   local sceneGroup = self.view
+   sound = event.params.pSound
+   music = event.params.pMusic
+   
+   local background = display.newImage("images/ORIGINAL-win-screen.jpg")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
+
     sceneGroup:insert(background)
     
-
-    soundChkBox = widget.newSwitch
-    {
-        id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
-        y = 100,
-        initialSwitchState = true
-    }
-    --soundChkBox.isOn = sound
+    local timeLbl = display.newText( { text = event.params.pTime, x = 751, y = 188, fontSize = 28 } )
+    timeLbl:setTextColor( 1 )
+    sceneGroup:insert(timeLbl)
     
-    musicChkBox = widget.newSwitch
-    {
-        id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
-        y = 200,
-        initialSwitchState = true,
-        onpress = toggleMusic
-    }
+    local playedLbl = display.newText( { text = event.params.pPlayed, x = 755, y = 250, fontSize = 28 } )
+    playedLbl:setTextColor( 1 )
+    sceneGroup:insert(playedLbl)
     
-    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
-    soundLbl:setTextColor( 1 )
-    soundLbl:addEventListener("touch", checkSound)
+    local drawnLbl = display.newText( { text = event.params.pDrawn, x = 755, y = 308, fontSize = 28 } )
+    drawnLbl:setTextColor( 1 )
+    sceneGroup:insert(drawnLbl)
     
-    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200, fontSize = 28 } )
-    musicLbl:setTextColor( 1 )
-    
-    
-    sceneGroup:insert(soundChkBox)
-    sceneGroup:insert(soundLbl)
-    sceneGroup:insert(musicChkBox)
-    sceneGroup:insert(musicLbl)
-    
-    local play = display.newRect(665, 365, 314, 32);
-   imgString = "images/main-play.jpg"
+    local play = display.newRect(160, 585, 314, 32);
+    imgString = "images/main-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
     }
     play.fill = paint 
-    play.alpha = .1;
-    play:addEventListener("touch", jumpListener)
+    play:addEventListener("touch", menuListener)
     play.name = "play"
     sceneGroup:insert(play)
     
-    local menu = display.newRect(665, 415, 314, 32);
-   imgString = "images/main-exit.jpg"
+    local menu = display.newRect(480, 585, 314, 32);
+    imgString = "images/main-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
     }
     menu.fill = paint 
-    menu.alpha = 1;
-    menu:addEventListener("touch", jumpListener)
+    menu:addEventListener("touch", menuListener)
     menu.name = "menu"
     sceneGroup:insert(menu)
+    
+    local exit = display.newRect(800, 585, 314, 32);
+    imgString = "images/main-exit.jpg"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    exit.fill = paint 
+    exit:addEventListener("touch", menuListener)
+    exit.name = "exit"
+    sceneGroup:insert(exit)
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end

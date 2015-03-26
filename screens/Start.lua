@@ -23,8 +23,20 @@ function scene:create( event )
     local function endTurnListener( event )
         local object = event.target
         --print( object.name.." TAPPED!" )
-    composer.gotoScene("screens.CardMovement")
-end    
+        local options =
+        {
+            params = 
+            {
+                pSound = true,
+                pMusic = true,
+                pTime = 8,
+                pPlayed = 8,
+                pDrawn = 8
+            }
+        }
+        
+        composer.gotoScene("screens.Win", options)
+    end    
     
     endTurnBtn:addEventListener( "tap", endTurnListener )
     sceneGroup: insert(endTurnBtn)

@@ -54,7 +54,7 @@ function scene:create( event )
     sceneGroup:insert(background)
    
    local play = display.newRect(665, 365, 314, 32);
-   imgString = "/images/main-play.jpg"
+   imgString = "images/main-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
@@ -64,9 +64,10 @@ function scene:create( event )
     play:addEventListener("touch", menuListener)
     play.name = "play"
     sceneGroup:insert(play)
+    play:toFront()
     
     local howToPlay = display.newRect(665, 437, 314, 32);
-    imgString = "/images/main-how-to-play.jpg"
+    imgString = "images/main-how-to-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
@@ -78,7 +79,7 @@ function scene:create( event )
     sceneGroup:insert(howToPlay)
     
     local settings = display.newRect(665, 513, 314, 32);
-    imgString = "/images/main-settings.jpg"
+    imgString = "images/main-settings.jpg"
     local paint = {
         type = "image",
         filename = imgString
@@ -90,7 +91,7 @@ function scene:create( event )
     sceneGroup:insert(settings)
     
     local exit = display.newRect(665, 585, 314, 32);
-    imgString = "/images/main-exit.jpg"
+    imgString = "images/main-exit.jpg"
     local paint = {
         type = "image",
         filename = imgString
