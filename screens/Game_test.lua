@@ -18,7 +18,10 @@ local cpuActiveEnvs = {} -- cpu cards on playfield
 
 -- number of cpu or other opponents
 local numOpp = 0
+local turnCount = 1
 
+
+local drawCount = 1
 local deckIndex = 1
 local maxEnvirons = 3
 local firstTurn = true -- flag 
@@ -877,6 +880,7 @@ function scene:DiscardHand(myHand)
               
         mainGroup:insert(discardPile[#discardPile])
         myHand[i]:addEventListener( "tap", ZoomTapListener )
+        myHand[i]:removeEventListener("touch", HandMovementListener)
         myHand[i]:addEventListener("touch", DiscardMovementListener)        
         discardPile[#discardPile]["x"] = GLOB.discardXLoc
         discardPile[#discardPile]["y"] = GLOB.discardYLoc        
@@ -1177,7 +1181,7 @@ function scene:EndTurn()
         -- don't discard'
     -- draw 2 cards
     -- if first turn, try to play env from hand
-
+    drawCount = 1
     if numOpp > 0 then       
         for i = 1, numOpp do
             local whoString = "Opponent"..i
@@ -1272,7 +1276,11 @@ function scene:EndTurn()
             end
             
             -- discard remaining hand after playing
-            scene:DiscardHand(cpuHand[i])
+            if turnCount > 1 then
+                scene:DiscardHand(cpuHand[i])
+                scene:DiscardHand(hand)
+                scene:AdjustScroller()
+            end
         end
     end     
     
@@ -1698,6 +1706,12 @@ function scene:create( event )
         --print( object.name.." TAPPED!" )
         scene:ShowOpponentCards(1)
     end
+    
+    local cpuBackground = display.newImage("images/ORIGINAL-background-green.jpg")
+    cpuBackground.x = display.contentWidth / 2
+    cpuBackground.y = display.contentHeight / 2
+    oppGroup:insert(cpuBackground)
+    cpuBackground:toBack()
 
     showOpp:addEventListener( "tap", tapListener )
 
@@ -1776,6 +1790,7 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
+            turnCount = turnCount + 1
         end 
     end    
     
@@ -1833,9 +1848,12 @@ function scene:create( event )
     
     local function drawCardListener( event )
         local object = event.target
-        scene:drawCards(1,hand, "Player")
+        if(drawCount < 3 and turnCount > 1)then
+            scene:drawCards(1,hand, "Player")
+            drawCount = drawCount + 1
+        end
         return true
-    end    
+    end      
 
     cardBack:addEventListener( "tap", drawCardListener )
     
