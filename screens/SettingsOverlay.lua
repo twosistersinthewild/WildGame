@@ -39,9 +39,11 @@ function jumpListener (event)
     if(event.phase == "ended") then
         display.getCurrentStage():setFocus(nil)
         if(target.name == "play")then
-            composer.gotoScene("screens.Game_test", options)
+            composer.hideOverlay( "fade", 400 )
+            --composer.gotoScene("screens.Game_test", options)
         end
         if(target.name == "menu") then
+            --composer.hideOverlay()
             composer.gotoScene("screens.MainMenu", options)
         end
     end
@@ -100,7 +102,7 @@ function scene:create( event )
         filename = imgString
     }
     play.fill = paint 
-    play.alpha = .1;
+    play.alpha = 1;
     play:addEventListener("touch", jumpListener)
     play.name = "play"
     sceneGroup:insert(play)
@@ -140,11 +142,13 @@ function scene:hide( event )
 
    local sceneGroup = self.view
    local phase = event.phase
+   local parent = event.parent
 
    if ( phase == "will" ) then
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
+      parent:ResumeGame()
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
    end
