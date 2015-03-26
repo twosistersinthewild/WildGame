@@ -51,9 +51,6 @@ local DiscardMovementListener
 local cardSlide
 local click
 local sound
-local backgroundMusic
-local music
-local backgroundMusicChanel
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -1472,10 +1469,8 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
-    backgroundMusic = audio.loadSound("sounds/ComePlayWithMe.mp3")
     sound = event.params.pSound
-    music = event.params.pMusic  
-    backgroundMusicChanel = audio.play(backgroundMusic)
+   
     --print("Sound: "..sound)
     
     
@@ -1757,10 +1752,7 @@ function scene:create( event )
         local self = event.target
         local options = 
         {
-            params = {
-                pSound = sound,
-                pMusic = music
-            }
+            params = {pSound = sound}
         }
         if(event.phase == "began") then
             self.alpha = 1
@@ -2041,17 +2033,10 @@ function scene:show( event )
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
       sound = event.params.pSound
-      music = event.params.pMusic
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
-      if music then
-        backgroundMusicChanel = audio.resume(backgroundMusic)
-      elseif music == false then
-        audio.pause(backgroundMusicChanel)
-      end
-      
         scene:InitializeGame()
     
    end
@@ -2069,7 +2054,6 @@ function scene:hide( event )
       -- Example: stop timers, stop animation, stop audio, etc.
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
-      audio.pause(backgroundMusicChanel)
    end
 end
 
