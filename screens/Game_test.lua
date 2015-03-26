@@ -155,10 +155,11 @@ function DiscardMovementListener(event)
         -- get a string if the card has been dropped in a valid spot        
         validLoc = gameLogic:ValidLocation(self, activeEnvs)
         
-        if validLoc == "hand" then
+        if validLoc == "hand" and drawCount < 3 and turnCount  > 1 then
             self:removeEventListener("touch", DiscardMovementListener) -- todo may not need to remove this
             event.phase = nil
             self:addEventListener("touch", HandMovementListener)
+            drawCount = drawCount + 1
             
             --scene:DiscardCard(self, hand, "hand")
             table.insert(hand, discardPile[#discardPile])
