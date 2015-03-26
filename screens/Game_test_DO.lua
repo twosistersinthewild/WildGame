@@ -51,6 +51,9 @@ local DiscardMovementListener
 local cardSlide
 local click
 local sound
+local music
+local backgroundMusic
+
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -1469,7 +1472,9 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
+    backgroundMusic = audio.loadSound("sounds/ComePlayWithMe.mp3")
     sound = event.params.pSound
+    music = event.params.pMusic
    
     --print("Sound: "..sound)
     
@@ -1752,7 +1757,10 @@ function scene:create( event )
         local self = event.target
         local options = 
         {
-            params = {pSound = sound}
+            params = {
+                pSound = sound,
+                pMusic = music
+                }
         }
         if(event.phase == "began") then
             self.alpha = 1
@@ -2021,7 +2029,7 @@ function scene:create( event )
     mainGroup:insert(ten_on)
     mainGroup:insert(ten_off)  
     
-    --print("Sound 2:"..sound)
+    audio.play(backgroundMusic)
 end
 
 -- "scene:show()"
@@ -2033,12 +2041,15 @@ function scene:show( event )
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
       sound = event.params.pSound
+      music = event.params.pMusic
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         scene:InitializeGame()
-    
+        if music then
+            backgroundChanel = audio.resume(backgroundMusic)
+        end
    end
 end
 
@@ -2052,6 +2063,9 @@ function scene:hide( event )
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
+      if music then
+        audio.pause(backgroundChanel)
+      end
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
    end

@@ -50,6 +50,9 @@ local DiscardMovementListener
 -- sound effects
 local cardSlide
 local click
+local sound
+local music
+local backgroundMusic
 
 ---------------------------------------------------------------------------------
 
@@ -96,7 +99,9 @@ function DiscardMovementListener(event)
         self.originalY = self.y -- store starting y
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        if sound then
+            audio.play(cardSlide)
+        end
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
@@ -160,7 +165,9 @@ function DiscardMovementListener(event)
             self.x = scrollXPos
             self.y = scrollYPos
             scrollXPos = scrollXPos + GLOB.cardWidth
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             scene:GameLogAdd(self["cardData"]["Name"].." was drawn from the discard pile.")
         else
             self.x = self.originalX
@@ -561,7 +568,9 @@ function FieldMovementListener(event)
                                 else
                                     played, playedString = gameLogic:PlayAnimal(activeEnvs[envNum][myChain][myIndex], activeEnvs[envNum][myChain], activeEnvs, i, newChain, "Player")                             
                                 end
-                                audio.play(click)
+                                if sound then
+                                    audio.play(click)
+                                end
                                 scene:GameLogAdd(playedString)
                                 
                                 if not played then
@@ -602,8 +611,10 @@ function HandMovementListener(event)
         self.x, self.y = self:localToContent(0, 0) -- *important: this will return the object's x and y value on the stage, not the scrollview
 
         self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object  
-        audio.play(cardSlide)
+        self.markY = self.y    -- store y location of object 
+        if sound then 
+            audio.play(cardSlide)
+        end
         mainGroup:insert(self)
         self:toFront()
         -- todo see if getCurrentStage can be used to pass to another file to manipulate controls
@@ -734,7 +745,9 @@ function HandMovementListener(event)
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(self) 
             self:removeEventListener("touch", HandMovementListener)
             event.phase = nil -- have to explicitely set the event to nil here or else the following line will start into its ended phase
@@ -1117,7 +1130,9 @@ function scene:PlayCard()
         if played then
             -- loop up through deck from where card was played to fill empty hole
             -- if the card played was the last card in hand
-            audio.play(click)
+            if sound then
+                audio.play(click)
+            end
             mainGroup:insert(myCard) 
             myCard:removeEventListener("touch", HandMovementListener)
             myCard:addEventListener("touch", FieldMovementListener)
@@ -1281,7 +1296,9 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 3 do
         if cpuActiveEnvs[oppNum][i] then
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
-            audio.play(cardSlide)            
+            if sound then
+                audio.play(cardSlide)  
+            end
             transition.moveTo( cpuActiveEnvs[oppNum][i]["activeEnv"], {x = GLOB.envLocs[i]["xLoc"], y = GLOB.envLocs[i]["yLoc"], time = 1000})
             cpuActiveEnvs[oppNum][i]["activeEnv"]:toFront()
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
@@ -1511,6 +1528,9 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
+    backgroundMusic = audio.loadSound("sounds/ComePlayWithMe.mp3")
+    sound = event.params.pSound
+    music = event.params.pMusic
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
@@ -1788,6 +1808,13 @@ function scene:create( event )
     
     local function settingsBtnListener( event ) 
         local self = event.target
+        local options = 
+        {
+            params = {
+                pSound = sound,
+                pMusic = music
+                }
+        }
         if(event.phase == "began") then
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
@@ -1795,8 +1822,9 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             -- todo do something ehere
+            composer.gotoScene("screens.Settings", options)
         end 
-    end    
+    end     
     
     settingsBtnOn:addEventListener( "touch", settingsBtnListener )
     mainGroup:insert(settingsBtnOff)
@@ -2054,6 +2082,7 @@ function scene:create( event )
     mainGroup:insert(ten_on)
     mainGroup:insert(ten_off)  
     
+    audio.play(backgroundMusic)
 end
 
 -- "scene:show()"
@@ -2064,11 +2093,16 @@ function scene:show( event )
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
+      sound = event.params.pSound
+      music = event.params.pMusic
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         scene:InitializeGame()
+        if music then
+            backgroundChanel = audio.resume(backgroundMusic)
+        end
    end
 end
 
@@ -2082,6 +2116,9 @@ function scene:hide( event )
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
+      if music then
+        audio.pause(backgroundChanel)
+      end
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
    end

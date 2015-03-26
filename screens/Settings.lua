@@ -10,7 +10,6 @@ local widget = require "widget"
 -- local forward references should go here
 local soundChkBox
 local musicChkBox
-local audio
 
 function toggleMusic (event)
     if(event.phase == "ended") then
@@ -40,7 +39,7 @@ function jumpListener (event)
     if(event.phase == "ended") then
         display.getCurrentStage():setFocus(nil)
         if(target.name == "play")then
-            composer.gotoScene("screens.Game_test_DO", options)
+            composer.gotoScene("screens.Game_test", options)
         end
         if(target.name == "menu") then
             composer.gotoScene("screens.MainMenu", options)
@@ -56,7 +55,6 @@ function scene:create( event )
 
     local sceneGroup = self.view
     sound = event.params.pSound;
-    audio = event.params.pAudio
     
     local background = display.newImage("images/ORIGINAL-settings-screen.png")
     background.x = display.contentWidth / 2

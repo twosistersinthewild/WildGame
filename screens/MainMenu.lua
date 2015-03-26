@@ -8,6 +8,7 @@ local scene = composer.newScene()
 
 -- local forward references should go here
 local sound
+local music
 ---------------------------------------------------------------------------------
 
 
