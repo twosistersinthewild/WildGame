@@ -200,9 +200,16 @@ function gameLogic:PlayPlant(myCard, myHand, myEnvs, index, availChain, who)
     end      
 
     if played then
-        -- todo should human become 2 or 3?
         if myCard["cardData"]["Type"] == "Wild" then
-            myCard["cardData"]["Value"] = 2
+            local myScore = gameLogic:CalculateScore(myEnvs)
+            
+            if myScore[2] then
+                myCard["cardData"]["Value"] = 3
+            elseif myScore[3] then
+                myCard["cardData"]["Value"] = 2
+            else
+                myCard["cardData"]["Value"] = 2
+            end
         end          
         
         gameLogic:RemoveFromHand(myCard, myHand)
@@ -567,7 +574,7 @@ function gameLogic:MigratePlant(myCard, myHand, myEnvs, index, availChain, who)
 end
 
 -- simply check to see if a card can play on a particular environment and return true or false
-function EnvTest(myCard, myEnvs, index)
+function gameLogic:EnvTest(myCard, myEnvs, index)
     local envType = ""
 
     envType = utilities:DetermineEnvType(myEnvs, index)
@@ -684,7 +691,6 @@ end
 
 
 
--- aww
 -- determine what environment and chain a card is on
 -- card and player's environments who owns card are passed in
 -- returns a number for the environment and a string for the chain
@@ -695,8 +701,7 @@ function gameLogic:GetMyEnv(myCard, myEnvs)
     local myChain = ""
     local myIndex = 0
     
-    for i = 1, 3 do     
-        
+    for i = 1, 3 do             
         -- determine if it's an environment
         if myEnvs[i] and myEnvs[i]["activeEnv"] and myEnvs[i]["activeEnv"]["cardData"].ID == myCard["cardData"]["ID"] then            
             found = true
@@ -741,11 +746,6 @@ function gameLogic:GetMyEnv(myCard, myEnvs)
     return envNum, myChain, myIndex
 end
 
-
-
-
-
--- aww
 -- get the value of a card from any available stat
 -- this references the data from the excel sheet/json data
 function gameLogic:GetStat(myCard, stat)

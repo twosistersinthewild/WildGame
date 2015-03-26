@@ -9,6 +9,13 @@ local widget = require "widget"
 
 -- local forward references should go here
 local soundChkBox
+local musicChkBox
+
+function toggleMusic (event)
+    if(event.phase == "ended") then
+        
+    end
+end
 
 function checkSound(event)
     if(event.phase == "ended") then
@@ -20,7 +27,10 @@ function jumpListener (event)
     local target = event.target;
     local options = 
         {
-            params = {pSound = soundChkBox.isOn}
+            params = {
+                pSound = soundChkBox.isOn,
+                pMusic = musicChkBox.isOn
+                }
         }
             
     if(event.phase == "began") then
@@ -29,7 +39,7 @@ function jumpListener (event)
     if(event.phase == "ended") then
         display.getCurrentStage():setFocus(nil)
         if(target.name == "play")then
-            composer.gotoScene("screens.Game_test_DO", options)
+            composer.gotoScene("screens.Game_test", options)
         end
         if(target.name == "menu") then
             composer.gotoScene("screens.MainMenu", options)
@@ -61,27 +71,42 @@ function scene:create( event )
     }
     --soundChkBox.isOn = sound
     
+    musicChkBox = widget.newSwitch
+    {
+        id = "checkbox", 
+        x = display.contentWidth / 2 - 100,
+        y = 200,
+        initialSwitchState = true,
+        onpress = toggleMusic
+    }
+    
     local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
     soundLbl:addEventListener("touch", checkSound)
     
+    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200, fontSize = 28 } )
+    musicLbl:setTextColor( 1 )
+    
+    
     sceneGroup:insert(soundChkBox)
     sceneGroup:insert(soundLbl)
+    sceneGroup:insert(musicChkBox)
+    sceneGroup:insert(musicLbl)
     
     local play = display.newRect(665, 365, 314, 32);
-   imgString = "/images/main-play.jpg"
+   imgString = "images/main-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
     }
     play.fill = paint 
-    play.alpha = 1;
+    play.alpha = .1;
     play:addEventListener("touch", jumpListener)
     play.name = "play"
     sceneGroup:insert(play)
     
     local menu = display.newRect(665, 415, 314, 32);
-   imgString = "/images/main-exit.jpg"
+   imgString = "images/main-exit.jpg"
     local paint = {
         type = "image",
         filename = imgString

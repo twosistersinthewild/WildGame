@@ -1785,14 +1785,28 @@ function scene:create( event )
     settingsBtnOn.fill = paint
     settingsBtnOn.alpha = .1
     
+    -- aww
     local function settingsBtnListener( event ) 
         local self = event.target
+        local options = 
+        {
+            params = {
+                pSound = sound,
+                pMusic = music,
+                effect = "fade",
+                time = 500,
+                isModal = true
+                }
+        }
         if(event.phase == "began") then
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
+
+            composer.showOverlay( "screens.Settings", options )
+            --composer.gotoScene("screens.Settings", options)
             -- todo do something ehere
         end 
     end    
