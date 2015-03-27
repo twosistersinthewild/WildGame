@@ -877,8 +877,7 @@ function scene:DiscardHand(myHand)
 
     for i = 1, #myHand do
         table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
-                
-              
+                              
         mainGroup:insert(discardPile[#discardPile])
         myHand[i]:addEventListener( "tap", ZoomTapListener )
         myHand[i]:removeEventListener("touch", HandMovementListener)
@@ -1278,8 +1277,8 @@ function scene:EndTurn()
             
             -- discard remaining hand after playing
             if turnCount > 1 then
-                scene:DiscardHand(cpuHand[i])
                 scene:DiscardHand(hand)
+                scene:DiscardHand(cpuHand[i])                
                 scene:AdjustScroller()
             end
         end
@@ -1423,7 +1422,7 @@ function scene:GameLogAdd(logText)
         scrollY = scrollY + textHeight
 
         local itemLabel = display.newText(logOptions)
-        itemLabel:setFillColor(1,1,1) 
+        itemLabel:setFillColor(0,0,0) 
         logScroll:insert(itemLabel)
         
         if charCount > strMaxLen then
@@ -1570,7 +1569,7 @@ function scene:create( event )
         horizontalScrollDisabled = true,
         isBounceEnabled = false,
         hideScrollBar = false,
-        backgroundColor = {.5,.5,.5},
+        backgroundColor = {1,1,1},
         friction = 0
     }
     
@@ -1585,7 +1584,7 @@ function scene:create( event )
         height = GLOB.cardHeight,
 
         verticalScrollDisabled = true,
-        backgroundColor = {.5,.5,.5, 0} -- transparent. remove the 0 to see it
+        backgroundColor = {0,0,0,0} -- transparent. remove the 0 to see it
     }
                 
     --location
@@ -1759,69 +1758,41 @@ function scene:create( event )
     mainGroup:insert(getHuman)
     mainGroup:insert(getHumanLabel) 
 
-    local endTurnBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
+    local endTurnBtn = display.newRect( GLOB.scoreImages["col1"] + 25, 425, 100, 100)
     
-    imgString = "images/end-turn-a.png"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    endTurnBtnOff.fill = paint
-
-    local endTurnBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 350, 87, 22 )
-    
-    imgString = "images/end-turn.png"
+    imgString = "images/end-turn-button.png"
     
     local paint = {
         type = "image",
-        filename = imgString
-    }
+        filename = imgString    }
     
-    endTurnBtnOn.fill = paint
-    endTurnBtnOn.alpha = .1
+    endTurnBtn.fill = paint
     
     local function endTurnListener( event ) 
         local self = event.target
         if(event.phase == "began") then
-            self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
-            self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
             turnCount = turnCount + 1
         end 
     end    
     
-    endTurnBtnOn:addEventListener( "touch", endTurnListener )
-    mainGroup:insert(endTurnBtnOff)
-    mainGroup:insert(endTurnBtnOn)  
+    endTurnBtn:addEventListener( "touch", endTurnListener )
+    mainGroup:insert(endTurnBtn)  
     
-    local settingsBtnOff = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
+    local settingsBtn = display.newRect( GLOB.scoreImages["col1"] + 25, 315, 100, 100 )
     
-    imgString = "images/settings-a.png"
-    
-    local paint = {
-        type = "image",
-        filename = imgString
-    }
-    
-    settingsBtnOff.fill = paint
-
-    local settingsBtnOn = display.newRect( GLOB.scoreImages["col1"] + 25, 300, 87, 22 )
-    
-    imgString = "images/settings.png"
+    imgString = "images/options-button.png"
     
     local paint = {
         type = "image",
         filename = imgString
     }
     
-    settingsBtnOn.fill = paint
-    settingsBtnOn.alpha = .1
-    
+    settingsBtn.fill = paint
+ 
     local function settingsBtnListener( event ) 
         local self = event.target
         local options = 
@@ -1832,19 +1803,16 @@ function scene:create( event )
                 }
         }
         if(event.phase == "began") then
-            self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
-            self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             -- todo do something ehere
             composer.gotoScene("screens.Settings", options)
         end 
     end     
     
-    settingsBtnOn:addEventListener( "touch", settingsBtnListener )
-    mainGroup:insert(settingsBtnOff)
-    mainGroup:insert(settingsBtnOn)     
+    settingsBtn:addEventListener( "touch", settingsBtnListener )
+    mainGroup:insert(settingsBtn) 
      
     
     local function drawCardListener( event )

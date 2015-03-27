@@ -38,7 +38,7 @@ function scene:create( event )
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             if self.name == "play" then
-                composer.gotoScene("screens.Game_test_DO", options)
+                composer.gotoScene("screens.Game_test", options)
             elseif self.name == "howToPlay" then
                 system.openURL( "https://www.youtube.com/watch?v=labRYQFxJaE" )
             elseif self.name == "settings" then
