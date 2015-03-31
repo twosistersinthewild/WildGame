@@ -26,7 +26,7 @@ function scene:create( event )
                 -- i put a small delay on the call to gotoScene or else the loading screen wouldn't actually come to front
                 -- before starting the load
                 loadingScreen:toFront()
-                timer.performWithDelay(25, function() composer.gotoScene("screens.Game_test") end)
+                timer.performWithDelay(25, function() composer.gotoScene("screens.Game_test_DO") end)
             elseif self.name == "howToPlay" then
                 system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4" )
             elseif self.name == "settings" then
@@ -111,7 +111,8 @@ function scene:show( event )
       -- Called when the scene is still off screen (but is about to come on screen).
       -- scene:showButton()
    elseif ( phase == "did" ) then
-      composer.removeScene("screens.Game_test") 
+      composer.removeScene("screens.Game_test_DO")
+      loadingScreen:toBack();
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.

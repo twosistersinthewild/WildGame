@@ -59,7 +59,7 @@ local backgroundMusic
 
 local gameTimer
 local gameTime
-local played
+local cardsPlayed
 local drawn
 ---------------------------------------------------------------------------------
 
@@ -75,7 +75,6 @@ local drawn
 
 local function gameTimeListener()
     gameTime = gameTime + 1;
-    print(gameTime)
 end
 
 -- count the number of elements from a passed in table and return the count
@@ -170,7 +169,7 @@ function DiscardMovementListener(event)
             event.phase = nil
             self:addEventListener("touch", HandMovementListener)
             drawCount = drawCount + 1
-            print("DO Card Drawn")
+    
             --scene:DiscardCard(self, hand, "hand")
             table.insert(hand, discardPile[#discardPile])
             discardPile[#discardPile] = nil
@@ -755,7 +754,10 @@ function HandMovementListener(event)
                 end
             end            
         end   
-
+        if played then 
+            cardsPlayed = cardsPlayed + 1
+            print(cardsPlayed)
+        end
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
@@ -953,7 +955,10 @@ function scene:drawCards( num, myHand, who )
             end            
 
             scene:GameLogAdd(who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
-            drawn = drawn + 1;
+            if who == "Player" then
+                drawn = drawn + 1;
+            end
+            
             deck[i] = nil  
             numPlayed = numPlayed + 1
             
@@ -1547,14 +1552,14 @@ function scene:create( event )
     gameTime = 0
     gameTimer = timer.performWithDelay( 1000, gameTimeListener, -1)
     
-    played = 0
+    cardsPlayed = 0
     drawn = 0
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
     backgroundMusic = audio.loadSound("sounds/ComePlayWithMe.mp3")
-    sound = event.params.pSound
-    music = event.params.pMusic
+    sound = GLOB.pSound
+    music = GLOB.pMusic
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
@@ -1814,10 +1819,8 @@ function scene:create( event )
         local options = 
         {
             params = {
-                pSound = sound,
-                pMusic = music,
                 pTime = gameTime,
-                pPlayed = played,
+                pPlayed = cardsPlayed,
                 pDrawn = drawn
                 }
         }
@@ -2099,13 +2102,14 @@ function scene:show( event )
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
-      sound = event.params.pSound
-      music = event.params.pMusic
+      sound = GLOB.pSound
+      music = GLOB.pMuisc
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         --gameTimer.resume();
+        composer.removeScene("screens.Win")
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then

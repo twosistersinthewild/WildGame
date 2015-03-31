@@ -1,5 +1,6 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
+local GLOB = require "globals"
 
 ---------------------------------------------------------------------------------
 -- All code outside of the listener functions will only be executed ONCE
@@ -8,20 +9,12 @@ local scene = composer.newScene()
 
 -- local forward references should go here
 local function menuListener (event)
-    local options =
-    {
-        params = 
-        {
-            pSound = sound,
-            pMusic = music
-        }
-    }
     self = event.target
     if event.phase == "ended" then
         if self.name == "play" then
-            composer.gotoScene("screens.Game_test_DO", options)
+            composer.gotoScene("screens.Game_test_DO")
         elseif self.name == "menu" then
-            composer.gotoScene("screens.MainMenu", options)
+            composer.gotoScene("screens.MainMenu")
         elseif self.name == "exit" then
             os.exit();
         end
@@ -33,8 +26,8 @@ end
 function scene:create( event )
 
    local sceneGroup = self.view
-   sound = event.params.pSound
-   music = event.params.pMusic
+   sound = GLOB.pSound
+   music = GLOB.pMusic
    
    local background = display.newImage("images/ORIGINAL-win-screen.jpg")
     background.x = display.contentWidth / 2
@@ -99,6 +92,7 @@ function scene:show( event )
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
    elseif ( phase == "did" ) then
+       composer.removeScene("screens.Game_test_DO")
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
