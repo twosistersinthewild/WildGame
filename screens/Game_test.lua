@@ -1531,14 +1531,23 @@ function scene:ScoreImageChange(myEco)
     
 end
 
+function scene:ResumeGame()
+    sound = GLOB.pSound
+    music = GLOB.pMusic
+    
+    if GLOB.pMusic then
+        audio.resume(backgroundMusic)
+    end    
+end
+
 function scene:create( event )
 
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
     backgroundMusic = audio.loadSound("sounds/ComePlayWithMe.mp3")
-    sound = event.params.pSound
-    music = event.params.pMusic
+    sound = GLOB.pSound
+    music = GLOB.pMusic 
 
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
@@ -1795,21 +1804,21 @@ function scene:create( event )
  
     local function settingsBtnListener( event ) 
         local self = event.target
-        local options = 
-        {
-            params = {
-                pSound = sound,
-                pMusic = music
-                }
-        }
         if(event.phase == "began") then
+            self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
+            self.alpha = .1
             display.getCurrentStage():setFocus(nil)
-            -- todo do something ehere
-            composer.gotoScene("screens.Settings", options)
+            local options = {
+            isModal = true,
+            effect = "fade",
+            time = 400,
+            }
+            audio.pause(backgroundMusic)
+            composer.showOverlay( "Screens.SettingsOverlay", options )
         end 
-    end     
+    end      
     
     settingsBtn:addEventListener( "touch", settingsBtnListener )
     mainGroup:insert(settingsBtn) 
@@ -2080,15 +2089,15 @@ function scene:show( event )
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
-      sound = event.params.pSound
-      music = event.params.pMusic
+      sound = GLOB.pSound
+      music = GLOB.pMusic
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         scene:InitializeGame()
         if music then
-            backgroundChanel = audio.resume(backgroundMusic)
+            audio.resume(backgroundMusic)
         end
    end
 end

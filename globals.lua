@@ -35,6 +35,9 @@ globals.chainLocs[1] = {["chain1"] = {["xLoc"] = 200, ["yLoc"] = globals.chainY}
 globals.chainLocs[2] = {["chain1"] = {["xLoc"] = display.contentWidth/2 - 50, ["yLoc"] = globals.chainY},["chain2"] = {["xLoc"] = display.contentWidth/2 + 50, ["yLoc"] = globals.chainY}}
 globals.chainLocs[3] = {["chain1"] = {["xLoc"] = display.contentWidth - 300, ["yLoc"] = globals.chainY},["chain2"] = {["xLoc"] = display.contentWidth - 200, ["yLoc"] = globals.chainY}}
 
+-- sound and music
+globals.pSound = true
+globals.pMusic = true
 
 local jsonStr = utilities:loadFile("data/cards.json", system.ResourceDirectory)
 globals.deck = json.decode(jsonStr)

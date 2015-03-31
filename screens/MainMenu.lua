@@ -7,11 +7,8 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 -- local forward references should go here
-local sound
-local music
+local loadingScreen
 ---------------------------------------------------------------------------------
-
-
 function scene:create( event )
     local sceneGroup = self.view
     --sound = event.params.pSound
@@ -19,35 +16,35 @@ function scene:create( event )
     local function menuListener(event)
         local self = event.target
         
-        local options = 
-        {
-            params = {
-                pSound = true,
-                pMusic = true
-            }
-        }
-        
         if(event.phase == "began") then
-            print("Touch Start")
-            --self.isVisible = true
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
-            print("Touch End")
-            --self.isVisible = true
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
-            if self.name == "play" then
-                composer.gotoScene("screens.Game_test", options)
+            if self.name == "play" then -- display loading screen then call next scene
+                -- i put a small delay on the call to gotoScene or else the loading screen wouldn't actually come to front
+                -- before starting the load
+                loadingScreen:toFront()
+                timer.performWithDelay(25, function() composer.gotoScene("screens.Game_test") end)
             elseif self.name == "howToPlay" then
-                system.openURL( "https://www.youtube.com/watch?v=labRYQFxJaE" )
+                system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4" )
             elseif self.name == "settings" then
-                composer.gotoScene("screens.Settings", options)
+                composer.gotoScene("screens.SettingsOverlay")
             elseif self.name == "exit" then
                 os.exit();
             end
         end    
     end
+    
+    loadingScreen = display.newRect(sceneGroup, display.contentWidth / 2, display.contentHeight / 2, display.contentWidth, display.contentHeight )
+    imgString = "images/ORIGINAL-Load-Screen.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    loadingScreen.fill = paint
+    sceneGroup:insert(loadingScreen)   
     
     local background = display.newImage("images/ORIGINAL-Main-Menu.jpg")
     background.x = display.contentWidth / 2
@@ -114,6 +111,7 @@ function scene:show( event )
       -- Called when the scene is still off screen (but is about to come on screen).
       -- scene:showButton()
    elseif ( phase == "did" ) then
+      composer.removeScene("screens.Game_test") 
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.

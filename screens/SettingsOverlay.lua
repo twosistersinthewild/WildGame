@@ -1,6 +1,7 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 local widget = require "widget"
+local GLOB = require "globals"
 
 ---------------------------------------------------------------------------------
 -- All code outside of the listener functions will only be executed ONCE
@@ -10,28 +11,10 @@ local widget = require "widget"
 -- local forward references should go here
 local soundChkBox
 local musicChkBox
-
-function toggleMusic (event)
-    if(event.phase == "ended") then
-        
-    end
-end
-
-function checkSound(event)
-    if(event.phase == "ended") then
-        print(soundChkBox.isOn)
-    end
-end
+local play
 
 function jumpListener (event)
     local target = event.target;
-    local options = 
-        {
-            params = {
-                pSound = soundChkBox.isOn,
-                pMusic = musicChkBox.isOn
-                }
-        }
             
     if(event.phase == "began") then
         display.getCurrentStage():setFocus(event.target)
@@ -44,11 +27,15 @@ function jumpListener (event)
         end
         if(target.name == "menu") then
             --composer.hideOverlay()
-            composer.gotoScene("screens.MainMenu", options)
+            composer.gotoScene("screens.MainMenu")
         end
     end
     
     
+end
+
+local function catchStrays(event)
+    return true
 end
 ---------------------------------------------------------------------------------
 
@@ -56,35 +43,48 @@ end
 function scene:create( event )
 
     local sceneGroup = self.view
-    sound = event.params.pSound;
+    
+    -- overlay background to absorb touch and tap events
+    local oBack = display.newRect(sceneGroup,display.contentWidth/2, display.contentHeight/2,display.contentWidth, display.contentHeight)
+    oBack:setFillColor(0,0,0)
+    oBack.alpha = .7
+    oBack:addEventListener("touch", catchStrays)
+    oBack:addEventListener("tap", catchStrays)
     
     local background = display.newImage("images/ORIGINAL-settings-screen.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
     sceneGroup:insert(background)
     
-
-    soundChkBox = widget.newSwitch
-    {
+    local sOptions =     {
         id = "checkbox", 
         x = display.contentWidth / 2 - 100,
         y = 100,
-        initialSwitchState = true
+        initialSwitchState = GLOB.pSound,
+        onEvent = function(event) if event.phase == "ended" then GLOB.pSound = not GLOB.pSound end end
     }
-    --soundChkBox.isOn = sound
+
+    soundChkBox = widget.newSwitch(sOptions)
+    sOptions["initialSwitchState"] = GLOB.pSound
+    soundChkBox:setState( { isOn=GLOB.pSound} )
     
-    musicChkBox = widget.newSwitch
-    {
+    
+    local mOptions = {
         id = "checkbox", 
         x = display.contentWidth / 2 - 100,
         y = 200,
-        initialSwitchState = true,
-        onpress = toggleMusic
+        initialSwitchState = GLOB.pMusic,
+        onEvent = function(event) if event.phase == "ended" then GLOB.pMusic = not GLOB.pMusic end end
     }
+    
+    mOptions["initialSwitchState"] = GLOB.pMusic
+    
+    musicChkBox = widget.newSwitch(mOptions)
+    --musicChkBox.isOn = false--GLOB.pMusic
+    musicChkBox:setState( { isOn=GLOB.pMusic} )
     
     local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
-    soundLbl:addEventListener("touch", checkSound)
     
     local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200, fontSize = 28 } )
     musicLbl:setTextColor( 1 )
@@ -95,8 +95,9 @@ function scene:create( event )
     sceneGroup:insert(musicChkBox)
     sceneGroup:insert(musicLbl)
     
-    local play = display.newRect(665, 365, 314, 32);
-   imgString = "images/main-play.jpg"
+
+    play = display.newRect(665, 365, 314, 32);
+    imgString = "images/main-play.jpg"
     local paint = {
         type = "image",
         filename = imgString
@@ -106,6 +107,7 @@ function scene:create( event )
     play:addEventListener("touch", jumpListener)
     play.name = "play"
     sceneGroup:insert(play)
+
     
     local menu = display.newRect(665, 415, 314, 32);
    imgString = "images/main-exit.jpg"
@@ -127,9 +129,14 @@ function scene:show( event )
 
    local sceneGroup = self.view
    local phase = event.phase
+   local parent = event.parent -- this will be nil unless called by the game (not from main menu)
+
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
+      if not parent then -- the play/resume button will only be shown when called by game
+          play.isVisible = false
+      end
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
@@ -142,13 +149,19 @@ function scene:hide( event )
 
    local sceneGroup = self.view
    local phase = event.phase
-   local parent = event.parent
+   local parent = nil
+   
+   if event.parent then
+       parent = event.parent
+   end  
 
    if ( phase == "will" ) then
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
-      parent:ResumeGame()
+      if event.parent then
+          parent:ResumeGame()
+      end          
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
    end
