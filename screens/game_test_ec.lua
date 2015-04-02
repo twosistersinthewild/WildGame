@@ -20,6 +20,9 @@ local cpuActiveEnvs = {} -- cpu cards on playfield
 local numOpp = 0
 local drawCount = 1
 local turnCount = 1
+--ecm
+local currentOpp = 1
+
 
 local deckIndex = 1
 local maxEnvirons = 3
@@ -36,6 +39,7 @@ local scrollXPos = GLOB.cardWidth / 2--display.contentWidth / 2
 local discardImage
 local mainGroup
 local oppGroup -- display's opponent cards
+local hiddenGroup
 local scrollView
 local overlay
 local logScroll
@@ -44,6 +48,10 @@ local scrollY = 10 -- this will allow the first item added to be in the right po
 local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 local settingsBtnOff, settingsBtnOn
+local btnY = 400
+local showMainLabel 
+--ecm
+showMainLabel = display.newText( { text = "Show Opponent ".. currentOpp, x = 75, y = btnY + 100, fontSize = 16 } )
 
 local HandMovementListener
 local FieldMovementListener
@@ -1232,10 +1240,10 @@ function scene:EndTurn()
 end
 
 function scene:ShowOpponentCards(oppNum)
-    
     -- hide the player's hand and cards
     mainGroup.isVisible = false
     scrollView.isVisible = false
+    
     
     local myChain = ""
     
@@ -1280,8 +1288,8 @@ function scene:HideOpponentCards()
     
     -- remove all display objects from the group before hiding again
     -- this allows it to be empty the next time cards are displayed
-    for i = 1, #oppGroup do
-        oppGroup:remove(i)
+    while oppGroup[1] do
+        hiddenGroup:insert(oppGroup[1])
     end
     
     oppGroup.isVisible = false
@@ -1298,7 +1306,7 @@ function scene:InitializeGame()
     -- pass 5 cards out to the player
     scene:drawCards(5,hand, "Player")
            
-    numOpp = 1
+    numOpp = 2
     
     -- pass 5 cards out to other players 
     if numOpp > 0 then
@@ -1473,15 +1481,18 @@ function scene:create( event )
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
-    sound = event.params.pSound
+    sound = GLOB.pSound
     
     local sceneGroup = self.view
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup)
     
     oppGroup = display.newGroup()
+    hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
+    sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
+    hiddenGroup.isVisible = false
     
     local imgString, paint, filename
  
@@ -1610,7 +1621,7 @@ function scene:create( event )
     cardBack.fill = paint
     mainGroup:insert(cardBack)
        
-    local btnY = 400
+
     
     -- touch demo
     local frontObject = display.newRect( 550, btnY, 100, 100 )
@@ -1633,15 +1644,12 @@ function scene:create( event )
     -- show opp 1 cards
     local showOpp = display.newRect( 750, btnY, 100, 100 )
     showOpp:setFillColor(.5,.5,.5)
-    local showOppLabel = display.newText( { text = "Show Opponent", x = 750, y = btnY, fontSize = 16 } )
+     showOppLabel = display.newText( { text = "Show Opponent", x = 750, y = btnY, fontSize = 16 } )
     showOppLabel:setTextColor( 1 )
     
-    local function tapListener( event )
-        local object = event.target
-        --print( object.name.." TAPPED!" )
-        scene:ShowOpponentCards(1)
-    end
-    
+   
+   
+   
      -- ecm give opponent background
     local cpuBackground = display.newImage("images/ORIGINAL-background-green.jpg")
     cpuBackground.x = display.contentWidth / 2
@@ -1658,11 +1666,50 @@ function scene:create( event )
     -- show opp 1 cards
     local showMain = display.newRect( 75, btnY + 100, 100, 100 )
     showMain:setFillColor(.5,.5,.5)
-    local showMainLabel = display.newText( { text = "Show Main", x = 75, y = btnY + 100, fontSize = 16 } )
     showMainLabel:setTextColor( 1 )
     
+    --ecm
     local function tapListener( event )
+     while oppGroup[1] do
+        hiddenGroup:insert(oppGroup[1])
+     end
+        
+  
         scene:HideOpponentCards()
+        showMainLabel.visible = false
+        showMain.visible = false
+        
+        if(currentOpp<=numOpp)then
+            currentOpp = currentOpp + 1
+        end
+        
+        if(currentOpp==numOpp+1)then
+            scene:HideOpponentCards() 
+        else
+            if(currentOpp == numOpp)then
+                showMainLabel.text = "Return to player "
+            else
+                showMainLabel.text = "Show Opponent " .. currentOpp+1 
+            end
+            oppGroup:insert(cpuBackground)
+            cpuBackground:toBack()
+            scene:ShowOpponentCards(currentOpp)
+
+        end
+        
+        
+        
+       
+        -- buttons for different players
+        
+        
+       
+        
+        oppGroup:insert(showMain)
+        oppGroup:insert(showMainLabel)
+    
+        
+
     end
     
     showMain:addEventListener( "tap", tapListener )
@@ -1724,19 +1771,27 @@ function scene:create( event )
     
     endTurnBtnOn.fill = paint
     endTurnBtnOn.alpha = .1
-    
+    -- ecm
     local function endTurnListener( event )
         --ecm
-        currentOpp = 1
         local self = event.target
         if(event.phase == "began") then
             self.alpha = 1
+            currentOpp = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
             self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
             turnCount = turnCount + 1
+            oppGroup:insert(cpuBackground)
+            cpuBackground:toBack()
+            scene:ShowOpponentCards(currentOpp)
+            if numOpp == 1 then
+                showMainLabel.text = "Return to Player"
+            else
+                showMainLabel.text = "Show Opponent "..currentOpp+1
+            end
             
         end 
     end    
@@ -2089,14 +2144,10 @@ function scene:destroy( event )
 end
 
 ---------------------------------------------------------------------------------
-
 -- Listener setup
 scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
-
 ---------------------------------------------------------------------------------
-
 return scene
-

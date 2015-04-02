@@ -19,7 +19,7 @@ local cpuActiveEnvs = {} -- cpu cards on playfield
 -- number of cpu or other opponents
 local numOpp = 0
 local turnCount = 1
-
+local currentOpp = 1
 
 local drawCount = 1
 local deckIndex = 1
@@ -38,6 +38,7 @@ local mainGroup
 local oppGroup -- display's opponent cards
 local scrollView
 local overlay
+local hiddenGroup
 local logScroll
 local logScrollWidth = 350
 local scrollY = 10 -- this will allow the first item added to be in the right position
@@ -1374,7 +1375,7 @@ function scene:InitializeGame()
     -- pass 5 cards out to the player
     scene:drawCards(5,hand, "Player")
            
-    numOpp = 1
+    numOpp = 2
     
     -- pass 5 cards out to other players 
     if numOpp > 0 then
@@ -1582,8 +1583,11 @@ function scene:create( event )
     sceneGroup:insert(mainGroup)
     
     oppGroup = display.newGroup()
+    hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
+    sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
+    hiddenGroup.isVisible = false
     
     local imgString, paint, filename
  
@@ -1715,11 +1719,11 @@ function scene:create( event )
     local btnY = 400
     
     -- touch demo
-    local frontObject = display.newRect( 550, btnY, 100, 100 )
-    frontObject:setFillColor(.5,.5,.5)
-    frontObject.name = "Front Object"
-    local frontLabel = display.newText( { text = "Play Card", x = 550, y = btnY, fontSize = 16 } )
-    frontLabel:setTextColor( 1 )
+   -- local frontObject = display.newRect( 550, btnY, 100, 100 )
+    --frontObject:setFillColor(.5,.5,.5)
+    --frontObject.name = "Front Object"
+   -- local frontLabel = display.newText( { text = "Play Card", x = 550, y = btnY, fontSize = 16 } )
+    --frontLabel:setTextColor( 1 )
     
     local function tapListener( event )
         local object = event.target
@@ -1727,16 +1731,16 @@ function scene:create( event )
         scene:PlayCard()
     end
     
-    frontObject:addEventListener( "tap", tapListener )
+ -- frontObject:addEventListener( "tap", tapListener )
 
-    mainGroup:insert(frontObject)
-    mainGroup:insert(frontLabel)
+    --mainGroup:insert(frontObject)
+    --mainGroup:insert(frontLabel)
     
     -- show opp 1 cards
-    local showOpp = display.newRect( 750, btnY, 100, 100 )
-    showOpp:setFillColor(.5,.5,.5)
-    local showOppLabel = display.newText( { text = "Show Opponent", x = 750, y = btnY, fontSize = 16 } )
-    showOppLabel:setTextColor( 1 )
+    --local showOpp = display.newRect( 750, btnY, 100, 100 )
+    --showOpp:setFillColor(.5,.5,.5)
+    --local showOppLabel = display.newText( { text = "Show Opponent", x = 750, y = btnY, fontSize = 16 } )
+    --showOppLabel:setTextColor( 1 )
     
     local function tapListener( event )
         local object = event.target
@@ -1750,10 +1754,10 @@ function scene:create( event )
     oppGroup:insert(cpuBackground)
     cpuBackground:toBack()
 
-    showOpp:addEventListener( "tap", tapListener )
+    --showOpp:addEventListener( "tap", tapListener )
 
-    mainGroup:insert(showOpp)
-    mainGroup:insert(showOppLabel)    
+   -- mainGroup:insert(showOpp)
+   -- mainGroup:insert(showOppLabel)    
     
     -- show opp 1 cards
     local showMain = display.newRect( 75, btnY + 100, 100, 100 )
@@ -1762,7 +1766,46 @@ function scene:create( event )
     showMainLabel:setTextColor( 1 )
     
     local function tapListener( event )
+     while oppGroup[1] do
+        hiddenGroup:insert(oppGroup[1])
+     end
+        
+  
         scene:HideOpponentCards()
+        showMainLabel.visible = false
+        showMain.visible = false
+        
+        if(currentOpp<=numOpp)then
+            currentOpp = currentOpp + 1
+        end
+        
+        if(currentOpp==numOpp+1)then
+            scene:HideOpponentCards() 
+        else
+            if(currentOpp == numOpp)then
+                showMainLabel.text = "Return to player "
+            else
+                showMainLabel.text = "Show Opponent " .. currentOpp+1 
+            end
+            oppGroup:insert(cpuBackground)
+            cpuBackground:toBack()
+            scene:ShowOpponentCards(currentOpp)
+
+        end
+        
+        
+        
+       
+        -- buttons for different players
+        
+        
+       
+        
+        oppGroup:insert(showMain)
+        oppGroup:insert(showMainLabel)
+    
+        
+
     end
     
     showMain:addEventListener( "tap", tapListener )
@@ -1770,10 +1813,10 @@ function scene:create( event )
     oppGroup:insert(showMain)
     oppGroup:insert(showMainLabel)       
     
-    local getHuman = display.newRect( 650, btnY, 100, 100 )
-    getHuman:setFillColor(.5,.5,.5)
-    local getHumanLabel = display.newText( { text = "Get Human", x = 650, y = btnY, fontSize = 16 } )
-    getHumanLabel:setTextColor( 1 )
+    --local getHuman = display.newRect( 650, btnY, 100, 100 )
+    --getHuman:setFillColor(.5,.5,.5)
+    --local getHumanLabel = display.newText( { text = "Get Human", x = 650, y = btnY, fontSize = 16 } )
+    --getHumanLabel:setTextColor( 1 )
     
     local function tapListener( event )
         local object = event.target
@@ -1790,10 +1833,10 @@ function scene:create( event )
         scene:DebugGetCard(69)
     end
     
-    getHuman:addEventListener( "tap", tapListener )
+    --getHuman:addEventListener( "tap", tapListener )
 
-    mainGroup:insert(getHuman)
-    mainGroup:insert(getHumanLabel) 
+   -- mainGroup:insert(getHuman)
+    -- mainGroup:insert(getHumanLabel) 
 
     local endTurnBtn = display.newRect( GLOB.scoreImages["col1"] + 25, 425, 100, 100)
     
@@ -1805,16 +1848,28 @@ function scene:create( event )
     
     endTurnBtn.fill = paint
     
-    local function endTurnListener( event ) 
+     local function endTurnListener( event )
+        --ecm
         local self = event.target
         if(event.phase == "began") then
+            self.alpha = 1
+            currentOpp = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
             turnCount = turnCount + 1
+            oppGroup:insert(cpuBackground)
+            cpuBackground:toBack()
+            scene:ShowOpponentCards(currentOpp)
+            if numOpp == 1 then
+                showMainLabel.text = "Return to Player"
+            else
+                showMainLabel.text = "Show Opponent "..currentOpp+1
+            end
+            
         end 
-    end    
+    end        
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
