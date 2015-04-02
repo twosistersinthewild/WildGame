@@ -7,7 +7,11 @@ settings = {
 		default = "landscape",
 		supported = { "landscape", }
 	},
-	
+        
+        android = {
+            versionCode = "01",        
+        },
+        
 	iphone = {
 		plist = {
 			UIStatusBarHidden = false,
