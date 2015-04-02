@@ -57,6 +57,10 @@ local sound
 local music
 local backgroundMusic
 
+local gameTimer
+local gameTime
+local cardsPlayed
+local drawn
 ---------------------------------------------------------------------------------
 
 -- todo enable strohmstead special ability to move plants
@@ -66,7 +70,9 @@ local backgroundMusic
 
 -- deal 5 cards
 
--- 
+local function gameTimeListener()
+    gameTime = gameTime + 1;
+end
 
 -- count the number of elements from a passed in table and return the count
 function scene:tableLength(myTable)
@@ -745,7 +751,11 @@ function HandMovementListener(event)
                 end
             end            
         end   
-
+        if played then 
+            cardsPlayed = cardsPlayed + 1
+            print(cardsPlayed)
+        end
+        
         if not played and validLoc and validLoc ~= "discard" then
             scrollView:insert(self)
         elseif played then
@@ -940,8 +950,12 @@ function scene:drawCards( num, myHand, who )
                 myImg:addEventListener( "tap", ZoomTapListener )
             else                
                 -- do anything cpu player might need
-            end            
-
+            end    
+            
+            if who == "Player" then
+                drawn = drawn + 1;
+            end
+            
             scene:GameLogAdd(who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
             deck[i] = nil  
             numPlayed = numPlayed + 1
@@ -1480,6 +1494,15 @@ function scene:ScoreImageChange(myEco)
                 ten_on.isVisible = true
                 ten_off.isVisible = false
                 scene:GameLogAdd("You win!")
+                local options = 
+                {
+                    params = {
+                        pTime = gameTime,
+                        pPlayed = cardsPlayed,
+                        pDrawn = drawn
+                    }
+                }
+                composer.gotoScene("screens.Win", options)
             end
             
             --print(i..": ",myEco[i]) -- needed to use , here to concatenate a boolean value
@@ -1541,7 +1564,12 @@ function scene:ResumeGame()
 end
 
 function scene:create( event )
-
+    
+    gameTime = 0
+    gameTimer = timer.performWithDelay( 1000, gameTimeListener, -1)
+    
+    cardsPlayed = 0
+    drawn = 0
     -- initialize sounds
     cardSlide = audio.loadSound("sounds/cardSlide.wav")
     click = audio.loadSound("sounds/click.wav")
@@ -1804,16 +1832,21 @@ function scene:create( event )
  
     local function settingsBtnListener( event ) 
         local self = event.target
+    
         if(event.phase == "began") then
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
             display.getCurrentStage():setFocus(nil)
-            local options = {
-            isModal = true,
-            effect = "fade",
-            time = 400,
-            params = {name = "game"}
+            local options = 
+            {
+                isModal = true,
+                effect = "fade",
+                time = 400,
+                params = 
+                {
+                    name = "game"
+                }
             }
             audio.pause(backgroundMusic)
             composer.showOverlay( "screens.SettingsOverlay", options )
@@ -2095,6 +2128,8 @@ function scene:show( event )
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
+        composer.removeScene("screens.Win")
+        timer.resume(gameTimer)
         scene:InitializeGame()
         if music then
             audio.resume(backgroundMusic)
@@ -2115,6 +2150,7 @@ function scene:hide( event )
       if music then
         audio.pause(backgroundChanel)
       end
+      timer.pause(gameTimer)
    elseif ( phase == "did" ) then
       -- Called immediately after scene goes off screen.
    end

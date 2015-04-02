@@ -34,7 +34,7 @@ function scene:create( event )
     background.y = display.contentHeight / 2
 
     sceneGroup:insert(background)
-    
+
     local timeLbl = display.newText( { text = event.params.pTime, x = 751, y = 188, fontSize = 28 } )
     timeLbl:setTextColor( 1 )
     sceneGroup:insert(timeLbl)
