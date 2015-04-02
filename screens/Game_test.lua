@@ -1808,15 +1808,15 @@ function scene:create( event )
             self.alpha = 1
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
-            self.alpha = .1
             display.getCurrentStage():setFocus(nil)
             local options = {
             isModal = true,
             effect = "fade",
             time = 400,
+            params = {name = "game"}
             }
             audio.pause(backgroundMusic)
-            composer.showOverlay( "Screens.SettingsOverlay", options )
+            composer.showOverlay( "screens.SettingsOverlay", options )
         end 
     end      
     

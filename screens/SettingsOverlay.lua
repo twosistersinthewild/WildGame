@@ -12,6 +12,7 @@ local GLOB = require "globals"
 local soundChkBox
 local musicChkBox
 local play
+local myParent
 
 function jumpListener (event)
     local target = event.target;
@@ -130,11 +131,11 @@ function scene:show( event )
    local sceneGroup = self.view
    local phase = event.phase
    local parent = event.parent -- this will be nil unless called by the game (not from main menu)
-
+   myParent = event.params["name"] -- this is used in scene:hide
 
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
-      if not parent then -- the play/resume button will only be shown when called by game
+      if event.params["name"] == "menu" then -- the play/resume button will only be shown when called by game
           play.isVisible = false
       end
    elseif ( phase == "did" ) then
@@ -159,7 +160,7 @@ function scene:hide( event )
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
-      if event.parent then
+      if myParent == "game" then
           parent:ResumeGame()
       end          
    elseif ( phase == "did" ) then
