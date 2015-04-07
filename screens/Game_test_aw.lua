@@ -3,7 +3,7 @@ local widget = require "widget"
 local GLOB = require "globals"
 local utilities = require "functions.Utilities"
 local gameLogic = require "functions.GameLogic"
-local controls = require "functions.Controls" -- aww
+local controls = require "functions.Controls"
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
@@ -819,10 +819,9 @@ local function ZoomTapListener( event )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
-            
-            local homeLoc = gameLogic:ValidLocation(self, activeEnvs) -- aww
-            
-            if self["cardData"].Type == "Environment" and (homeLoc == "discard" or homeLoc == "hand") then -- aww
+
+            -- aww
+            if self["cardData"].Type == "Environment" and (self.orgY > display.contentHeight - GLOB.cardHeight or self.orgX < 150) then -- aww
                 self.rotation = 0
             end
             
@@ -1548,8 +1547,7 @@ function scene:create( event )
     backgroundMusic = audio.loadStream("sounds/forestLoop.wav")
     sound = GLOB.pSound
     music = GLOB.pMusic 
-    
-    -- aww
+
     controls:MakeElements(mainGroup)
     overlay = controls:MakeOverlay(mainGroup)
     overlay:toBack()

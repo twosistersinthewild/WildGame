@@ -834,7 +834,22 @@ function gameLogic:CalculateScore(myEnvs)
             end
         end
         
+        -- aww
         if allNumsPlayed then
+            -- if all other numbers are present, make sure that apex is not already fulfilling another role
+            for i = 1, 3 do 
+                if myEnvs[i] then
+                    -- todo: change this for loop if there are more than 2 possible chains
+                    for chainCount = 1, 2 do
+                        chainStr = "chain"..chainCount -- will have a value of "chain1" or "chain2"
+
+                        
+
+                    end            
+                end 
+            end            
+            
+            
             curEco[10] = true -- explicitely set 10 (apex) to true
         end
         
