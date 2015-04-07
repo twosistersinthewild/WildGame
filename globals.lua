@@ -14,6 +14,8 @@ globals.spCardXLoc = 75
 globals.spCardYLoc = 425
 globals.gameLogXLoc = 775
 globals.gameLogYLoc = display.contentHeight - 100
+globals.logScrollWidth = 350
+globals.scrollY = 10 -- this will allow the first item added to be in the right position
 
 -- score button image locs
 globals.scoreImages = {}

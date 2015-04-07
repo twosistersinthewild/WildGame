@@ -13,6 +13,17 @@ local gameLogic_mt = { __index = gameLogic }	-- metatable
 -- PUBLIC FUNCTIONS
 -------------------------------------------------
 
+function gameLogic:Testing(myScene)
+    
+    --local sceneG = myScene.view
+    
+    for i=1, 10 do
+    myScene:remove(myScene[i])
+    end
+    
+end
+
+
 -- todo make sure these parameters are correct
 function gameLogic:ValidLocation(myCard, myEnvs)
     

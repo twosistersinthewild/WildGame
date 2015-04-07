@@ -88,6 +88,7 @@ function utilities:DetermineEnvType(myEnvs, ind)
     
     return envStr 
 end
+-------------------------------------------------
 
 -------------------------------------------------
 -- load a file into memory from the system.ResourceDirectory. this is being used to load a json file in and decoding it
