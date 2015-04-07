@@ -30,6 +30,12 @@ function jumpListener (event)
             --composer.hideOverlay()
             composer.gotoScene("screens.MainMenu")
         end
+        if(target.name == "exit") then
+            os.exit();
+        end
+        if(target.name == "new") then
+            composer.gotoScene("screens.Game_test")
+        end
     end
     
     
@@ -51,6 +57,7 @@ function scene:create( event )
     oBack.alpha = .7
     oBack:addEventListener("touch", catchStrays)
     oBack:addEventListener("tap", catchStrays)
+    sceneGroup:insert(oBack)
     
     local background = display.newImage("images/ORIGINAL-settings-screen.png")
     background.x = display.contentWidth / 2
@@ -59,8 +66,8 @@ function scene:create( event )
     
     local sOptions =     {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
-        y = 100,
+        x = display.contentWidth / 2 - 400,
+        y = 100 + 100,
         initialSwitchState = GLOB.pSound,
         onEvent = function(event) if event.phase == "ended" then GLOB.pSound = not GLOB.pSound end end
     }
@@ -72,8 +79,8 @@ function scene:create( event )
     
     local mOptions = {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
-        y = 200,
+        x = display.contentWidth / 2 - 400,
+        y = 200 + 100,
         initialSwitchState = GLOB.pMusic,
         onEvent = function(event) if event.phase == "ended" then GLOB.pMusic = not GLOB.pMusic end end
     }
@@ -84,21 +91,39 @@ function scene:create( event )
     --musicChkBox.isOn = false--GLOB.pMusic
     musicChkBox:setState( { isOn=GLOB.pMusic} )
     
-    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100, fontSize = 28 } )
+    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2 - 300, y = 100 + 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
     
-    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200, fontSize = 28 } )
+    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2 - 300, y = 200 + 100, fontSize = 28 } )
     musicLbl:setTextColor( 1 )
     
+    local instructionLbl = display.newText( { text = "Tap or Slide Checkboxes to toggle settings", x = display.contentWidth / 2, y = 600, fontSize = 18 } )
+    musicLbl:setTextColor( 1 )
+    
+    local settingsLbl = display.newText( { text = "Settings", x = display.contentWidth / 2, y = 100, fontSize = 36 } )
+    musicLbl:setTextColor( 1 )
     
     sceneGroup:insert(soundChkBox)
     sceneGroup:insert(soundLbl)
     sceneGroup:insert(musicChkBox)
     sceneGroup:insert(musicLbl)
+    sceneGroup:insert(instructionLbl)
+    sceneGroup:insert(settingsLbl)
     
+    exit = display.newRect(800, 460 + 60, 100, 100);
+    imgString = "images/exit-button.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    exit.fill = paint 
+    exit.alpha = 1;
+    exit:addEventListener("touch", jumpListener)
+    exit.name = "exit"
+    sceneGroup:insert(exit)
 
-    play = display.newRect(665, 365, 314, 32);
-    imgString = "images/main-play.jpg"
+    play = display.newRect(800, 115 + 60, 100, 100);
+    imgString = "images/return-to-game-button.png"
     local paint = {
         type = "image",
         filename = imgString
@@ -110,8 +135,8 @@ function scene:create( event )
     sceneGroup:insert(play)
 
     
-    local menu = display.newRect(665, 415, 314, 32);
-   imgString = "images/main-exit.jpg"
+    local menu = display.newRect(800, 230 + 60, 100, 100);
+   imgString = "images/main-menu-button.png"
     local paint = {
         type = "image",
         filename = imgString
@@ -121,6 +146,18 @@ function scene:create( event )
     menu:addEventListener("touch", jumpListener)
     menu.name = "menu"
     sceneGroup:insert(menu)
+    
+    local new = display.newRect(800, 345 + 60, 100, 100);
+   imgString = "images/new-game-button.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    new.fill = paint 
+    new.alpha = 1;
+    new:addEventListener("touch", jumpListener)
+    new.name = "new"
+    sceneGroup:insert(new)
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
@@ -173,6 +210,7 @@ function scene:destroy( event )
 
    local sceneGroup = self.view
 
+    
    -- Called prior to the removal of scene's view ("sceneGroup").
    -- Insert code here to clean up the scene.
    -- Example: remove display objects, save state, etc.

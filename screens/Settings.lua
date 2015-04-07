@@ -44,6 +44,13 @@ function jumpListener (event)
         if(target.name == "menu") then
             composer.gotoScene("screens.MainMenu", options)
         end
+        if(target.name == "exit") then
+            os.exit();
+        end
+        if(target.name == "new") then
+            composer.removeScene("screens.Game_test")
+            composer.gotoScene("screens.Game_test")
+        end
     end
     
     
@@ -93,6 +100,18 @@ function scene:create( event )
     sceneGroup:insert(musicChkBox)
     sceneGroup:insert(musicLbl)
     
+    exit = display.newRect(665, 365, 314, 32);
+    imgString = "images/exit-button.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    exit.fill = paint 
+    exit.alpha = 1;
+    exit:addEventListener("touch", jumpListener)
+    exit.name = "exit"
+    sceneGroup:insert(exit)
+    
     local play = display.newRect(665, 365, 314, 32);
    imgString = "images/main-play.jpg"
     local paint = {
@@ -116,6 +135,18 @@ function scene:create( event )
     menu:addEventListener("touch", jumpListener)
     menu.name = "menu"
     sceneGroup:insert(menu)
+    
+    local new = display.newRect(665, 415, 314, 32);
+   imgString = "images/new-game-button.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    new.fill = paint 
+    new.alpha = 1;
+    new:addEventListener("touch", jumpListener)
+    new.name = "menu"
+    sceneGroup:insert(new)
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
