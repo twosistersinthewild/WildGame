@@ -12,7 +12,7 @@ local function menuListener (event)
     self = event.target
     if event.phase == "ended" then
         if self.name == "play" then
-            composer.gotoScene("screens.Game_test_DO")
+            composer.gotoScene("screens.Game_test")
         elseif self.name == "menu" then
             composer.gotoScene("screens.MainMenu")
         elseif self.name == "exit" then

@@ -66,7 +66,7 @@ function scene:create( event )
     
     local sOptions =     {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 400,
+        x = display.contentWidth / 2 - 100,
         y = 100 + 100,
         initialSwitchState = GLOB.pSound,
         onEvent = function(event) if event.phase == "ended" then GLOB.pSound = not GLOB.pSound end end
@@ -79,7 +79,7 @@ function scene:create( event )
     
     local mOptions = {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 400,
+        x = display.contentWidth / 2 - 100,
         y = 200 + 100,
         initialSwitchState = GLOB.pMusic,
         onEvent = function(event) if event.phase == "ended" then GLOB.pMusic = not GLOB.pMusic end end
@@ -91,10 +91,10 @@ function scene:create( event )
     --musicChkBox.isOn = false--GLOB.pMusic
     musicChkBox:setState( { isOn=GLOB.pMusic} )
     
-    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2 - 300, y = 100 + 100, fontSize = 28 } )
+    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100 + 100, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
     
-    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2 - 300, y = 200 + 100, fontSize = 28 } )
+    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200 + 100, fontSize = 28 } )
     musicLbl:setTextColor( 1 )
     
     local instructionLbl = display.newText( { text = "Tap or Slide Checkboxes to toggle settings", x = display.contentWidth / 2, y = 600, fontSize = 18 } )
