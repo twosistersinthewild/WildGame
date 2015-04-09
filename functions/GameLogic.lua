@@ -782,21 +782,25 @@ function gameLogic:CalculateScore(myEnvs)
     -- run through each chain
     
     -- for each card found, flag the value in curEco for that spot of chain
+    -- also count the number of each occurance to use for checking that apex are not filling a double role
     
     local envFound = false
     local tabLen = 0
     local apexFound = false -- determine if an apex is in play. if it is and all 9 roles are filled player can win
+    local apexValues = {[1]=0, [2]=0, [3]=0,[4]=0, [5]=0, [6]=0,[7]=0, [8]=0, [9]=0,[10]=0}
+    local numCounts = {[1]=0, [2]=0, [3]=0,[4]=0, [5]=0, [6]=0,[7]=0, [8]=0, [9]=0,[10]=0}
     local allNumsPlayed = true -- flag to see if 10 can be set to true. if this becomes false, there is no win
     
     -- todo: might want to deal with this differently
     local curEco = {} -- clear the table first so that we only mark true if they are currently there
-    local chainStr = "chain"
+    local chainStr = "chain"    
     
     for i = 1, 3 do 
         if myEnvs[i] then
             if not envFound then -- only want to set this once, so once an env has been found this will not be true again
                 envFound = true
                 curEco[1] = true -- hard coded to make it a 1 for env
+                numCounts[1] = numCounts[1] + 1
             end
             
             -- todo: change this for loop if there are more than 2 possible chains
@@ -812,12 +816,15 @@ function gameLogic:CalculateScore(myEnvs)
                         for j = 1, tabLen do                        
                             cardValue = myEnvs[i][chainStr][j]["cardData"].Value
                             curEco[cardValue] = true
+                            numCounts[cardValue] = numCounts[cardValue] + 1
                             
                             if myEnvs[i][chainStr][j]["cardData"].Type == "Apex" then
                                 apexFound = true
+                                apexValues[cardValue] = apexValues[cardValue] + 1
                             -- human can become apex if it is played as last in chain
                             elseif myEnvs[i][chainStr][j]["cardData"].Type == "Wild" and not myEnvs[i][chainStr][j + 1] then
                                 apexFound = true
+                                apexValues[cardValue] = apexValues[cardValue] + 1
                             end
                         end
                     end
@@ -837,22 +844,14 @@ function gameLogic:CalculateScore(myEnvs)
         -- aww
         if allNumsPlayed then
             -- if all other numbers are present, make sure that apex is not already fulfilling another role
-            for i = 1, 3 do 
-                if myEnvs[i] then
-                    -- todo: change this for loop if there are more than 2 possible chains
-                    for chainCount = 1, 2 do
-                        chainStr = "chain"..chainCount -- will have a value of "chain1" or "chain2"
-
-                        
-
-                    end            
-                end 
-            end            
-            
-            
-            curEco[10] = true -- explicitely set 10 (apex) to true
-        end
-        
+            for i = 1, 10 do
+                if apexValues[i] > 0 then
+                    if numCounts[i] > apexValues[i] then
+                        curEco[10] = true -- explicitely set 10 (apex) to true
+                    end
+                end
+            end
+        end        
     end
     
     return curEco

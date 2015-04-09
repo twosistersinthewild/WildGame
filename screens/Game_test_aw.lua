@@ -42,6 +42,7 @@ local hiddenGroup
 local logScroll
 local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
+local cardBack
 
 local cardMoving = false
 
@@ -160,9 +161,11 @@ function DiscardMovementListener(event)
         -- get a string if the card has been dropped in a valid spot        
         validLoc = gameLogic:ValidLocation(self, activeEnvs)
         
-        if validLoc == "hand" and drawCount < 3 and turnCount  > 1 then
+        if validLoc == "hand" and drawCount < 3 and turnCount  > 1 then -- add card to hand from discard
             self:removeEventListener("touch", DiscardMovementListener) -- todo may not need to remove this
             event.phase = nil
+            -- aww 
+            self:removeEventListener("touch", DiscardMovementListener)
             self:addEventListener("touch", HandMovementListener)
             drawCount = drawCount + 1
             
@@ -191,9 +194,9 @@ function DiscardMovementListener(event)
     return true
 end 
 
+-- aww removed whitespace plus a few lines fixed
 -- listener for cards out on the playfield to move them around
 function FieldMovementListener(event)
-
     local self = event.target
 
     if event.phase == "began" then
@@ -250,13 +253,6 @@ function FieldMovementListener(event)
         display.getCurrentStage():setFocus(nil)
         
         if self.x ~= self.originalX and self.y ~= self.originalY then
-            
-
-             -- make sure to move card to appropriate table (env, discard, etc)
-            -- or snap back to hand if not in a valid area
-
-            -- may need to remove the listener here?
-
             local validLoc = ""
             local played = false
             local playedString = ""
@@ -264,12 +260,7 @@ function FieldMovementListener(event)
             -- get a string if the card has been dropped in a valid spot
             validLoc = gameLogic:ValidLocation(self, activeEnvs)
 
-            print(validLoc)
-
-            -- need to know
-            -- type, env, chain
-
-            local envNum, myChain, myIndex
+            local envNum, myChain, myIndex -- need to know  type, env, chain
 
             if not validLoc or validLoc == "special" then -- snap back -- aww
                 self.x = self.originalX
@@ -441,11 +432,7 @@ function FieldMovementListener(event)
                              local ind = chainSize - chainCount
                              local myCard = activeEnvs[envNum][myChain][ind]
 
-                             -- do what needs to be done to card here
-                             -- if plant move to discard
-                             -- if animal, move to hand
-                             --activeEnvs[envNum]["chain"..i][ind]
-
+                             -- do what needs to be done to card here. if plant move to discard. if animal, move to hand
                             myCard:removeEventListener("touch", FieldMovementListener)
                             event.phase = nil
                             
@@ -457,8 +444,7 @@ function FieldMovementListener(event)
                             myImg.y = scrollYPos
                             scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                            myImg:addEventListener( "touch", HandMovementListener )                
-                            --myImg:addEventListener( "tap", ZoomTapListener )
+                            myImg:addEventListener( "touch", HandMovementListener ) 
                             scene:AdjustScroller()        
 
                             if gameLogic:GetStat(myCard, "Value") == 2 or gameLogic:GetStat(myCard, "Value") == 3 then
@@ -511,14 +497,16 @@ function FieldMovementListener(event)
                                             end
                                         else
                                             if plantPlayed then
-                                                played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
+                                                -- aww
+                                                played = gameLogic:EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
                                             else
                                                 played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "first")
                                             end
                                         end
                                     else
                                         if plantPlayed then
-                                            played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
+                                            -- aww
+                                            played = gameLogic:EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
                                         else
                                             played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain1", "Player", "other")
                                         end
@@ -543,14 +531,14 @@ function FieldMovementListener(event)
                                             end 
                                         else
                                             if plantPlayed then
-						played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
+						played = gameLogic:EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
                                             else
                                                 played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "first")
                                             end
                                         end
                                     else
                                         if plantPlayed then
-                                            played = EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
+                                            played = gameLogic:EnvTest(activeEnvs[envNum][myChain][j], activeEnvs, i)
                                         else                                        
                                             played = gameLogic:MigrateAnimal(activeEnvs[envNum][myChain][j], activeEnvs[envNum][myChain], activeEnvs, i, "chain2", "Player", "other")
                                         end
@@ -606,11 +594,10 @@ function FieldMovementListener(event)
         cardMoving = false
     end
     
-    
     return true
 end 
 
--- from damian's code'
+-- aww removed some whitespace
 -- movement of a card from the hand out onto the playfield
 function HandMovementListener(event)
 
@@ -672,9 +659,6 @@ function HandMovementListener(event)
             -- make sure to move card to appropriate table (env, discard, etc)
             -- at this point, check can be made to put card into playfield and snap back to hand if it can't be played
         -- or snap back to hand if not in a valid area
-
-        -- may need to remove the listener here?
-
         display.getCurrentStage():setFocus(nil)
 
         local validLoc = ""
@@ -683,7 +667,6 @@ function HandMovementListener(event)
 
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self, activeEnvs)
-
 
         if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
             scrollView:insert(self)
@@ -749,7 +732,8 @@ function HandMovementListener(event)
                    end                   
                 end
             end            
-        end   
+        end
+        
         if played then 
             cardsPlayed = cardsPlayed + 1
             print(cardsPlayed)
@@ -771,7 +755,6 @@ function HandMovementListener(event)
         if playedString ~= "" then
             controls:GameLogAdd(logScroll,playedString)
         end
-
 
         scrollView.isVisible = true
         scene:AdjustScroller()
@@ -798,7 +781,8 @@ local function ZoomTapListener( event )
             self.yScale = 4
             self:removeEventListener("touch", HandMovementListener)
             self:removeEventListener("touch", FieldMovementListener)
-            --todo put remove discard listener here too
+            -- aww
+            self:removeEventListener("touch", DiscardMovementListener)
             mainGroup:insert(self)
             overlay.isHitTestable = true -- Only needed if alpha is 0
             overlay:addEventListener("touch", function() return true end)
@@ -830,6 +814,11 @@ local function ZoomTapListener( event )
                 self:addEventListener("touch", HandMovementListener)
                 scene:AdjustScroller()
             -- todo put an elseif here to check if moving back to discard
+            -- aww 
+            elseif self.orgX < 150 and self.orgY < display.contentHeight - GLOB.cardHeight then -- came from discard
+                self:addEventListener("touch", DiscardMovementListener)
+                self.x = self.orgX
+                self.y = self.orgY 
             else -- else kick back to position on playfield
                 --todo add field movement listener
                 self:addEventListener("touch", FieldMovementListener)
@@ -856,10 +845,13 @@ end
 
 -- activated when a *single* card has been dropped onto the discard pile
 -- can be used by player and cpu
-function scene:DiscardCard(myCard, myHand, origin)
+function scene:DiscardCard(myCard, myHand, origin)  
     table.insert(discardPile, myCard) -- insert the card in the last available position on discard    
     mainGroup:insert(discardPile[#discardPile])
-    myCard:addEventListener( "tap", ZoomTapListener )
+    -- aww 
+    if not myCard._functionListeners or myCard._functionListeners.tap == nil then
+        myCard:addEventListener( "tap", ZoomTapListener )
+    end
     myCard:addEventListener("touch", DiscardMovementListener) 
     discardPile[#discardPile]["x"] = GLOB.discardXLoc
     discardPile[#discardPile]["y"] = GLOB.discardYLoc    
@@ -887,9 +879,12 @@ function scene:DiscardHand(myHand)
 
     for i = 1, #myHand do
         table.insert(discardPile, myHand[i]) -- insert the first card in hand to the last available position on discard
-                              
         mainGroup:insert(discardPile[#discardPile])
-        myHand[i]:addEventListener( "tap", ZoomTapListener )
+        -- aww
+        if not myHand[i]._functionListeners or myHand[i]._functionListeners.tap == nil then
+            myHand[i]:addEventListener( "tap", ZoomTapListener )
+        end
+        
         myHand[i]:removeEventListener("touch", HandMovementListener)
         myHand[i]:addEventListener("touch", DiscardMovementListener)        
         discardPile[#discardPile]["x"] = GLOB.discardXLoc
@@ -910,69 +905,78 @@ function scene:DiscardHand(myHand)
     controls:GameLogAdd(logScroll,"All cards in hand have been discarded")
 end
 
-
+-- aww
 -- cards will be dealt to hand
 --@params: num is number of cards to draw. myHand is the hand to deal cards to (can be player or npc)
-function scene:drawCards( num, myHand, who )    
-    local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
-    local numPlayed = 0
+function scene:drawCards( num, myHand, who )
+    local numDraw = num
     
-    for i = deckIndex, numDraw, 1 do -- start from deckIndex and draw the number passed in. third param is step
+    while numDraw > 0 do
+        local deckCount = 0
+
+        for k,v in pairs(deck) do -- see how many cards are left in deck
+            deckCount = deckCount + 1
+        end
+
+        if deckCount < 1 then -- if number to draw exceeds cards in deck, empty discard pile and reshuffle deck
+            deckIndex = 1 -- reset deckIndex             
+
+            deck = {} -- nil out deck before reentering cards as a safety measure
+            
+            for i = 1, #discardPile do 
+                discardPile[i]._functionListeners = nil -- remove any tap or touch listeners from cards in discard               
+                discardPile[i].x = GLOB.drawPileXLoc
+                discardPile[i].y = GLOB.drawPileYLoc
+                table.insert(deck, discardPile[i])-- add discard cards back into deck                
+            end
+
+            discardPile = {}
+            scene:shuffleDeck(deck)-- shuffle deck
+            cardBack:toFront()
+            controls:GameLogAdd(logScroll, "The deck has been shuffled.")-- print that deck has been shuffled
+        end     
         
-        if deck[i] then -- make sure there is a card to draw
-            -- insert the card into the hand, then nil it from the deck            
-            table.insert(myHand, deck[i])
+        if deck[deckIndex] then
+            table.insert(myHand, deck[deckIndex])
 
-        -- if the player is being dealt a card, put the image on screen
-
+            -- if the player is being dealt a card, put the image on screen
             local imgString = "assets/"
             local filenameString = myHand[#myHand]["cardData"]["File Name"]
             imgString = imgString..filenameString
-
-            --print(imgString)
-            --print(myHand[#myHand].x)
-            local paint = {
-                type = "image",
-                filename = imgString
-            }
-
+            local paint = {type = "image",filename = imgString}
             local myImg = myHand[#myHand]
             myImg.fill = paint  
 
             if who == "Player" then 
-
                 scrollView:insert(myHand[#myHand])
                 myImg.x = scrollXPos
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
-
-                myImg:addEventListener( "touch", HandMovementListener )                
-                myImg:addEventListener( "tap", ZoomTapListener )
+                drawn = drawn + 1;
+                myImg:addEventListener( "touch", HandMovementListener )
+                --aww
+                if not myImg._functionListeners or myImg._functionListeners.tap == nil then
+                    myImg:addEventListener( "tap", ZoomTapListener )
+                end
             else                
                 -- do anything cpu player might need
             end    
             
-            if who == "Player" then
-                drawn = drawn + 1;
-            end
-            
-            controls:GameLogAdd(logScroll,who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
-            deck[i] = nil  
-            numPlayed = numPlayed + 1
-            
-            if who == "Player" then
-                scene:AdjustScroller()
-            end
+            controls:GameLogAdd(logScroll,who.." has drawn the " .. deck[deckIndex]["cardData"].Name .. " card.")
+            deck[deckIndex] = nil  
+            numDraw = numDraw - 1 
+            deckIndex = deckIndex + 1 -- increment the deck index for next deal.
         else
             -- the draw pile is empty
             -- todo: deal with this by either reshuffling discard or ending game
-            controls:GameLogAdd(logScroll,"There are no cards left to draw.")
+            numDraw = 0
+            controls:GameLogAdd(logScroll,"There are no cards left to draw.")     
         end
         
+        if who == "Player" then
+            scene:AdjustScroller()
+        end
     end
-    
-    -- increment the deck index for next deal. it should stop incrementing if deck is empty
-    deckIndex = deckIndex + numPlayed
 end
 
 -- search for Strohmstead to see if it is in play
@@ -1023,9 +1027,11 @@ function scene:DebugGetCard(id)
                 myImg.y = scrollYPos
                 scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                myImg:addEventListener( "touch", HandMovementListener )                
-                myImg:addEventListener( "tap", ZoomTapListener )
-
+                myImg:addEventListener( "touch", HandMovementListener ) 
+                -- aww
+                if not myImg._functionListeners or myImg._functionListeners.tap == nil then
+                    myImg:addEventListener( "tap", ZoomTapListener )
+                end
 
                 controls:GameLogAdd(logScroll,"Player has drawn the " .. deck[i]["cardData"].Name .. " card.")
                 deck[i] = nil  
@@ -1316,7 +1322,7 @@ function scene:ShowOpponentCards(oppNum)
     local myChain = ""
     
     for i = 1, 3 do
-        if cpuActiveEnvs[oppNum][i] then
+        if cpuActiveEnvs[oppNum] and cpuActiveEnvs[oppNum][i] then -- aww
             oppGroup:insert(cpuActiveEnvs[oppNum][i]["activeEnv"])
             if sound then
                 audio.play(cardSlide)  
@@ -1363,17 +1369,13 @@ function scene:HideOpponentCards()
     oppGroup.isVisible = false
 end
 
-function scene:InitializeGame()
-    -- deck should be shuffled after this
-    scene:shuffleDeck(deck)
+-- aww just removed whitespace
+function scene:InitializeGame()    
+    scene:shuffleDeck(deck)-- deck should be shuffled after this    
     
-    --initialize tables for where cards will be stored
-    hand = {}
-    discardPile = {}  
-    
-    -- pass 5 cards out to the player
-    scene:drawCards(5,hand, "Player")
-           
+    hand = {}--initialize tables for where cards will be stored
+    discardPile = {} 
+    scene:drawCards(5,hand, "Player")    -- pass 5 cards out to the player
     numOpp = 2
     
     -- pass 5 cards out to other players 
@@ -1384,26 +1386,16 @@ function scene:InitializeGame()
             cpuActiveEnvs[i] = {} -- initialize computer's playfield area
             cpuHand[i] = {}
             local whoString = "Opponent"..i
-            scene:drawCards(5,cpuHand[i], whoString)
-            
+            scene:drawCards(5,cpuHand[i], whoString)            
         end
     end 
-    
-
     
     -- flip over a card and add to discard if we want
     
     -- todo change this from an automated process
-    
-    --scene:PlayCard()
-
-
-    
 end
 
-function scene:ScoreImageChange(myEco)
-    --print("Current Score:")
-    
+function scene:ScoreImageChange(myEco)    
     for i = 1, 10 do
         if myEco[i] then
             if i == 1 then
@@ -1566,7 +1558,7 @@ function scene:create( event )
         return true
     end      
 
-    local cardBack = controls:CardBack(mainGroup)
+    cardBack = controls:CardBack(mainGroup)
     cardBack:addEventListener( "tap", drawCardListener )    
        
     local btnY = 400
