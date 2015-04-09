@@ -103,12 +103,6 @@ function gameLogic:RemoveFromHand(myCard, myHand)
     end
 end
 
--- todo what was this? can probably be removed
-function gameLogic:RemoveFromPlayfield(myEnv, myPlayfield)
-
-end
-
-
 --------------------------
 -- try to play an environment card
 --------------------------    
