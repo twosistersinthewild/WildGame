@@ -75,7 +75,8 @@ function controls:MakeLogScroll(myGroup, scrollWidth)
     element = widget.newScrollView
     {
         width = scrollWidth,
-        height = 100,
+        -- aww
+        height = 160,
         horizontalScrollDisabled = true,
         isBounceEnabled = false,
         hideScrollBar = false,
