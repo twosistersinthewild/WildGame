@@ -34,6 +34,7 @@ function jumpListener (event)
             os.exit();
         end
         if(target.name == "new") then
+            composer.removeScene("screens.Game_test")
             composer.gotoScene("screens.Game_test")
         end
     end
@@ -197,7 +198,7 @@ function scene:hide( event )
       -- Called when the scene is on screen (but is about to go off screen).
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
-      if myParent == "game" then
+      if myParent == "game" and parent then
           parent:ResumeGame()
       end          
    elseif ( phase == "did" ) then

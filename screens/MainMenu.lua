@@ -114,6 +114,7 @@ function scene:show( event )
    local phase = event.phase
 
    if ( phase == "will" ) then
+       
       -- Called when the scene is still off screen (but is about to come on screen).
       -- scene:showButton()
    elseif ( phase == "did" ) then
