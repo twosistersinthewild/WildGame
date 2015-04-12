@@ -1293,6 +1293,22 @@ function scene:EndTurn()
                 scene:DiscardHand(cpuHand[i])                
                 scene:AdjustScroller()
             end
+            
+            -- check to see if computer player has won. if so, go to lose screen
+            local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs[i])
+            
+            if cpuScore[10] then -- if 10 is true they have won
+                local options = 
+                {
+                    params = {
+                        pTime = gameTime,
+                        pPlayed = cardsPlayed,
+                        pDrawn = drawn
+                    }
+                }
+                scrollY = controls:GameLogAdd(logScroll,scrollY,whoString.." has won")
+                composer.gotoScene("screens.Lose", options)
+            end
         end
     end     
     

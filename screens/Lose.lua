@@ -30,7 +30,7 @@ function scene:create( event )
    sound = GLOB.pSound
    music = GLOB.pMusic
    
-   local background = display.newImage("images/ORIGINAL-win-screen.jpg")
+   local background = display.newImage("images/ORIGINAL-lose-screen.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -136,3 +136,4 @@ scene:addEventListener( "destroy", scene )
 ---------------------------------------------------------------------------------
 
 return scene
+
