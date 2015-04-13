@@ -75,7 +75,8 @@ function controls:MakeLogScroll(myGroup, scrollWidth)
     element = widget.newScrollView
     {
         width = scrollWidth,
-        height = 100,
+        -- aww
+        height = 160,
         horizontalScrollDisabled = true,
         isBounceEnabled = false,
         hideScrollBar = false,
@@ -256,7 +257,7 @@ function controls:ScoreIcons(myGroup)
     return one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off,eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 end
 
-function controls:GameLogAdd(myScroller, logText)
+function controls:GameLogAdd(myScroller, scrollPos,logText)
     -- multiline text will be split and looped through, adding a max number of characters each line until completion
     -- todo make multiline text break at whole words rather than just split it
     
@@ -280,7 +281,7 @@ function controls:GameLogAdd(myScroller, logText)
        local logOptions = {
             text = logText,
             x = textWidth/2 + 5,
-            y = GLOB.scrollY,
+            y = scrollPos,
             width = textWidth,
             height = textHeight,
             font = native.systemFont,
@@ -288,7 +289,7 @@ function controls:GameLogAdd(myScroller, logText)
             align = "left"    
         }  
 
-        GLOB.scrollY = GLOB.scrollY + textHeight
+        scrollPos = scrollPos + textHeight
 
         local itemLabel = display.newText(logOptions)
         itemLabel:setFillColor(0,0,0) 
@@ -302,6 +303,8 @@ function controls:GameLogAdd(myScroller, logText)
     end
 
     myScroller:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right  
+
+    return scrollPos
 end
 -------------------------------------------------
 

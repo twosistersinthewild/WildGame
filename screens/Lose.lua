@@ -30,7 +30,7 @@ function scene:create( event )
    sound = GLOB.pSound
    music = GLOB.pMusic
    
-   local background = display.newImage("images/ORIGINAL-win-screen.jpg")
+   local background = display.newImage("images/ORIGINAL-lose-screen.png")
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
 
@@ -39,10 +39,6 @@ function scene:create( event )
     local timeLbl = display.newText( { text = event.params.pTime.." Seconds", x = 820, y = 188, fontSize = 28 } )
     timeLbl:setTextColor( 1 )
     sceneGroup:insert(timeLbl)
-    
-    local secondsLbl = display.newText( { text = "seconds", x = 820, y = 188, fontSize = 28 } )
-    secondsLbl:setTextColor( 1 )
-    sceneGroup:insert(secondsLbl)
     
     local playedLbl = display.newText( { text = event.params.pPlayed, x = 755, y = 250, fontSize = 28 } )
     playedLbl:setTextColor( 1 )
@@ -140,3 +136,4 @@ scene:addEventListener( "destroy", scene )
 ---------------------------------------------------------------------------------
 
 return scene
+
