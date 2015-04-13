@@ -1200,9 +1200,89 @@ function scene:EndTurn()
     drawCount = 1
     if numOpp > 0 then       
         for i = 1, numOpp do
+            --Find what we need
+            local discardDrawn = 0;
+            local cpuScore = gameLogic:CalculateScore(activeEnvs)
+            
+            local needEnv = false;
+            
+            for j = 1, 3 do
+                if cpuActiveEnvs[i][j] == nil then
+                    needEnv = true;
+                end
+            end
+
+            local needPlant = false;
+
+            for j = 1, 3 do
+                if cpuActiveEnvs[i][j] then
+                    for k = 1, 2 do
+                        if cpuActiveEnvs[i][j]["chain"..k] then
+                            if cpuActiveEnvs[i][j]["chain"..k][1] == nil then
+                                needPlant = true;
+                            end
+                        end
+                    end
+                end
+            end
+            
+            --check available cards
+            drawFromDiscard = 0
+            while drawFromDiscard < 1 do
+                for j=1, #cpuScore do
+                    if drawFromDiscard < 2 then
+                        if not cpuScore[j] then -- cpu doesn't have this role filled
+                            if j == 1 and needEnvs then
+                                if discardPile[#discardPile]["cardData"]["Type"] == "Environment" then
+                                    drawFromDiscard = 1
+                                elseif discardPile[#discardPile - 1] and discardPile[#discardPile - 1]["cardData"]["Type"] == "Environment" then
+                                    drawFromDiscard = 2
+                                end
+                            elseif (j == 2 or j == 3) and needPlant then
+                                if discardPile[#discardPile]["cardData"]["Type"] == "Small Plant" or discardPile[#discardPile]["cardData"]["Type"] == "Large Plant" then
+                                    drawFromDiscard = 1
+                                end
+                                elseif discardPile[#discardPile - 1] and discardPile[#discardPile - 1]["cardData"]["Type"] == "Small Plant" then
+                                    drawFromDiscard = 2
+                                end
+                            else
+                                for k=1, 4 do -- check all 4 possible roles card could fill
+                                    if discardPile[#discardPile]["cardData"]["Diet"..k.."_Value"] == i then
+                                        drawFromDiscard = 1
+                                        break
+                                    end
+                                end
+                                if drawFromDiscard < 1 and discardPile[#discardPile - 1]then -- if we didn't find it, check next lower one. this might need tweaked    
+                                    for k=1, 4 do -- check all 4 possible roles card could fill
+                                        if discardPile[#discardPile - 1]["cardData"]["Diet"..k.."_Value"] == i then
+                                            drawFromDiscard = 2
+                                            break
+                                        end
+                                    end
+                                end   
+                            end
+                        --end 
+                    else
+                        break
+                    end
+                end
+            end
+            
+             --#DTO check discard pile
+            for j = 1 , drawFromDiscard do
+                discardPile[#discardPile]:removeEventListener("touch", DiscardMovementListener);
+                table.insert(cpuHand, discardPile[#discardPile])
+                discardPile[#discardPile] = nil
+            end
+            
+            
             local whoString = "Opponent"..i
             -- todo check discard pile for a card to draw from
-            scene:drawCards(2,cpuHand[i], whoString)
+            if(drawFromDiscard < 2) then
+                scene:drawCards(2 - drawFromDiscard, cpuHand[i], whoString)
+            else
+                scene:drawCards(2, cpuHand[i], whoString) 
+            end
                       
             -- opponent tries to play cards
             -- cycle through their entire hand

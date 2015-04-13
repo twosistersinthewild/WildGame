@@ -39,6 +39,10 @@ function scene:create( event )
     timeLbl:setTextColor( 1 )
     sceneGroup:insert(timeLbl)
     
+    local secondsLbl = display.newText( { text = "seconds", x = 820, y = 188, fontSize = 28 } )
+    secondsLbl:setTextColor( 1 )
+    sceneGroup:insert(secondsLbl)
+    
     local playedLbl = display.newText( { text = event.params.pPlayed, x = 755, y = 250, fontSize = 28 } )
     playedLbl:setTextColor( 1 )
     sceneGroup:insert(playedLbl)
