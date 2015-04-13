@@ -15,6 +15,8 @@ globals.spCardYLoc = 425
 globals.gameLogXLoc = 775
 globals.gameLogYLoc = display.contentHeight - 80
 globals.logScrollWidth = 350
+globals.tutBoxX = display.contentWidth/2
+globals.tutBoxY = 350
 
 -- score button image locs
 globals.scoreImages = {}

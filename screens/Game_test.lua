@@ -584,10 +584,9 @@ function FieldMovementListener(event)
 
             local curEco = gameLogic:CalculateScore(activeEnvs)
             
-            scene:ScoreImageChange(curEco)
-            gameLogic:RepositionCards(activeEnvs)
+            scene:ScoreImageChange(curEco)            
         end
-        
+        gameLogic:RepositionCards(activeEnvs)
         cardMoving = false
     end
     
