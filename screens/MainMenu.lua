@@ -28,7 +28,9 @@ function scene:create( event )
                 loadingScreen:toFront()
                 timer.performWithDelay(50, function() composer.gotoScene("screens.Game_test_DO") end)
             elseif self.name == "howToPlay" then
-                system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4" )
+                --system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4" )
+                loadingScreen:toFront()
+                timer.performWithDelay(50, function() composer.gotoScene("screens.tutorial") end)                
             elseif self.name == "settings" then
                 local options = {
                 isModal = true,
@@ -119,6 +121,7 @@ function scene:show( event )
       -- scene:showButton()
    elseif ( phase == "did" ) then
       composer.removeScene("screens.Game_test")
+      composer.removeScene("screens.tutorial")
       loadingScreen:toBack();
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.

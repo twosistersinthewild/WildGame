@@ -151,110 +151,76 @@ function controls:CPUBG(myGroup)
     return element
 end
 
-function controls:ScoreIcons(myGroup)    
-    local one_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44) 
-    one_off.fill = {type = "image",filename = "images/1a.png"}  
-    one_off.alpha = .33
+function controls:ScoreIconsOff(myGroup)
+    local iconTable = {}
     
-    local one_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
-    one_on.fill = {type = "image",filename = "images/1.png"}
+    iconTable[1] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44) 
+    iconTable[1].fill = {type = "image",filename = "images/1a.png"}  
+    iconTable[1].alpha = .33    
+    iconTable[2] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)    
+    iconTable[2].fill = {type = "image",filename = "images/2a.png"}
+    iconTable[2].alpha = .33  
+    iconTable[3] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+    iconTable[3].fill = {type = "image",filename = "images/3a.png"}
+    iconTable[3].alpha = .33   
+    iconTable[4] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
+    iconTable[4].fill = {type = "image",filename = "images/4a.png"}
+    iconTable[4].alpha = .33
+    iconTable[5] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    iconTable[5].fill = {type = "image",filename = "images/5a.png"}
+    iconTable[5].alpha = .33
+    iconTable[6] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    iconTable[6].fill = {type = "image",filename = "images/6a.png"}
+    iconTable[6].alpha = .33
+    iconTable[7] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
+    iconTable[7].fill = {type = "image",filename = "images/7a.png"}
+    iconTable[7].alpha = .33
+    iconTable[8] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
+    iconTable[8].fill = {type = "image",filename = "images/8a.png"}
+    iconTable[8].alpha = .33    
+    iconTable[9] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    iconTable[9].fill = {type = "image",filename = "images/9a.png"}
+    iconTable[9].alpha = .33 
+    iconTable[10] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    iconTable[10].fill = {type = "image",filename = "images/10a.png"}
+    iconTable[10].alpha = .33
     
-    local two_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)    
-    two_off.fill = {type = "image",filename = "images/2a.png"}
-    two_off.alpha = .33
+    for i = 1, 10 do
+        myGroup:insert(iconTable[i])
+    end    
     
-    local two_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
-    two_on.fill = {type = "image",filename = "images/2.png"}
+    return iconTable
+end
+
+function controls:ScoreIconsOn(myGroup) 
+    local iconTable = {}
     
-    local three_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
-    three_off.fill = {type = "image",filename = "images/3a.png"}
-    three_off.alpha = .33
+    iconTable[1] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"],44,44)
+    iconTable[1].fill = {type = "image",filename = "images/1.png"}
+    iconTable[2] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"],44,44)
+    iconTable[2].fill = {type = "image",filename = "images/2.png"}
+    iconTable[3] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
+    iconTable[3].fill = {type = "image",filename = "images/3.png"}
+    iconTable[4] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
+    iconTable[4].fill = {type = "image",filename = "images/4.png"}
+    iconTable[5] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    iconTable[5].fill = {type = "image",filename = "images/5.png"}
+    iconTable[6] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
+    iconTable[6].fill = {type = "image",filename = "images/6.png"}
+    iconTable[7] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
+    iconTable[7].fill = {type = "image",filename = "images/7.png"}
+    iconTable[8] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
+    iconTable[8].fill = {type = "image",filename = "images/8.png"}
+    iconTable[9] = display.newRect(myGroup,GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    iconTable[9].fill = {type = "image",filename = "images/9.png"}
+    iconTable[10] = display.newRect(myGroup,GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
+    iconTable[10].fill = {type = "image",filename = "images/10.png"}
     
-    local three_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50,44,44)
-    three_on.fill = {type = "image",filename = "images/3.png"}
+    for i = 1, 10 do        
+        iconTable[i].isVisible = false
+    end
     
-    local four_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
-    four_off.fill = {type = "image",filename = "images/4a.png"}
-    four_off.alpha = .33
-    
-    local four_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50,44,44)
-    four_on.fill = {type = "image",filename = "images/4.png"}
-    
-    local five_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
-    five_off.fill = {type = "image",filename = "images/5a.png"}
-    five_off.alpha = .33
-    
-    local five_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 2,44,44)
-    five_on.fill = {type = "image",filename = "images/5.png"}
-        
-    local six_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
-    six_off.fill = {type = "image",filename = "images/6a.png"}
-    six_off.alpha = .33
-    
-    local six_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 2,44,44)
-    six_on.fill = {type = "image",filename = "images/6.png"}
-    
-    local seven_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
-    seven_off.fill = {type = "image",filename = "images/7a.png"}
-    seven_off.alpha = .33
-    
-    local seven_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 3,44,44)
-    seven_on.fill = {type = "image",filename = "images/7.png"}
-    
-    local eight_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
-    eight_off.fill = {type = "image",filename = "images/8a.png"}
-    eight_off.alpha = .33
-    
-    local eight_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 3,44,44)
-    eight_on.fill = {type = "image",filename = "images/8.png"}
-    
-    local nine_off = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
-    nine_off.fill = {type = "image",filename = "images/9a.png"}
-    nine_off.alpha = .33
-    
-    local nine_on = display.newRect(GLOB.scoreImages["col1"],GLOB.scoreImages["row1"] + 50 * 4,44,44)
-    nine_on.fill = {type = "image",filename = "images/9.png"}
-    
-    local ten_off = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
-    ten_off.fill = {type = "image",filename = "images/10a.png"}
-    ten_off.alpha = .33
-    
-    local ten_on = display.newRect(GLOB.scoreImages["col1"] + 50,GLOB.scoreImages["row1"] + 50 * 4,44,44)
-    ten_on.fill = {type = "image",filename = "images/10.png"}
-    
-    one_on.isVisible = false;
-    two_on.isVisible = false;
-    three_on.isVisible = false;
-    four_on.isVisible = false;
-    five_on.isVisible = false;
-    six_on.isVisible = false;
-    seven_on.isVisible = false;
-    eight_on.isVisible = false;
-    nine_on.isVisible = false;
-    ten_on.isVisible = false;    
-    
-    myGroup:insert(one_on)
-    myGroup:insert(one_off)
-    myGroup:insert(two_on)
-    myGroup:insert(two_off)
-    myGroup:insert(three_on)
-    myGroup:insert(three_off)
-    myGroup:insert(four_on)
-    myGroup:insert(four_off)
-    myGroup:insert(five_on)
-    myGroup:insert(five_off)
-    myGroup:insert(six_on)
-    myGroup:insert(six_off)
-    myGroup:insert(seven_on)
-    myGroup:insert(seven_off)
-    myGroup:insert(eight_on)
-    myGroup:insert(eight_off)
-    myGroup:insert(nine_on)
-    myGroup:insert(nine_off)
-    myGroup:insert(ten_on)
-    myGroup:insert(ten_off)      
-    
-    return one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off,eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
+    return iconTable
 end
 
 function controls:GameLogAdd(myScroller, scrollPos,logText)
@@ -306,6 +272,8 @@ function controls:GameLogAdd(myScroller, scrollPos,logText)
 
     return scrollPos
 end
+
+
 -------------------------------------------------
 
 -------------------------------------------------

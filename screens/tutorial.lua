@@ -1593,18 +1593,25 @@ function scene:create( event )
     -- aww for tutorial
     local jsonStr = utilities:loadFile("data/tutorialText.json", system.ResourceDirectory)
     local tutText = json.decode(jsonStr)    
-    local tutBox = display.newRect(GLOB.tutBoxX, GLOB.tutBoxY, 700, 200)
+    local tutBox = display.newRect(GLOB.tutBoxX, GLOB.tutBoxY, 400, 400)
+    tutBox:setFillColor(1)
+    tutBox.alpha = .7
     mainGroup:insert(tutBox)
-    tutLabel = display.newText( { text = tutText[tutStepCounter]["Text"], width = 650, x = GLOB.tutBoxX, y = GLOB.tutBoxY, fontSize = 16 } )
+    tutLabel = display.newText( { text = tutText[tutStepCounter]["Text"], width = 340, x = GLOB.tutBoxX, y = GLOB.tutBoxY, fontSize = 14, font = native.systemFont } )
     tutLabel:setTextColor( 0 )    
     mainGroup:insert(tutLabel)
-    
-
     
     local function tutListener()
         if tutStepCounter == 1 then -- wait for player to put an env on playfield
             for i = 1, 3 do
                 if activeEnvs[i] then
+                    if i ~= 1 then -- move card to first env if it's on another one'
+                        activeEnvs[1] = {}
+                        activeEnvs[1]["activeEnv"] = activeEnvs[i]["activeEnv"]      
+                        activeEnvs[i] = nil
+                        gameLogic:RepositionCards(activeEnvs)
+                    end
+                    
                     tutStepCounter = 2
                     tutLabel.text = tutText[tutStepCounter]["Text"]
                     break
@@ -1630,7 +1637,35 @@ function scene:create( event )
                     break 
                 end                
             end
+        elseif tutStepCounter == 3 then  -- play amber snail
+            tutStepCounter = gameLogic:TutorialCheck(activeEnvs,tutStepCounter)
             
+            if tutStepCounter == 4 then
+                tutLabel.text = tutText[tutStepCounter]["Text"]
+            end
+        elseif tutStepCounter == 4 then -- play eastern toad
+            tutStepCounter = gameLogic:TutorialCheck(activeEnvs,tutStepCounter)
+            
+            if tutStepCounter == 5 then
+                tutLabel.text = tutText[tutStepCounter]["Text"]
+            end
+        elseif tutStepCounter == 5 then -- play timber wolf
+            tutStepCounter = gameLogic:TutorialCheck(activeEnvs,tutStepCounter)
+            
+            if tutStepCounter == 6 then
+                tutLabel.text = tutText[tutStepCounter]["Text"]
+            end  
+        elseif tutStepCounter == 6 and drawCount == 1 and turnCount ~= 1 then
+            tutStepCounter = 7
+            tutLabel.text = tutText[tutStepCounter]["Text"]
+        elseif tutStepCounter == 7 and drawCount > 2 then
+            tutStepCounter = 8
+            tutLabel.text = tutText[tutStepCounter]["Text"] 
+            
+            local linkLabel = display.newText( { text = "https://www.youtube.com/watch?v=n4Cc02VLYq4", width = 340, x = GLOB.tutBoxX, y = GLOB.tutBoxY + 125, fontSize = 16 } )
+            linkLabel:setTextColor( 0,0,1 )  
+            linkLabel:addEventListener("tap", function() system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4") return true end)
+            mainGroup:insert(linkLabel)            
         end
     end
     
@@ -1742,7 +1777,10 @@ function scene:create( event )
         if(event.phase == "began") then
             currentOpp = 1
             display.getCurrentStage():setFocus(event.target)
-        elseif(event.phase == "ended") then
+        -- aww tutorial code   
+        elseif(event.phase == "ended" and tutStepCounter == 8) then
+            composer.gotoScene("screens.MainMenu")
+        elseif(event.phase == "ended" and tutStepCounter == 6) then      
             display.getCurrentStage():setFocus(nil)
             scene:EndTurn()
             turnCount = turnCount + 1
@@ -1753,8 +1791,11 @@ function scene:create( event )
                 showMainLabel.text = "Return to Player"
             else
                 showMainLabel.text = "Show Opponent "..currentOpp+1
-            end            
-        end 
+            end 
+        elseif(event.phase == "ended") then
+            display.getCurrentStage():setFocus(nil)
+            -- aww end tutorial code
+        end
     end        
     
     endTurnBtn:addEventListener( "touch", endTurnListener )

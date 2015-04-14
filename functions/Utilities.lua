@@ -34,6 +34,31 @@ function utilities:RNG(high, low) -- can pass in 0, 1, or 2 numbers
     return newNum
 end  
 --------------------------------------------------- 
+-- count the number of elements from a passed in table and return the count
+-- this is safer than using #myTable to find length since it uses in pairs rather than numeric indexes
+function utilities:TableLength(myTable)
+    local count = 0
+    
+    for k,v in pairs(myTable) do
+        count = count + 1
+    end
+    
+    return count
+end
+--------------------------------------------------- 
+-- shuffle elements in table
+function utilities:ShuffleDeck(myTable)
+    local rand = math.random 
+    --assert( myTable, "shuffleTable() expected a table, got nil" )
+    local iterations = #myTable
+    local j
+    
+    for i = iterations, 2, -1 do
+        j = rand(i)
+        myTable[i], myTable[j] = myTable[j], myTable[i]
+    end
+end
+--------------------------------------------------- 
  -- round a number up if it's decimial place is .5 or above, else round down 
  -- NOTE: may not work correctly for negative numbers
 function utilities:Round(number) 

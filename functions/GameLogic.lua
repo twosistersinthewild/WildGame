@@ -850,6 +850,31 @@ function gameLogic:CalculateScore(myEnvs)
     
     return curEco
 end
+
+-- checks to see if player has proceeded with tutorial scenario
+function gameLogic:TutorialCheck(myEnvs, counter)
+    local animalFound = false
+    local chainString = ""
+    for i = 1, 3 do
+        if myEnvs[i] then
+            for j = 1, 2 do
+                chainString = "chain"..j                    
+                if myEnvs[i][chainString] and myEnvs[i][chainString][counter - 1] then
+                    counter = counter + 1                    
+                    animalFound = true
+                    break
+                end  
+            end
+        end
+
+        if animalFound then 
+            break 
+        end  
+    end    
+    
+    return counter
+end
+
 -------------------------------------------------
  
 return gameLogic
