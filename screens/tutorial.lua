@@ -41,6 +41,8 @@ local logScroll
 local scoreIconsOn = {}
 local scoreIconsOff = {}
 local cardBack
+local cpuBackground
+
 
 local cardMoving = false
 
@@ -1258,7 +1260,16 @@ function scene:EndTurn()
             -- check to see if computer player has won. if so, go to lose screen
             local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs[i])
             
-            if cpuScore[10] then -- if 10 is true they have won
+            local cpuWin = true
+            
+            for j = 1, 10 do
+                if not cpuScore[j] then
+                    cpuWin = false
+                    break
+                end                
+            end
+            
+            if cpuWin then -- if all 10 is true they have won
                 local options = 
                 {
                     params = {
@@ -1369,29 +1380,43 @@ function scene:InitializeGame()
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Cards can be drawn from the draw pile or pulled from the discard pile into the hand.")
 end
 
-function scene:ScoreImageChange(myEco)    
+function scene:ScoreImageChange(myEco)
+    local playerWin = true
+    
     for i = 1, 10 do
         if myEco[i] then
             scoreIconsOn[i].isVisible = true
             scoreIconsOff[i].isVisible = false
-
-            if i == 10 then
-                scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
-                local options = 
-                {
-                    params = {
-                        pTime = gameTime,
-                        pPlayed = cardsPlayed,
-                        pDrawn = drawn
-                    }
-                }
-                composer.gotoScene("screens.Win", options)
-            end
         else
             scoreIconsOn[i].isVisible = false
-            scoreIconsOff[i].isVisible = true      
+            scoreIconsOff[i].isVisible = true  
+            playerWin = false
         end
-    end        
+    end 
+
+    if playerWin then
+        scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
+        local options = 
+        {
+            params = {
+                pTime = gameTime,
+                pPlayed = cardsPlayed,
+                pDrawn = drawn
+            }
+        }
+        local catcher = display.newRect(display.contentWidth /2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+        catcher:setFillColor(0)
+        catcher.alpha = .1
+        mainGroup:insert(catcher)
+        
+        local function catchStrays(event) 
+            return true
+        end
+        
+        catcher:addEventListener("tap", catchStrays)
+        catcher:addEventListener("touch", catchStrays)
+        timer.performWithDelay(3000, function() composer.gotoScene("screens.Win", options) end)        
+    end 
 end
 
 function scene:ResumeGame()
@@ -1408,11 +1433,14 @@ function scene:create( event )
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup) 
     oppGroup = display.newGroup()
+    cpuBackground = controls:CPUBG(oppGroup)
     hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
     sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
     hiddenGroup.isVisible = false  
+    --oppGroup:insert(cpuBackground)
+
     
     -- create a rectangle for each card
     -- attach card data to the image as a table
@@ -1445,7 +1473,6 @@ function scene:create( event )
     controls:MakeArrows(mainGroup, scrollView)
     scoreIconsOn = controls:ScoreIconsOn(mainGroup)
     scoreIconsOff = controls:ScoreIconsOff(mainGroup)
-    local cpuBackground = controls:CPUBG(oppGroup)
     
     local function drawCardListener( event )
         local object = event.target
@@ -1572,9 +1599,9 @@ function scene:create( event )
    -- mainGroup:insert(showOppLabel)    
     
     -- show opp 1 cards
-    local showMain = display.newRect( 75, btnY + 100, 100, 100 )
+    local showMain = display.newRect( 900, btnY + 100, 100, 100 )
     showMain:setFillColor(.5,.5,.5)
-    local showMainLabel = display.newText( { text = "Show Main", x = 75, y = btnY + 100, fontSize = 16 } )
+    local showMainLabel = display.newText( { text = "Show Main", x = 900, y = btnY + 100, fontSize = 16 } )
     showMainLabel:setTextColor( 1 )
     
     local function oppViewListener( event )
@@ -1586,6 +1613,7 @@ function scene:create( event )
         scene:HideOpponentCards()
         showMainLabel.visible = false
         showMain.visible = false
+       
         
         if(currentOpp<=numOpp)then
             currentOpp = currentOpp + 1
@@ -1593,15 +1621,15 @@ function scene:create( event )
         
         if(currentOpp==numOpp+1)then
             scene:HideOpponentCards() 
-            oppGroup:insert(cpuBackground)
-
         else
             if(currentOpp == numOpp)then
                 showMainLabel.text = "Return to player "
+                cpuBackground = controls:CPUBG(oppGroup)
             else
-                showMainLabel.text = "Show Opponent " .. currentOpp+1 
+                showMainLabel.text = "Show Opponent " .. currentOpp+1
+                cpuBackground = controls:CPUBG1(oppGroup)
             end
-            oppGroup:insert(cpuBackground)
+            
             scene:ShowOpponentCards(currentOpp)
         end
 
@@ -1648,9 +1676,9 @@ function scene:create( event )
         if(event.phase == "began") then
             currentOpp = 1
             display.getCurrentStage():setFocus(event.target)          
-        --elseif(event.phase == "ended" and tutStepCounter == 8) then
-        --    composer.gotoScene("screens.MainMenu")            
-        elseif(event.phase == "ended")then-- and tutStepCounter == 6) then
+        elseif(event.phase == "ended" and tutStepCounter == 8) then
+            composer.gotoScene("screens.MainMenu")            
+        elseif(event.phase == "ended" and tutStepCounter == 6) then
             display.getCurrentStage():setFocus(nil)
             if drawCount < 3 and turnCount > 1 then
                 scrollY = controls:GameLogAdd(logScroll,scrollY,"Please draw " .. 3 - drawCount  .. " cards.")
@@ -1671,7 +1699,7 @@ function scene:create( event )
             display.getCurrentStage():setFocus(nil)            
         end 
     end    
-     -- aww end tutorial code 	    
+     -- aww end tutorial code      
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
@@ -1697,7 +1725,7 @@ function scene:show( event )
         composer.removeScene("screens.Win")
         -- aww for tutorial
         composer.removeScene("screens.Game_test")
-        -- aww for tutorial end
+        -- aww end for tutorial
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then

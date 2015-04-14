@@ -828,24 +828,14 @@ function gameLogic:CalculateScore(myEnvs)
     end
     
     if apexFound then -- if there is an apex in play, see if all other numbers are present
-        for i = 1, 9 do
-            if not curEco[i] then
-                allNumsPlayed = false
-                break
-            end
-        end
-        
-        -- aww
-        if allNumsPlayed then
-            -- if all other numbers are present, make sure that apex is not already fulfilling another role
-            for i = 1, 10 do
-                if apexValues[i] > 0 then
-                    if numCounts[i] > apexValues[i] or apexValues[i] > 1 then -- added second condition for cases when having 2 apex predators on playfield wouold not win
-                        curEco[10] = true -- explicitely set 10 (apex) to true
-                    end
+        -- if all other numbers are present, make sure that apex is not already fulfilling another role
+        for i = 1, 10 do
+            if apexValues[i] > 0 then
+                if numCounts[i] > apexValues[i] or apexValues[i] > 1 then -- added second condition for cases when having 2 apex predators on playfield wouold not win
+                    curEco[10] = true -- explicitely set 10 (apex) to true
                 end
             end
-        end        
+        end      
     end
     
     return curEco

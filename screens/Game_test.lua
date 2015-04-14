@@ -1253,7 +1253,16 @@ function scene:EndTurn()
             -- check to see if computer player has won. if so, go to lose screen
             local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs[i])
             
-            if cpuScore[10] then -- if 10 is true they have won
+            local cpuWin = true
+            
+            for j = 1, 10 do
+                if not cpuScore[j] then
+                    cpuWin = false
+                    break
+                end                
+            end
+            
+            if cpuWin then -- if all 10 is true they have won
                 local options = 
                 {
                     params = {
@@ -1357,29 +1366,43 @@ function scene:InitializeGame()
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Cards can be drawn from the draw pile or pulled from the discard pile into the hand.")
 end
 
-function scene:ScoreImageChange(myEco)    
+function scene:ScoreImageChange(myEco)
+    local playerWin = true
+    
     for i = 1, 10 do
         if myEco[i] then
             scoreIconsOn[i].isVisible = true
             scoreIconsOff[i].isVisible = false
-
-            if i == 10 then
-                scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
-                local options = 
-                {
-                    params = {
-                        pTime = gameTime,
-                        pPlayed = cardsPlayed,
-                        pDrawn = drawn
-                    }
-                }
-                composer.gotoScene("screens.Win", options)
-            end
         else
             scoreIconsOn[i].isVisible = false
-            scoreIconsOff[i].isVisible = true      
+            scoreIconsOff[i].isVisible = true  
+            playerWin = false
         end
-    end        
+    end 
+
+    if playerWin then
+        scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
+        local options = 
+        {
+            params = {
+                pTime = gameTime,
+                pPlayed = cardsPlayed,
+                pDrawn = drawn
+            }
+        }
+        local catcher = display.newRect(display.contentWidth /2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+        catcher:setFillColor(0)
+        catcher.alpha = .1
+        mainGroup:insert(catcher)
+        
+        local function catchStrays(event) 
+            return true
+        end
+        
+        catcher:addEventListener("tap", catchStrays)
+        catcher:addEventListener("touch", catchStrays)
+        timer.performWithDelay(3000, function() composer.gotoScene("screens.Win", options) end)        
+    end 
 end
 
 function scene:ResumeGame()
