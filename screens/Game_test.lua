@@ -40,7 +40,6 @@ local hiddenGroup
 local logScroll
 local scoreIconsOn = {}
 local scoreIconsOff = {}
-local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 local cardBack
 
 local cardMoving = false
@@ -1498,6 +1497,8 @@ function scene:create( event )
         
         if(currentOpp==numOpp+1)then
             scene:HideOpponentCards() 
+            oppGroup:insert(cpuBackground)
+
         else
             if(currentOpp == numOpp)then
                 showMainLabel.text = "Return to player "
