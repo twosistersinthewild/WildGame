@@ -371,8 +371,8 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
             if envMatch then
                 local valueStr = "Diet"..dietValue.."_Value"                                
 
-                myCard["cardData"].Value = myCard["cardData"][valueStr]
-
+                myCard["cardData"].Value = myCard["cardData"][valueStr]    
+                
                 -- assign to next available spot in the table
                 myEnvs[index][availChain][tabLen + 1] = myCard
 

@@ -40,7 +40,6 @@ local hiddenGroup
 local logScroll
 local scoreIconsOn = {}
 local scoreIconsOff = {}
-local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 local cardBack
 
 local cardMoving = false
@@ -1340,7 +1339,6 @@ function scene:InitializeGame()
     
     hand = {}--initialize tables for where cards will be stored
     discardPile = {} 
-    
     -- aww for tutorial
     --scene:drawCards(5,hand, "Player")    -- pass 5 cards out to the player
     scene:DebugGetCard(1) -- env
@@ -1349,7 +1347,6 @@ function scene:InitializeGame()
     scene:DebugGetCard(64) -- eastern toad
     scene:DebugGetCard(77) -- timber wolf      
     -- aww end tutorial code
-    
     numOpp = 2
     
     -- pass 5 cards out to other players 
@@ -1460,8 +1457,8 @@ function scene:create( event )
     end      
 
     cardBack = controls:CardBack(mainGroup)
-    cardBack:addEventListener( "tap", drawCardListener ) 
-    
+    cardBack:addEventListener( "tap", drawCardListener )    
+       
     -- aww for tutorial
     local jsonStr = utilities:loadFile("data/tutorialText.json", system.ResourceDirectory)
     local tutText = json.decode(jsonStr)    
@@ -1542,8 +1539,7 @@ function scene:create( event )
     end
     
     tutTimer  = timer.performWithDelay( 50, tutListener, -1)
-    -- aww end tutorial code    
-    
+    -- aww end tutorial code          
        
     local btnY = 400
    
@@ -1597,6 +1593,8 @@ function scene:create( event )
         
         if(currentOpp==numOpp+1)then
             scene:HideOpponentCards() 
+            oppGroup:insert(cpuBackground)
+
         else
             if(currentOpp == numOpp)then
                 showMainLabel.text = "Return to player "
@@ -1604,7 +1602,6 @@ function scene:create( event )
                 showMainLabel.text = "Show Opponent " .. currentOpp+1 
             end
             oppGroup:insert(cpuBackground)
-            cpuBackground:toBack()
             scene:ShowOpponentCards(currentOpp)
         end
 
@@ -1645,31 +1642,36 @@ function scene:create( event )
     local endTurnBtn = display.newRect( GLOB.scoreImages["col1"] + 25, 425, 100, 100)    
     endTurnBtn.fill = {type = "image",filename = "images/end-turn-button.png"}
     
-     local function endTurnListener( event )
+    -- aww tutorial code 
+    local function endTurnListener( event )
         local self = event.target
         if(event.phase == "began") then
             currentOpp = 1
-            display.getCurrentStage():setFocus(event.target)
-        -- aww tutorial code   
-        elseif(event.phase == "ended" and tutStepCounter == 8) then
-            composer.gotoScene("screens.MainMenu")
-        elseif(event.phase == "ended" and tutStepCounter == 6) then      
+            display.getCurrentStage():setFocus(event.target)          
+        --elseif(event.phase == "ended" and tutStepCounter == 8) then
+        --    composer.gotoScene("screens.MainMenu")            
+        elseif(event.phase == "ended")then-- and tutStepCounter == 6) then
             display.getCurrentStage():setFocus(nil)
-            scene:EndTurn()
-            turnCount = turnCount + 1
-            oppGroup:insert(cpuBackground)
-            cpuBackground:toBack()
-            scene:ShowOpponentCards(currentOpp)
+            if drawCount < 3 and turnCount > 1 then
+                scrollY = controls:GameLogAdd(logScroll,scrollY,"Please draw " .. 3 - drawCount  .. " cards.")
+                display.getCurrentStage():setFocus(nil)
+            else
+                display.getCurrentStage():setFocus(nil)
+                scene:EndTurn()
+                turnCount = turnCount + 1
+                scene:ShowOpponentCards(currentOpp)
+            end
+            
             if numOpp == 1 then
                 showMainLabel.text = "Return to Player"
             else
                 showMainLabel.text = "Show Opponent "..currentOpp+1
-            end 
+            end
         elseif(event.phase == "ended") then
-            display.getCurrentStage():setFocus(nil)
-            -- aww end tutorial code
-        end
-    end    	  
+            display.getCurrentStage():setFocus(nil)            
+        end 
+    end    
+     -- aww end tutorial code 	    
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
@@ -1693,7 +1695,9 @@ function scene:show( event )
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         composer.removeScene("screens.Win")
-        composer.removeScene("screens.tutorial")
+        -- aww for tutorial
+        composer.removeScene("screens.Game_test")
+        -- aww for tutorial end
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then
