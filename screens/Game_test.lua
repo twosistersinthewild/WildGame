@@ -1505,7 +1505,6 @@ function scene:create( event )
                 showMainLabel.text = "Show Opponent " .. currentOpp+1 
             end
             oppGroup:insert(cpuBackground)
-            cpuBackground:toBack()
             scene:ShowOpponentCards(currentOpp)
         end
 
@@ -1553,11 +1552,16 @@ function scene:create( event )
             display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended") then
             display.getCurrentStage():setFocus(nil)
-            scene:EndTurn()
-            turnCount = turnCount + 1
-            oppGroup:insert(cpuBackground)
-            cpuBackground:toBack()
-            scene:ShowOpponentCards(currentOpp)
+            if drawCount < 3 and turnCount > 1 then
+                scrollY = controls:GameLogAdd(logScroll,scrollY,"Please draw " .. 3 - drawCount  .. " cards.")
+                display.getCurrentStage():setFocus(nil)
+            else
+                display.getCurrentStage():setFocus(nil)
+                scene:EndTurn()
+                turnCount = turnCount + 1
+                scene:ShowOpponentCards(currentOpp)
+            end
+            
             if numOpp == 1 then
                 showMainLabel.text = "Return to Player"
             else
