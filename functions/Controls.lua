@@ -27,27 +27,27 @@ function controls:MakeElements(myGroup)
     background.y = display.contentHeight / 2
     
     -- env indicators
-    local env1Indicator = display.newImage("assets/2014-RIVER-03.jpg")
+    local env1Indicator = display.newImage("assets/bgPlaceholder.png")
     env1Indicator.x = GLOB.envLocs[1]["xLoc"]
     env1Indicator.y = GLOB.envLocs[1]["yLoc"]
-    env1Indicator.width = 100
-    env1Indicator.height = 160
+    env1Indicator.width = 90
+    env1Indicator.height = 150
     env1Indicator.rotation = 270
-    env1Indicator.alpha = .5
-    local env2Indicator = display.newImage("assets/2014-FOREST-02.jpg")
+    env1Indicator.alpha = .33
+    local env2Indicator = display.newImage("assets/bgPlaceholder.png")
     env2Indicator.x = GLOB.envLocs[2]["xLoc"]
     env2Indicator.y = GLOB.envLocs[2]["yLoc"]
-    env2Indicator.width = 100
-    env2Indicator.height = 160
-    env2Indicator.rotation = 270    
-    env2Indicator.alpha = .5
-    local env3Indicator = display.newImage("assets/2014-FIELD-03.jpg")
+    env2Indicator.width = 90
+    env2Indicator.height = 150
+    env2Indicator.rotation = 270  
+    env2Indicator.alpha = .33
+    local env3Indicator = display.newImage("assets/bgPlaceholder.png")
     env3Indicator.x = GLOB.envLocs[3]["xLoc"]
     env3Indicator.y = GLOB.envLocs[3]["yLoc"]  
-    env3Indicator.width = 100
-    env3Indicator.height = 160
+    env3Indicator.width = 90
+    env3Indicator.height = 150
     env3Indicator.rotation = 270    
-    env3Indicator.alpha = .5
+    env3Indicator.alpha = .33
     
     -- discard image
     local discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight)   
@@ -169,7 +169,16 @@ function controls:CardBack(myGroup)
 end
 
 function controls:CPUBG(myGroup)
-    local element = display.newImage("images/ORIGINAL-background-green.jpg")
+    local element = display.newImage("images/background-player-1.png")
+    element.x = display.contentWidth / 2
+    element.y = display.contentHeight / 2
+    myGroup:insert(element)
+    element:toBack() 
+    return element
+end
+
+function controls:CPUBG1(myGroup)
+    local element = display.newImage("images/background-player-2.png")
     element.x = display.contentWidth / 2
     element.y = display.contentHeight / 2
     myGroup:insert(element)
