@@ -1191,7 +1191,9 @@ function scene:AdjustScroller()
 end
 
 function scene:EndTurn()
-
+    
+    --print("Top card: "..discardPile[#discardPile]["cardData"]["Type"])
+    --print("2nd card: "..discardPile[#discardPile - 1]["cardData"]["Type"])
     -- shift control to npc
     -- if not first turn
         -- don't discard'
@@ -1200,9 +1202,12 @@ function scene:EndTurn()
     drawCount = 1
     if numOpp > 0 then       
         for i = 1, numOpp do
+            
+            --print("Top card: "..discardPile[#discardPile]["cardData"]["Type"])
+            
             --Find what we need
             local discardDrawn = 0;
-            local cpuScore = gameLogic:CalculateScore(activeEnvs)
+            local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs)
             
             local needEnv = false;
             
@@ -1228,7 +1233,8 @@ function scene:EndTurn()
             
             --check available cards
             drawFromDiscard = 0
-            while drawFromDiscard < 1 do
+            --while drawFromDiscard < 1 do
+                --print("test")
                 for j=1, #cpuScore do
                     if drawFromDiscard < 2 then
                         if not cpuScore[j] then -- cpu doesn't have this role filled
@@ -1266,10 +1272,12 @@ function scene:EndTurn()
                         break
                     end
                 end
-            end
+            --end
+            print("drawFromDiscard: "..drawFromDiscard)
             
              --#DTO check discard pile
             for j = 1 , drawFromDiscard do
+                print("CPU Discard Draw");
                 discardPile[#discardPile]:removeEventListener("touch", DiscardMovementListener);
                 table.insert(cpuHand, discardPile[#discardPile])
                 discardPile[#discardPile] = nil
@@ -1278,11 +1286,12 @@ function scene:EndTurn()
             
             local whoString = "Opponent"..i
             -- todo check discard pile for a card to draw from
+            --[[
             if(drawFromDiscard < 2) then
                 scene:drawCards(2 - drawFromDiscard, cpuHand[i], whoString)
             else
                 scene:drawCards(2, cpuHand[i], whoString) 
-            end
+            end]]--
                       
             -- opponent tries to play cards
             -- cycle through their entire hand
@@ -1466,7 +1475,7 @@ function scene:InitializeGame()
             cpuActiveEnvs[i] = {} -- initialize computer's playfield area
             cpuHand[i] = {}
             local whoString = "Opponent"..i
-            scene:drawCards(5,cpuHand[i], whoString)
+            --scene:drawCards(5,cpuHand[i], whoString)
             
         end
     end 
