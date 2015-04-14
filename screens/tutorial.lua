@@ -4,9 +4,6 @@ local GLOB = require "globals"
 local utilities = require "functions.Utilities"
 local gameLogic = require "functions.GameLogic"
 local controls = require "functions.Controls"
--- aww for tutorial
-local json = require "json"
--- aww end tutorial code
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
@@ -27,10 +24,7 @@ local currentOpp = 1
 
 local drawCount = 1
 local deckIndex = 1
-local maxEnvirons = 3
-local firstTurn = true -- flag 
 local tapCounter = 0 -- flag
--- todo make sure strohm flag is set properly when strohmstead is played and set when it is discarded
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -44,7 +38,8 @@ local scrollView
 local overlay
 local hiddenGroup
 local logScroll
-local one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off
+local scoreIconsOn = {}
+local scoreIconsOff = {}
 local eight_on,eight_off,nine_on,nine_off,ten_on,ten_off
 local cardBack
 
@@ -70,43 +65,15 @@ local drawn
 local tutLabel
 local tutTimer
 local tutStepCounter = 1
+local json = require "json"
 -- aww end tutorial stuff
 ---------------------------------------------------------------------------------
-
--- todo enable strohmstead special ability to move plants
-
--- shuffle deck
-
-
--- deal 5 cards
 
 local function gameTimeListener()
     gameTime = gameTime + 1;
 end
 
--- count the number of elements from a passed in table and return the count
-function scene:tableLength(myTable)
-    local count = 0
-    
-    for k,v in pairs(myTable) do
-        count = count + 1
-    end
-    
-    return count
-end
 
--- shuffle elements in table
-function scene:shuffleDeck(myTable)
-    local rand = math.random 
-    --assert( myTable, "shuffleTable() expected a table, got nil" )
-    local iterations = #myTable
-    local j
-    
-    for i = iterations, 2, -1 do
-        j = rand(i)
-        myTable[i], myTable[j] = myTable[j], myTable[i]
-    end
-end
 
 -- for moving a card out of discard
 function DiscardMovementListener(event)
@@ -127,8 +94,6 @@ function DiscardMovementListener(event)
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
-        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
-        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
         
         if self.x >= self.width/2 and self.x <= display.contentWidth - self.width/2 and (self.y - self.height/2 + 10) >= 0 and self.y < (display.contentHeight - self.height/2.5 - 10)then
             if self.markX then
@@ -213,19 +178,12 @@ function FieldMovementListener(event)
         self.originalY = self.y -- store starting y
         self.markX = self.x    -- store x location of object
         self.markY = self.y    -- store y location of object  
-
-        -- figure out type and where in chain then drag rest of cards
-        -- todo: can plants be brought off at all?
-
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
         print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
-        local myX, myY
-        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
-        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
-        
+        local myX, myY        
         if self.x >= self.width/2 and self.x <= display.contentWidth - self.width/2 and (self.y - self.height/2 + 10) >= 0 and self.y < (display.contentHeight - self.height/2.5 - 10)then
             if self.markX then
                 myX = (event.x - event.xStart) + self.markX
@@ -599,7 +557,6 @@ function FieldMovementListener(event)
         cardMoving = false
     end
     
-    
     return true
 end 
 
@@ -625,8 +582,6 @@ function HandMovementListener(event)
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
-        -- todo make sure the check for markX and setting it to a specific x and y don't cause a problem
-        -- before adding that check it would sometimes crash and say that mark x or y had a nil value
         
         if self.x >= self.width/2 and self.x <= display.contentWidth - self.width/2 and (self.y - self.height/2 + 10) >= 0 and self.y < (display.contentHeight - self.height/2.5 - 10)then
             if self.markX then
@@ -932,7 +887,7 @@ function scene:drawCards( num, myHand, who )
             end
 
             discardPile = {}
-            scene:shuffleDeck(deck)-- shuffle deck
+            utilities:ShuffleDeck(deck)-- shuffle deck
             cardBack:toFront()
             scrollY = controls:GameLogAdd(logScroll,scrollY, "The deck has been shuffled.")-- print that deck has been shuffled
         end     
@@ -1060,8 +1015,6 @@ end
 
 -- for testing. will play a card to the playfield if there is one in the hand that can be played.
 function scene:PlayCard()
-        -- todo this is only for testing. 
-        
         --todo account for strohmstead card
     local played = false
     local playedString = ""
@@ -1349,11 +1302,7 @@ function scene:ShowOpponentCards(oppNum)
             cpuActiveEnvs[oppNum][i]["activeEnv"].rotation = 270   
 
             for j = 1, 2 do
-                if j == 1 then
-                    myChain = "chain1"
-                else
-                    myChain = "chain2"
-                end                
+                myChain = "chain"..j            
                 
                 if cpuActiveEnvs[oppNum][i][myChain] then
                     for k = 1, #cpuActiveEnvs[oppNum][i][myChain] do                    
@@ -1387,7 +1336,7 @@ function scene:HideOpponentCards()
 end
 
 function scene:InitializeGame()    
-    scene:shuffleDeck(deck)-- deck should be shuffled after this    
+    utilities:ShuffleDeck(deck)-- deck should be shuffled after this    
     
     hand = {}--initialize tables for where cards will be stored
     discardPile = {} 
@@ -1426,45 +1375,10 @@ end
 function scene:ScoreImageChange(myEco)    
     for i = 1, 10 do
         if myEco[i] then
-            if i == 1 then
-                one_on.isVisible = true
-                one_off.isVisible = false
-            end
-            if i == 2 then
-                two_on.isVisible = true
-                two_off.isVisible = false
-            end
-            if i == 3 then
-                three_on.isVisible = true
-                three_off.isVisible = false
-            end
-            if i == 4 then
-                four_on.isVisible = true
-                four_off.isVisible = false
-            end
-            if i == 5 then
-                five_on.isVisible = true
-                five_off.isVisible = false
-            end
-            if i == 6 then
-                six_on.isVisible = true
-                six_off.isVisible = false
-            end
-            if i == 7 then
-                seven_on.isVisible = true
-                seven_off.isVisible = false
-            end
-            if i == 8 then
-                eight_on.isVisible = true
-                eight_off.isVisible = false
-            end
-            if i == 9 then
-                nine_on.isVisible = true
-                nine_off.isVisible = false
-            end
+            scoreIconsOn[i].isVisible = true
+            scoreIconsOff[i].isVisible = false
+
             if i == 10 then
-                ten_on.isVisible = true
-                ten_off.isVisible = false
                 scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
                 local options = 
                 {
@@ -1476,51 +1390,9 @@ function scene:ScoreImageChange(myEco)
                 }
                 composer.gotoScene("screens.Win", options)
             end
-            
-            --print(i..": ",myEco[i]) -- needed to use , here to concatenate a boolean value
         else
-            if i == 1 then
-                one_on.isVisible = false
-                one_off.isVisible = true
-            end
-            if i == 2 then
-                two_on.isVisible = false
-                two_off.isVisible = true
-            end
-            if i == 3 then
-                three_on.isVisible = false
-                three_off.isVisible = true
-            end
-            if i == 4 then
-                four_on.isVisible = false
-                four_off.isVisible = true
-            end
-            if i == 5 then
-                five_on.isVisible = false
-                five_off.isVisible = true
-            end
-            if i == 6 then
-                six_on.isVisible = false
-                six_off.isVisible = true
-            end
-            if i == 7 then
-                seven_on.isVisible = false
-                seven_off.isVisible = true
-            end
-            if i == 8 then
-                eight_on.isVisible = false
-                eight_off.isVisible = true
-            end
-            if i == 9 then
-                nine_on.isVisible = false
-                nine_off.isVisible = true
-            end
-            if i == 10 then
-                ten_on.isVisible = false
-                ten_off.isVisible = true
-            end
-            
-            --print(i..": false")
+            scoreIconsOn[i].isVisible = false
+            scoreIconsOff[i].isVisible = true      
         end
     end        
 end
@@ -1573,8 +1445,9 @@ function scene:create( event )
     overlay:toBack()
     logScroll = controls:MakeLogScroll(mainGroup, GLOB.logScrollWidth)
     scrollView = controls:MakeScrollView(mainGroup)  
-    controls:MakeArrows(mainGroup, scrollView) 
-    one_on,one_off,two_on,two_off,three_on,three_off,four_on,four_off,five_on,five_off,six_on,six_off,seven_on,seven_off,eight_on,eight_off,nine_on,nine_off,ten_on,ten_off = controls:ScoreIcons(mainGroup)    
+    controls:MakeArrows(mainGroup, scrollView)
+    scoreIconsOn = controls:ScoreIconsOn(mainGroup)
+    scoreIconsOff = controls:ScoreIconsOff(mainGroup)
     local cpuBackground = controls:CPUBG(oppGroup)
     
     local function drawCardListener( event )
@@ -1587,8 +1460,7 @@ function scene:create( event )
     end      
 
     cardBack = controls:CardBack(mainGroup)
-    cardBack:addEventListener( "tap", drawCardListener )   
-    
+    cardBack:addEventListener( "tap", drawCardListener ) 
     
     -- aww for tutorial
     local jsonStr = utilities:loadFile("data/tutorialText.json", system.ResourceDirectory)
@@ -1670,7 +1542,8 @@ function scene:create( event )
     end
     
     tutTimer  = timer.performWithDelay( 50, tutListener, -1)
-    -- aww end tutorial code
+    -- aww end tutorial code    
+    
        
     local btnY = 400
    
@@ -1796,7 +1669,7 @@ function scene:create( event )
             display.getCurrentStage():setFocus(nil)
             -- aww end tutorial code
         end
-    end        
+    end    	  
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
@@ -1820,6 +1693,7 @@ function scene:show( event )
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         composer.removeScene("screens.Win")
+        composer.removeScene("screens.tutorial")
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then

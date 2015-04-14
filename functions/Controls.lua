@@ -26,6 +26,29 @@ function controls:MakeElements(myGroup)
     background.x = display.contentWidth / 2
     background.y = display.contentHeight / 2
     
+    -- env indicators
+    local env1Indicator = display.newImage("assets/2014-RIVER-03.jpg")
+    env1Indicator.x = GLOB.envLocs[1]["xLoc"]
+    env1Indicator.y = GLOB.envLocs[1]["yLoc"]
+    env1Indicator.width = 100
+    env1Indicator.height = 160
+    env1Indicator.rotation = 270
+    env1Indicator.alpha = .5
+    local env2Indicator = display.newImage("assets/2014-FOREST-02.jpg")
+    env2Indicator.x = GLOB.envLocs[2]["xLoc"]
+    env2Indicator.y = GLOB.envLocs[2]["yLoc"]
+    env2Indicator.width = 100
+    env2Indicator.height = 160
+    env2Indicator.rotation = 270    
+    env2Indicator.alpha = .5
+    local env3Indicator = display.newImage("assets/2014-FIELD-03.jpg")
+    env3Indicator.x = GLOB.envLocs[3]["xLoc"]
+    env3Indicator.y = GLOB.envLocs[3]["yLoc"]  
+    env3Indicator.width = 100
+    env3Indicator.height = 160
+    env3Indicator.rotation = 270    
+    env3Indicator.alpha = .5
+    
     -- discard image
     local discardImage = display.newRect(GLOB.discardXLoc, GLOB.discardYLoc, GLOB.cardWidth, GLOB.cardHeight)   
     discardImage.fill = {type = "image",filename = "images/discard-pile.png"}  
@@ -58,7 +81,10 @@ function controls:MakeElements(myGroup)
     -- order matters here
     myGroup:insert(background)
     myGroup:insert(discardImage)
-    myGroup:insert(settingsBtn)    
+    myGroup:insert(settingsBtn)  
+    myGroup:insert(env1Indicator)
+    myGroup:insert(env2Indicator)
+    myGroup:insert(env3Indicator)
 end
 
 function controls:MakeOverlay(myGroup)
