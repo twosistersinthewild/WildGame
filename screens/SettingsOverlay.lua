@@ -67,7 +67,7 @@ function scene:create( event )
     
     local sOptions =     {
         id = "checkbox", 
-        x = 800 - 50,
+        x = 800 - 60,
         y = 125 - 60,
         initialSwitchState = GLOB.pSound,
         onEvent = function(event) if event.phase == "ended" then GLOB.pSound = not GLOB.pSound end end
