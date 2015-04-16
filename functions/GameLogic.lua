@@ -786,7 +786,7 @@ function gameLogic:CalculateScore(myEnvs)
     local allNumsPlayed = true -- flag to see if 10 can be set to true. if this becomes false, there is no win
     
     -- todo: might want to deal with this differently
-    local curEco = {} -- clear the table first so that we only mark true if they are currently there
+    local curEco = {[1]=false, [2]=false, [3]=false,[4]=false, [5]=false, [6]=false,[7]=false, [8]=false, [9]=false,[10]=false} -- clear the table first so that we only mark true if they are currently there
     local chainStr = "chain"    
     
     for i = 1, 3 do 

@@ -1,4 +1,3 @@
--- the line below caused a problem because the load function is used in globals.lua
 local GLOB = require "globals"
 local widget = require "widget"
 local composer = require "composer"
@@ -27,21 +26,21 @@ function controls:MakeElements(myGroup)
     background.y = display.contentHeight / 2
     
     -- env indicators
-    local env1Indicator = display.newImage("assets/bgPlaceholder.png")
+    local env1Indicator = display.newImage("images/bgPlaceholder.png")
     env1Indicator.x = GLOB.envLocs[1]["xLoc"]
     env1Indicator.y = GLOB.envLocs[1]["yLoc"]
     env1Indicator.width = 90
     env1Indicator.height = 150
     env1Indicator.rotation = 270
     env1Indicator.alpha = .33
-    local env2Indicator = display.newImage("assets/bgPlaceholder.png")
+    local env2Indicator = display.newImage("images/bgPlaceholder.png")
     env2Indicator.x = GLOB.envLocs[2]["xLoc"]
     env2Indicator.y = GLOB.envLocs[2]["yLoc"]
     env2Indicator.width = 90
     env2Indicator.height = 150
     env2Indicator.rotation = 270  
     env2Indicator.alpha = .33
-    local env3Indicator = display.newImage("assets/bgPlaceholder.png")
+    local env3Indicator = display.newImage("images/bgPlaceholder.png")
     env3Indicator.x = GLOB.envLocs[3]["xLoc"]
     env3Indicator.y = GLOB.envLocs[3]["yLoc"]  
     env3Indicator.width = 90
@@ -259,55 +258,61 @@ function controls:ScoreIconsOn(myGroup)
 end
 
 function controls:GameLogAdd(myScroller, scrollPos,logText)
-    -- multiline text will be split and looped through, adding a max number of characters each line until completion
-    -- todo make multiline text break at whole words rather than just split it
+    -- multiline text will automatically move to the next line but a few adjustments have to be made
+    -- to make sure it aligns right. to determine this, a max string length and character count are compared
     
     print(logText) -- also show in console output for debugging. todo remove this
     
     local strMaxLen = 48
-    local textWidth = GLOB.logScrollWidth
+    local textWidth = GLOB.logScrollWidth - 5
     local textHeight = 20    
     local outputDone = false
     local charCount = 0
-    
-    while not outputDone do
-        local multiLine = ""
-        charCount = string.len(logText)
 
-        if charCount > strMaxLen then            
-            multiLine = string.sub(logText, strMaxLen + 1)
-            logText = string.sub(logText, 0, strMaxLen)
-        end    
+    charCount = string.len(logText)
 
-       local logOptions = {
-            text = logText,
-            x = textWidth/2 + 5,
-            y = scrollPos,
-            width = textWidth,
-            height = textHeight,
-            font = native.systemFont,
-            fontSize = 14,
-            align = "left"    
-        }  
+    if charCount > strMaxLen then 
+        textHeight = 30
+        scrollPos = scrollPos + 7
+    end    
 
-        scrollPos = scrollPos + textHeight
+   local logOptions = {
+        text = logText,
+        x = textWidth/2 + 5,
+        y = scrollPos,
+        width = textWidth,
+        height = textHeight,
+        font = native.systemFont,
+        fontSize = 14,
+        align = "left"    
+    }  
 
-        local itemLabel = display.newText(logOptions)
-        itemLabel:setFillColor(0,0,0) 
-        myScroller:insert(itemLabel)
-        
-        if charCount > strMaxLen then
-            logText = "   "..multiLine
-        else
-            outputDone = true
-        end    
-    end
+    scrollPos = scrollPos + textHeight
+
+    local itemLabel = display.newText(logOptions)
+    itemLabel:setFillColor(0,0,0) 
+    myScroller:insert(itemLabel)
 
     myScroller:scrollTo("bottom",{time = 400}) -- had to set the y position to negative to get this to work right  
 
     return scrollPos
 end
 
+function controls:TouchCatcher(myGroup)
+    local element = display.newRect(display.contentWidth /2, display.contentHeight/2, display.contentWidth, display.contentHeight)
+    element:setFillColor(0)
+    element.alpha = .1
+    myGroup:insert(element)
+
+    local function catchStrays(event) 
+        return true
+    end
+
+    element:addEventListener("tap", catchStrays)
+    element:addEventListener("touch", catchStrays)   
+    
+    return element
+end
 
 -------------------------------------------------
 
