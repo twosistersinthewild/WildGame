@@ -1524,7 +1524,7 @@ function scene:ResumeGame()
     music = GLOB.pMusic
     
     if GLOB.pMusic then
-        audio.resume(backgroundMusic)
+        --audio.resume(backgroundMusic)
     end    
 end
 
@@ -1720,7 +1720,7 @@ function scene:create( event )
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
     
-    audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
+    --audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
     audio.setVolume( 0.5, { channel=1 } )
 end
 
@@ -1743,7 +1743,7 @@ function scene:show( event )
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then
-            audio.resume(backgroundMusic)
+            --audio.resume(backgroundMusic)
         end
    end
 end
@@ -1759,7 +1759,7 @@ function scene:hide( event )
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
       if music then
-        audio.pause(backgroundChanel)
+        --audio.pause(backgroundChanel)
       end
 
       if gameTimer then
