@@ -48,8 +48,8 @@ function scene:create( event )
     drawnLbl:setTextColor( 1 )
     sceneGroup:insert(drawnLbl)
     
-    local play = display.newRect(160, 585, 314, 32);
-    imgString = "images/main-play.jpg"
+    local play = display.newRect(450, 585, 80, 80);
+    imgString = "images/new-game-button.png"
     local paint = {
         type = "image",
         filename = imgString
@@ -59,8 +59,8 @@ function scene:create( event )
     play.name = "play"
     sceneGroup:insert(play)
     
-    local menu = display.newRect(480, 585, 314, 32);
-    imgString = "images/main-play.jpg"
+    local menu = display.newRect(650, 585, 80, 80);
+    imgString = "images/main-menu-button.png"
     local paint = {
         type = "image",
         filename = imgString
@@ -70,8 +70,8 @@ function scene:create( event )
     menu.name = "menu"
     sceneGroup:insert(menu)
     
-    local exit = display.newRect(800, 585, 314, 32);
-    imgString = "images/main-exit.jpg"
+    local exit = display.newRect(850, 585, 80, 80);
+    imgString = "images/exit-button.png"
     local paint = {
         type = "image",
         filename = imgString

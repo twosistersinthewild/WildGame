@@ -38,8 +38,8 @@ function scene:create( event )
                 time = 400,
                 params = {name = "menu", pTime = 8, pDrawn = 8, pPlayed = 8}
                 }
-                --composer.showOverlay( "screens.SettingsOverlay", options )
-                composer.showOverlay( "screens.Win", options )
+                composer.showOverlay( "screens.SettingsOverlay", options )
+                --composer.showOverlay( "screens.Lose", options )
             elseif self.name == "exit" then
                 os.exit();
             end

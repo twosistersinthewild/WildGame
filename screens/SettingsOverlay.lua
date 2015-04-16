@@ -67,8 +67,8 @@ function scene:create( event )
     
     local sOptions =     {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
-        y = 100 + 100,
+        x = 800 - 50,
+        y = 125 - 60,
         initialSwitchState = GLOB.pSound,
         onEvent = function(event) if event.phase == "ended" then GLOB.pSound = not GLOB.pSound end end
     }
@@ -77,41 +77,44 @@ function scene:create( event )
     sOptions["initialSwitchState"] = GLOB.pSound
     soundChkBox:setState( { isOn=GLOB.pSound} )
     
-    
+    --[[ 
     local mOptions = {
         id = "checkbox", 
-        x = display.contentWidth / 2 - 100,
+        x = display.contentWidth / 2 - 300,
         y = 200 + 100,
         initialSwitchState = GLOB.pMusic,
         onEvent = function(event) if event.phase == "ended" then GLOB.pMusic = not GLOB.pMusic end end
     }
     
     mOptions["initialSwitchState"] = GLOB.pMusic
-    
+   
     musicChkBox = widget.newSwitch(mOptions)
     --musicChkBox.isOn = false--GLOB.pMusic
     musicChkBox:setState( { isOn=GLOB.pMusic} )
+    ]]--
     
-    local soundLbl = display.newText( { text = "Sound", x = display.contentWidth / 2, y = 100 + 100, fontSize = 28 } )
+    local soundLbl = display.newText( { text = "Sound", x = 875 - 50, y = 125 - 60, fontSize = 28 } )
     soundLbl:setTextColor( 1 )
     
-    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2, y = 200 + 100, fontSize = 28 } )
+    --[[
+    local musicLbl = display.newText( { text = "Music", x = display.contentWidth / 2 - 200, y = 200 + 100, fontSize = 28 } )
     musicLbl:setTextColor( 1 )
+    ]]--
     
-    local instructionLbl = display.newText( { text = "Tap or Slide Checkboxes to toggle settings", x = display.contentWidth / 2, y = 600, fontSize = 18 } )
-    musicLbl:setTextColor( 1 )
+    local instructionLbl = display.newText( { text = "Tap or Slide Checkbox to Change", x = 800, y = 160 - 60, fontSize = 18 } )
+    instructionLbl:setTextColor( 1 )
     
-    local settingsLbl = display.newText( { text = "Settings", x = display.contentWidth / 2, y = 100, fontSize = 36 } )
-    musicLbl:setTextColor( 1 )
+    --local settingsLbl = display.newText( { text = "Options", x = 800, y = 140, fontSize = 36 } )
+    --settingsLbl:setTextColor( 1 )
     
     sceneGroup:insert(soundChkBox)
     sceneGroup:insert(soundLbl)
-    sceneGroup:insert(musicChkBox)
-    sceneGroup:insert(musicLbl)
+    --sceneGroup:insert(musicChkBox)
+    --sceneGroup:insert(musicLbl)
     sceneGroup:insert(instructionLbl)
-    sceneGroup:insert(settingsLbl)
+    --sceneGroup:insert(settingsLbl)
     
-    exit = display.newRect(800, 460 + 60, 100, 100);
+    exit = display.newRect(800, 460 + 80, 100, 100);
     imgString = "images/exit-button.png"
     local paint = {
         type = "image",
@@ -123,7 +126,7 @@ function scene:create( event )
     exit.name = "exit"
     sceneGroup:insert(exit)
 
-    play = display.newRect(800, 115 + 60, 100, 100);
+    play = display.newRect(800, 230 + 80, 100, 100);
     imgString = "images/return-to-game-button.png"
     local paint = {
         type = "image",
@@ -136,7 +139,7 @@ function scene:create( event )
     sceneGroup:insert(play)
 
     
-    local menu = display.newRect(800, 230 + 60, 100, 100);
+    local menu = display.newRect(800, 115 + 80, 100, 100);
    imgString = "images/main-menu-button.png"
     local paint = {
         type = "image",
@@ -148,7 +151,7 @@ function scene:create( event )
     menu.name = "menu"
     sceneGroup:insert(menu)
     
-    local new = display.newRect(800, 345 + 60, 100, 100);
+    local new = display.newRect(800, 345 + 80, 100, 100);
    imgString = "images/new-game-button.png"
     local paint = {
         type = "image",
@@ -159,6 +162,17 @@ function scene:create( event )
     new:addEventListener("touch", jumpListener)
     new.name = "new"
     sceneGroup:insert(new)
+    
+    optionTitle = display.newRect(display.contentWidth / 2 - 200, display.contentHeight / 2, 662 / 2, 157 / 2);
+    imgString = "images/options.png"
+    local paint = {
+        type = "image",
+        filename = imgString
+    }
+    optionTitle.fill = paint 
+    optionTitle.alpha = 1;
+    optionTitle.name = "play"
+    sceneGroup:insert(optionTitle)
    -- Initialize the scene here.
    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
@@ -174,7 +188,7 @@ function scene:show( event )
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
       if event.params["name"] == "menu" then -- the play/resume button will only be shown when called by game
-          play.isVisible = false
+          --play.isVisible = false
       end
    elseif ( phase == "did" ) then
       -- Called when the scene is now on screen.
