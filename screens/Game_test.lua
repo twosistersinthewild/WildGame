@@ -547,7 +547,7 @@ function FieldMovementListener(event)
 
             local curEco = gameLogic:CalculateScore(activeEnvs)
             
-            scene:ScoreImageChange(curEco)            
+            scene:ScoreImageChange(curEco, "player")            
         end
         gameLogic:RepositionCards(activeEnvs)
         cardMoving = false
@@ -715,7 +715,7 @@ function HandMovementListener(event)
         scrollView.isVisible = true
         scene:AdjustScroller()
         local curEco = gameLogic:CalculateScore(activeEnvs)
-        scene:ScoreImageChange(curEco)
+        scene:ScoreImageChange(curEco, "player")
         
         cardMoving = false
     end
@@ -1117,7 +1117,7 @@ function scene:PlayCard()
             
             scene:AdjustScroller()
             local curEco = gameLogic:CalculateScore(activeEnvs)
-            scene:ScoreImageChange(curEco)
+            scene:ScoreImageChange(curEco, "player")
             
             -- since a card was played, break the loop so as not to continue checking more to play
             break

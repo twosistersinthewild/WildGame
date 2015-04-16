@@ -40,6 +40,8 @@ local hiddenGroup
 local logScroll
 local scoreIconsOn = {}
 local scoreIconsOff = {}
+local cpuScoreIconsOn = {}
+local cpuScoreIconsOff = {}
 local cardBack
 local cpuBackground
 
@@ -1149,20 +1151,134 @@ function scene:AdjustScroller()
     scrollView:scrollTo("right", {time=1200})
 end
 
-function scene:EndTurn()
+function scene:ComputerDiscard(cpuField, whoString, currentHand, totalDrawn)
+    local drawFromDiscard = 0;
+    local cpuScore = gameLogic:CalculateScore(cpuField)
+    local needEnv = false;
+    local needPlant = false;
+    local envNeeded = 3
+    local plantNeeded = 6
 
-    -- shift control to npc
-    -- if not first turn
-        -- don't discard'
-    -- draw 2 cards
-    -- if first turn, try to play env from hand
+    for j = 1, 3 do
+        if not cpuField[j] then
+            needEnv = true;
+            envNeeded = envNeeded - 1
+        end
+    end
+
+    for j = 1, 3 do
+        if cpuField[j] then
+            for k = 1, 2 do
+                if not cpuField[j]["chain"..k] then
+                    needPlant = true;
+                else
+                    plantNeeded = plantNeeded - 1
+                end
+            end
+        else
+            plantNeeded = plantNeeded - 2
+        end
+    end
+
+    -- always try to grab a human card. first check second card down on discard stack before checking top one
+    if totalDrawn == 0 and #discardPile - 1 > 0 and discardPile[#discardPile - 1]["cardData"]["Type"] == "Wild" then
+        drawFromDiscard = 2
+    end
+
+    if drawFromDiscard < 2 and #discardPile > 0 and discardPile[#discardPile]["cardData"]["Type"] == "Wild" then
+        drawFromDiscard = 1
+    end
+    
+    --check available cards to see if it will fill a role for computer
+    --note: this does not check to see if it will match environments available, just checks possible roles it *could* fill
+    for j=1, #cpuScore do
+        if drawFromDiscard < 2 then
+            if not cpuScore[j] then -- cpu doesn't have this role filled
+                if j == 1 and needEnv then
+                    if #discardPile > 0 and discardPile[#discardPile]["cardData"]["Type"] == "Environment" then
+                        if drawFromDiscard < 2 then                                    
+                            drawFromDiscard = 1
+                        end
+                    elseif totalDrawn == 0 and #discardPile - 1 > 0 and discardPile[#discardPile - 1]["cardData"]["Type"] == "Environment" then
+                        drawFromDiscard = 2
+                    end
+                elseif (j == 2 or j == 3) and needPlant then
+                    if #discardPile > 0 and (discardPile[#discardPile]["cardData"]["Type"] == "Small Plant" or discardPile[#discardPile]["cardData"]["Type"] == "Large Plant") then
+                        if drawFromDiscard < 2 then                                    
+                            drawFromDiscard = 1
+                        end
+                    elseif totalDrawn == 0 and #discardPile - 1 > 0 and discardPile[#discardPile - 1]["cardData"]["Type"] == "Small Plant" then
+                        drawFromDiscard = 2
+                    end
+                elseif envNeeded < 2 and (plantNeeded + 2 <= (envNeeded + 1) * 2) then -- only try for the others if we're good on envs and plants on playfield'
+                    for k=1, 4 do -- check all 4 possible roles card could fill
+                        if #discardPile > 0 and discardPile[#discardPile]["cardData"]["Diet"..k.."_Value"] == j then
+                            if drawFromDiscard < 2 then                                    
+                                drawFromDiscard = 1
+                            end
+                            break
+                        end
+                    end
+                    if totalDrawn == 0 and drawFromDiscard < 1 and #discardPile - 1 > 0 then -- if we didn't find it, check next lower one. this might need tweaked    
+                        for k=1, 4 do -- check all 4 possible roles card could fill
+                            if discardPile[#discardPile - 1]["cardData"]["Diet"..k.."_Value"] == j then
+                                drawFromDiscard = 2
+                                break
+                            end
+                        end
+                    end   
+                end
+            end
+        else
+            break
+        end
+    end
+
+    -- try to pull from discard pile now
+    if drawFromDiscard > 0 then
+        for j = 1 , drawFromDiscard do
+            local discardCard = discardPile[#discardPile]
+            scrollY = controls:GameLogAdd(logScroll,scrollY,whoString.." has drawn the "..discardCard["cardData"]["Name"].." card from the discard pile.")
+            discardCard:removeEventListener("touch", DiscardMovementListener);
+            discardCard:removeEventListener("tap", ZoomTapListener)
+            table.insert(currentHand, discardCard)
+            discardPile[#discardPile] = nil
+            totalDrawn = totalDrawn + 1
+        end
+    end   
+    
+    return totalDrawn
+end
+
+function scene:EndTurn()
+    if turnCount > 1 then
+        scene:DiscardHand(hand)               
+        scene:AdjustScroller()
+    end    
+    
+    -- determine current score    
+    local curEco = gameLogic:CalculateScore(activeEnvs)
+    scene:ScoreImageChange(curEco, "player")    
+    
     drawCount = 1
     if numOpp > 0 then       
         for i = 1, numOpp do
             local whoString = "Opponent"..i
-            -- todo check discard pile for a card to draw from
-            scene:drawCards(2,cpuHand[i], whoString)
-                      
+            
+            if turnCount > 1 then -- only do this after first turn.                
+                local cardsDrawn = 0
+                
+                while cardsDrawn < 2 do
+                    cardsDrawn = scene:ComputerDiscard(cpuActiveEnvs[i], whoString, cpuHand[i], cardsDrawn)
+
+                    -- draw from deck if they haven't taken 2 from discard
+                    if cardsDrawn < 2 then
+                        scene:drawCards(1, cpuHand[i], whoString)
+                        cardsDrawn = cardsDrawn + 1
+                    end
+                end
+            end     
+            
             -- opponent tries to play cards
             -- cycle through their entire hand
             local ind = 1
@@ -1252,45 +1368,10 @@ function scene:EndTurn()
             
             -- discard remaining hand after playing
             if turnCount > 1 then
-                scene:DiscardHand(hand)
-                scene:DiscardHand(cpuHand[i])                
-                scene:AdjustScroller()
-            end
-            
-            -- check to see if computer player has won. if so, go to lose screen
-            local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs[i])
-            
-            local cpuWin = true
-            
-            for j = 1, 10 do
-                if not cpuScore[j] then
-                    cpuWin = false
-                    break
-                end                
-            end
-            
-            if cpuWin then -- if all 10 is true they have won
-                local options = 
-                {
-                    params = {
-                        pTime = gameTime,
-                        pPlayed = cardsPlayed,
-                        pDrawn = drawn
-                    }
-                }
-                scrollY = controls:GameLogAdd(logScroll,scrollY,whoString.." has won")
-                composer.gotoScene("screens.Lose", options)
+                scene:DiscardHand(cpuHand[i])
             end
         end
-    end     
-    
-    -- determine current score    
-    local curEco = gameLogic:CalculateScore(activeEnvs)
-    scene:ScoreImageChange(curEco)
-    
-        
-    -- if there's a winner do something
-    
+    end   
 end
 
 function scene:ShowOpponentCards(oppNum)
@@ -1298,6 +1379,15 @@ function scene:ShowOpponentCards(oppNum)
     -- hide the player's hand and cards
     mainGroup.isVisible = false
     scrollView.isVisible = false
+    
+    -- check to see if computer player has won. if so, go to lose screen
+    local cpuScore = gameLogic:CalculateScore(cpuActiveEnvs[oppNum])            
+    scene:ScoreImageChange(cpuScore, "cpu")    
+    
+    for i = 1, 10 do
+        oppGroup:insert(cpuScoreIconsOn[i])
+        oppGroup:insert(cpuScoreIconsOff[i])
+    end    
     
     local myChain = ""
     
@@ -1335,6 +1425,7 @@ function scene:HideOpponentCards()
     -- hide the player's hand and cards
     mainGroup.isVisible = true
     scrollView.isVisible = true
+    
     
     -- remove all display objects from the group before hiding again
     -- this allows it to be empty the next time cards are displayed
@@ -1380,22 +1471,55 @@ function scene:InitializeGame()
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Cards can be drawn from the draw pile or pulled from the discard pile into the hand.")
 end
 
-function scene:ScoreImageChange(myEco)
-    local playerWin = true
+-- turn on/off the appropriate score indicators as well as checking for a winner
+-- can be called for player and cpu
+function scene:ScoreImageChange(myEco, who)
+    local playerWin, cpuWin, winString, screenString, winningGroup
+    local gameOver = false
+    
+    if who == "player" then
+        playerWin = true
+    else
+        cpuWin = true
+    end    
     
     for i = 1, 10 do
         if myEco[i] then
-            scoreIconsOn[i].isVisible = true
-            scoreIconsOff[i].isVisible = false
+            if who == "player" then
+                scoreIconsOn[i].isVisible = true
+                scoreIconsOff[i].isVisible = false                
+            else
+                cpuScoreIconsOn[i].isVisible = true
+                cpuScoreIconsOff[i].isVisible = false                 
+            end
         else
-            scoreIconsOn[i].isVisible = false
-            scoreIconsOff[i].isVisible = true  
-            playerWin = false
+            if who == "player" then
+                scoreIconsOn[i].isVisible = false
+                scoreIconsOff[i].isVisible = true 
+                playerWin = false
+            else
+                cpuScoreIconsOn[i].isVisible = false
+                cpuScoreIconsOff[i].isVisible = true
+                cpuWin = false
+            end
         end
     end 
 
-    if playerWin then
-        scrollY = controls:GameLogAdd(logScroll,scrollY,"You win!")
+    -- set things up if someone has one
+    if who == "player" and playerWin then
+        gameOver = true
+        winString = "You win!"
+        winningGroup = mainGroup
+        screenString = "screens.Win"
+    elseif who == "cpu" and cpuWin then
+        gameOver = true
+        winString = "You lose!"
+        winningGroup = oppGroup
+        screenString = "screens.Lose" 
+    end  
+    
+    if gameOver then -- a winner has been found. do what needs to be done
+        scrollY = controls:GameLogAdd(logScroll,scrollY,winString)
         local options = 
         {
             params = {
@@ -1404,19 +1528,9 @@ function scene:ScoreImageChange(myEco)
                 pDrawn = drawn
             }
         }
-        local catcher = display.newRect(display.contentWidth /2, display.contentHeight/2, display.contentWidth, display.contentHeight)
-        catcher:setFillColor(0)
-        catcher.alpha = .1
-        mainGroup:insert(catcher)
-        
-        local function catchStrays(event) 
-            return true
-        end
-        
-        catcher:addEventListener("tap", catchStrays)
-        catcher:addEventListener("touch", catchStrays)
-        timer.performWithDelay(3000, function() composer.gotoScene("screens.Win", options) end)        
-    end 
+        local catcher = controls:TouchCatcher(winningGroup)
+        timer.performWithDelay(3000, function() composer.gotoScene(screenString, options) end)
+    end
 end
 
 function scene:ResumeGame()
@@ -1424,7 +1538,7 @@ function scene:ResumeGame()
     music = GLOB.pMusic
     
     if GLOB.pMusic then
-        audio.resume(backgroundMusic)
+        --audio.resume(backgroundMusic)
     end    
 end
 
@@ -1433,7 +1547,8 @@ function scene:create( event )
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup) 
     oppGroup = display.newGroup()
-    cpuBackground = controls:CPUBG(oppGroup)
+    cpuBackground = display.newRect( display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight )
+    cpuBackground:toBack()    
     hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
     sceneGroup:insert(hiddenGroup)
@@ -1473,6 +1588,8 @@ function scene:create( event )
     controls:MakeArrows(mainGroup, scrollView)
     scoreIconsOn = controls:ScoreIconsOn(mainGroup)
     scoreIconsOff = controls:ScoreIconsOff(mainGroup)
+    cpuScoreIconsOn = controls:ScoreIconsOn(oppGroup)
+    cpuScoreIconsOff = controls:ScoreIconsOff(oppGroup)  
     
     local function drawCardListener( event )
         local object = event.target
@@ -1558,15 +1675,15 @@ function scene:create( event )
             tutStepCounter = 8
             tutLabel.text = tutText[tutStepCounter]["Text"] 
             
-            local linkLabel = display.newText( { text = "https://www.youtube.com/watch?v=n4Cc02VLYq4", width = 340, x = GLOB.tutBoxX, y = GLOB.tutBoxY + 125, fontSize = 16 } )
+            local linkLabel = display.newText( { text = "http://www.twosistersinthewild.com/original-instruction-video", width = 340, x = GLOB.tutBoxX, y = GLOB.tutBoxY + 125, fontSize = 16 } )
             linkLabel:setTextColor( 0,0,1 )  
-            linkLabel:addEventListener("tap", function() system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4") return true end)
+            linkLabel:addEventListener("tap", function() system.openURL( "http://www.twosistersinthewild.com/original-instruction-video") return true end)
             mainGroup:insert(linkLabel)            
         end
     end
     
     tutTimer  = timer.performWithDelay( 50, tutListener, -1)
-    -- aww end tutorial code          
+    -- aww end tutorial code       
        
     local btnY = 400
    
@@ -1599,10 +1716,11 @@ function scene:create( event )
    -- mainGroup:insert(showOppLabel)    
     
     -- show opp 1 cards
-    local showMain = display.newRect( 900, btnY + 100, 100, 100 )
+    local showMain = display.newRect( 900, 424, 100, 100 )
     showMain:setFillColor(.5,.5,.5)
-    local showMainLabel = display.newText( { text = "Show Main", x = 900, y = btnY + 100, fontSize = 16 } )
-    showMainLabel:setTextColor( 1 )
+    
+    local playerIndic = display.newRect(display.contentWidth/2, btnY + 200, 200,40)
+    playerIndic:setFillColor(.5,.5,.5)
     
     local function oppViewListener( event )
         while oppGroup[1] do
@@ -1611,8 +1729,9 @@ function scene:create( event )
         
   
         scene:HideOpponentCards()
-        showMainLabel.visible = false
         showMain.visible = false
+        playerIndic.visible = false
+
        
         
         if(currentOpp<=numOpp)then
@@ -1623,24 +1742,23 @@ function scene:create( event )
             scene:HideOpponentCards() 
         else
             if(currentOpp == numOpp)then
-                showMainLabel.text = "Return to player "
-                cpuBackground = controls:CPUBG(oppGroup)
-            else
-                showMainLabel.text = "Show Opponent " .. currentOpp+1
-                cpuBackground = controls:CPUBG1(oppGroup)
+                showMain.fill = {type = "image",filename = "images/view-your-hand.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-2.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-2.png"}
             end
             
             scene:ShowOpponentCards(currentOpp)
         end
 
         oppGroup:insert(showMain)
-        oppGroup:insert(showMainLabel)
+        oppGroup:insert(playerIndic)
     end
     
     showMain:addEventListener( "tap", oppViewListener )
 
     oppGroup:insert(showMain)
-    oppGroup:insert(showMainLabel)       
+    oppGroup:insert(playerIndic)
+
     
     --local getHuman = display.newRect( 650, btnY, 100, 100 )
     --getHuman:setFillColor(.5,.5,.5)
@@ -1670,41 +1788,41 @@ function scene:create( event )
     local endTurnBtn = display.newRect( GLOB.scoreImages["col1"] + 25, 425, 100, 100)    
     endTurnBtn.fill = {type = "image",filename = "images/end-turn-button.png"}
     
-    -- aww tutorial code 
+    -- aww tutorial code     
     local function endTurnListener( event )
         local self = event.target
+
         if(event.phase == "began") then
             currentOpp = 1
-            display.getCurrentStage():setFocus(event.target)          
+            display.getCurrentStage():setFocus(event.target)
         elseif(event.phase == "ended" and tutStepCounter == 8) then
-            composer.gotoScene("screens.MainMenu")            
+            composer.gotoScene("screens.MainMenu")           
         elseif(event.phase == "ended" and tutStepCounter == 6) then
             display.getCurrentStage():setFocus(nil)
+            
             if drawCount < 3 and turnCount > 1 then
-                scrollY = controls:GameLogAdd(logScroll,scrollY,"Please draw " .. 3 - drawCount  .. " cards.")
+                scrollY = controls:GameLogAdd(logScroll,scrollY,"Please draw " .. 3 - drawCount  .. " card(s).")
                 display.getCurrentStage():setFocus(nil)
             else
                 display.getCurrentStage():setFocus(nil)
                 scene:EndTurn()
                 turnCount = turnCount + 1
+                showMain.fill = {type = "image",filename = "images/view-next-player.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-1.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-1.png"}
+                display.getCurrentStage():setFocus(event.target)
                 scene:ShowOpponentCards(currentOpp)
             end
-            
-            if numOpp == 1 then
-                showMainLabel.text = "Return to Player"
-            else
-                showMainLabel.text = "Show Opponent "..currentOpp+1
-            end
         elseif(event.phase == "ended") then
-            display.getCurrentStage():setFocus(nil)            
+            display.getCurrentStage():setFocus(nil)              
         end 
-    end    
-     -- aww end tutorial code      
+    end        
+    -- aww end tutorial code  
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
     
-    audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
+    --audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
     audio.setVolume( 0.5, { channel=1 } )
 end
 
@@ -1725,11 +1843,11 @@ function scene:show( event )
         composer.removeScene("screens.Win")
         -- aww for tutorial
         composer.removeScene("screens.Game_test")
-        -- aww end for tutorial
+        -- aww end for tutorial	 
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then
-            audio.resume(backgroundMusic)
+            --audio.resume(backgroundMusic)
         end
    end
 end
@@ -1745,7 +1863,7 @@ function scene:hide( event )
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
       if music then
-        audio.pause(backgroundChanel)
+        --audio.pause(backgroundChanel)
       end
 
       if gameTimer then
