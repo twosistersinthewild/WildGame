@@ -1419,6 +1419,7 @@ function scene:HideOpponentCards()
     mainGroup.isVisible = true
     scrollView.isVisible = true
     
+    
     -- remove all display objects from the group before hiding again
     -- this allows it to be empty the next time cards are displayed
     for i = 1, #oppGroup do
@@ -1532,7 +1533,8 @@ function scene:create( event )
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup) 
     oppGroup = display.newGroup()
-    cpuBackground = controls:CPUBG(oppGroup)
+    cpuBackground = display.newRect( display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight )
+    cpuBackground:toBack()    
     hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
     sceneGroup:insert(hiddenGroup)
@@ -1618,10 +1620,11 @@ function scene:create( event )
    -- mainGroup:insert(showOppLabel)    
     
     -- show opp 1 cards
-    local showMain = display.newRect( 900, btnY + 100, 100, 100 )
+    local showMain = display.newRect( 900, 424, 100, 100 )
     showMain:setFillColor(.5,.5,.5)
-    local showMainLabel = display.newText( { text = "Show Main", x = 900, y = btnY + 100, fontSize = 16 } )
-    showMainLabel:setTextColor( 1 )
+    
+    local playerIndic = display.newRect(display.contentWidth/2, btnY + 200, 200,40)
+    playerIndic:setFillColor(.5,.5,.5)
     
     local function oppViewListener( event )
         while oppGroup[1] do
@@ -1630,8 +1633,9 @@ function scene:create( event )
         
   
         scene:HideOpponentCards()
-        showMainLabel.visible = false
         showMain.visible = false
+        playerIndic.visible = false
+
        
         
         if(currentOpp<=numOpp)then
@@ -1642,24 +1646,23 @@ function scene:create( event )
             scene:HideOpponentCards() 
         else
             if(currentOpp == numOpp)then
-                showMainLabel.text = "Return to player "
-                cpuBackground = controls:CPUBG(oppGroup)
-            else
-                showMainLabel.text = "Show Opponent " .. currentOpp+1
-                cpuBackground = controls:CPUBG1(oppGroup)
+                showMain.fill = {type = "image",filename = "images/view-your-hand.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-2.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-2.png"}
             end
             
             scene:ShowOpponentCards(currentOpp)
         end
 
         oppGroup:insert(showMain)
-        oppGroup:insert(showMainLabel)
+        oppGroup:insert(playerIndic)
     end
     
     showMain:addEventListener( "tap", oppViewListener )
 
     oppGroup:insert(showMain)
-    oppGroup:insert(showMainLabel)       
+    oppGroup:insert(playerIndic)
+
     
     --local getHuman = display.newRect( 650, btnY, 100, 100 )
     --getHuman:setFillColor(.5,.5,.5)
@@ -1691,7 +1694,6 @@ function scene:create( event )
     
      local function endTurnListener( event )
         local self = event.target
-        cpuBackground = controls:CPUBG(oppGroup)
 
         if(event.phase == "began") then
             currentOpp = 1
@@ -1706,14 +1708,12 @@ function scene:create( event )
                 display.getCurrentStage():setFocus(nil)
                 scene:EndTurn()
                 turnCount = turnCount + 1
+                showMain.fill = {type = "image",filename = "images/view-next-player.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-1.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-1.png"}
+                display.getCurrentStage():setFocus(event.target)
                 scene:ShowOpponentCards(currentOpp)
-            end
-            
-            if numOpp == 1 then
-                showMainLabel.text = "Return to Player"
-            else
-                showMainLabel.text = "Show Opponent "..currentOpp+1
-            end            
+            end           
         end 
     end        
     

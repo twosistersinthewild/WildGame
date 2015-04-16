@@ -1603,7 +1603,7 @@ function scene:create( event )
                 display.getCurrentStage():setFocus(nil)
                 scene:EndTurn()
                 turnCount = turnCount + 1
-                showMain.fill = {type = "image",filename = "images/view-next-player_1.png"}
+                showMain.fill = {type = "image",filename = "images/1.png"}
                 playerIndic.fill = {type = "image",filename = "images/title-player-1.png"}
                 cpuBackground.fill = {type = "image",filename = "images/background-player-1.png"}
                 display.getCurrentStage():setFocus(event.target)
