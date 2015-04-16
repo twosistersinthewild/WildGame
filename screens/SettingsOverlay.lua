@@ -126,7 +126,7 @@ function scene:create( event )
     exit.name = "exit"
     sceneGroup:insert(exit)
 
-    play = display.newRect(800, 230 + 80, 100, 100);
+    play = display.newRect(800, 115 + 80, 100, 100);
     imgString = "images/return-to-game-button.png"
     local paint = {
         type = "image",
@@ -139,7 +139,7 @@ function scene:create( event )
     sceneGroup:insert(play)
 
     
-    local menu = display.newRect(800, 115 + 80, 100, 100);
+    local menu = display.newRect(800, 345 + 80, 100, 100);
    imgString = "images/main-menu-button.png"
     local paint = {
         type = "image",
@@ -151,7 +151,7 @@ function scene:create( event )
     menu.name = "menu"
     sceneGroup:insert(menu)
     
-    local new = display.newRect(800, 345 + 80, 100, 100);
+    local new = display.newRect(800, 230 + 80, 100, 100);
    imgString = "images/new-game-button.png"
     local paint = {
         type = "image",
