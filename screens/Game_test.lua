@@ -1515,7 +1515,7 @@ function scene:ScoreImageChange(myEco, who)
             }
         }
         local catcher = controls:TouchCatcher(winningGroup)
-        timer.performWithDelay(3000, function() composer.gotoScene(screenString, options) end)
+        timer.performWithDelay(1500, function() composer.gotoScene(screenString, options) end)
     end
 end
 
@@ -1540,7 +1540,7 @@ function scene:create( event )
     sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
     hiddenGroup.isVisible = false  
-    --oppGroup:insert(cpuBackground)
+    oppGroup:insert(cpuBackground)
 
     
     -- create a rectangle for each card
@@ -1633,8 +1633,8 @@ function scene:create( event )
         
   
         scene:HideOpponentCards()
-        showMain.visible = false
-        playerIndic.visible = false
+        showMain.isVisible = true
+        playerIndic.isVisible = true
 
        
         
@@ -1653,13 +1653,17 @@ function scene:create( event )
             
             scene:ShowOpponentCards(currentOpp)
         end
-
+        
+        oppGroup:insert(cpuBackground)
+        cpuBackground:toBack()
         oppGroup:insert(showMain)
         oppGroup:insert(playerIndic)
     end
     
     showMain:addEventListener( "tap", oppViewListener )
 
+    oppGroup:insert(cpuBackground)
+    cpuBackground:toBack()
     oppGroup:insert(showMain)
     oppGroup:insert(playerIndic)
 
@@ -1708,6 +1712,8 @@ function scene:create( event )
                 display.getCurrentStage():setFocus(nil)
                 scene:EndTurn()
                 turnCount = turnCount + 1
+                oppGroup:insert(cpuBackground)
+                cpuBackground:toBack()
                 showMain.fill = {type = "image",filename = "images/view-next-player.png"}
                 playerIndic.fill = {type = "image",filename = "images/title-player-1.png"}
                 cpuBackground.fill = {type = "image",filename = "images/background-player-1.png"}

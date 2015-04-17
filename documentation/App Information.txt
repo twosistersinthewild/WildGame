@@ -4,8 +4,8 @@ The number used for version code must match in the build.settings file!
 
 
 WILD-North-East-North-America
-Version Code: 03
-Version Name: 0.3
+Version Code: 04
+Version Name: 0.4
 Package: com.gmail.WILD.WildGame
 
 Password:

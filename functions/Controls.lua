@@ -167,24 +167,6 @@ function controls:CardBack(myGroup)
     return element
 end
 
-function controls:CPUBG(myGroup)
-    local element = display.newImage("images/background-player-1.png")
-    element.x = display.contentWidth / 2
-    element.y = display.contentHeight / 2
-    myGroup:insert(element)
-    element:toBack() 
-    return element
-end
-
-function controls:CPUBG1(myGroup)
-    local element = display.newImage("images/background-player-2.png")
-    element.x = display.contentWidth / 2
-    element.y = display.contentHeight / 2
-    myGroup:insert(element)
-    element:toBack() 
-    return element
-end
-
 function controls:ScoreIconsOff(myGroup)
     local iconTable = {}
     
@@ -265,14 +247,14 @@ function controls:GameLogAdd(myScroller, scrollPos,logText)
     
     local strMaxLen = 48
     local textWidth = GLOB.logScrollWidth - 5
-    local textHeight = 20    
+    local textHeight = 23    
     local outputDone = false
     local charCount = 0
 
     charCount = string.len(logText)
 
     if charCount > strMaxLen then 
-        textHeight = 30
+        textHeight = 35
         scrollPos = scrollPos + 7
     end    
 
