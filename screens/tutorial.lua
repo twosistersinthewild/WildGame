@@ -231,7 +231,7 @@ function FieldMovementListener(event)
 
             local envNum, myChain, myIndex -- need to know  type, env, chain
 
-            if not validLoc or validLoc == "special" then -- snap back -- aww
+            if not validLoc or validLoc == "special" or validLoc == "discard" then -- snap back -- aww for tutorial
                 self.x = self.originalX
                 self.y = self.originalY
             elseif validLoc == "discard" then
@@ -631,7 +631,7 @@ function HandMovementListener(event)
         -- get a string if the card has been dropped in a valid spot
         validLoc = gameLogic:ValidLocation(self, activeEnvs)
 
-        if not validLoc or validLoc == "hand" then -- if card hasn't been moved to a valid place, snap it back to the hand
+        if not validLoc or validLoc == "hand" or validLoc == "discard" then -- if card hasn't been moved to a valid place, snap it back to the hand -- aww for tutorial
             scrollView:insert(self)
         elseif validLoc == "discard" then
             self:removeEventListener("touch", HandMovementListener) -- todo may not need to remove this                       
@@ -952,47 +952,42 @@ function scene:SearchForStrohm()
 end
 
 --for testing to get a specific card from deck
-function scene:DebugGetCard(id)
-    --local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
-    --local numPlayed = 0
+function scene:DebugGetCard(id, myHand, who)
     local size = #deck - deckIndex
     
     for i = deckIndex, size, 1 do -- start from deckIndex and draw the number passed in. third param is step
         if deck[i] then
             if deck[i]["cardData"]["ID"] == id then -- make sure there is a card to draw
                 -- insert the card into the hand, then nil it from the deck            
-                table.insert(hand, deck[i])
+                table.insert(myHand, deck[i])
 
-            -- if the player is being dealt a card, put the image on screen
+                -- if the player is being dealt a card, put the image on screen
+                if who == "player" then
+                    local imgString = "assets/"
+                    local filenameString = myHand[#myHand]["cardData"]["File Name"]
+                    imgString = imgString..filenameString
 
-                local imgString = "assets/"
-                local filenameString = hand[#hand]["cardData"]["File Name"]
-                imgString = imgString..filenameString
+                    local paint = {type = "image", filename = imgString}
+                    local myImg = myHand[#myHand]
+                    myImg.fill = paint  
+                    scrollView:insert(myHand[#myHand])
+                    myImg.x = scrollXPos
+                    myImg.y = scrollYPos
+                    scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                --print(imgString)
-                --print(myHand[#myHand].x)
-                local paint = {
-                    type = "image",
-                    filename = imgString
-                }
+                    myImg:addEventListener( "touch", HandMovementListener ) 
 
-                local myImg = hand[#hand]
-                myImg.fill = paint  
+                    if not myImg._functionListeners or myImg._functionListeners.tap == nil then
+                        myImg:addEventListener( "tap", ZoomTapListener )
+                    end
 
-
-
-                scrollView:insert(hand[#hand])
-                myImg.x = scrollXPos
-                myImg.y = scrollYPos
-                scrollXPos = scrollXPos + GLOB.cardWidth 
-
-                myImg:addEventListener( "touch", HandMovementListener ) 
-
-                if not myImg._functionListeners or myImg._functionListeners.tap == nil then
-                    myImg:addEventListener( "tap", ZoomTapListener )
+                    scrollY = controls:GameLogAdd(logScroll,scrollY,"Player has drawn the " .. deck[i]["cardData"].Name .. " card.")
+                
+                    scene:AdjustScroller()
+                else
+                    scrollY = controls:GameLogAdd(logScroll,scrollY,who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
                 end
-
-                scrollY = controls:GameLogAdd(logScroll,scrollY,"Player has drawn the " .. deck[i]["cardData"].Name .. " card.")
+                
                 deck[i] = nil  
 
                 local index = i
@@ -1002,17 +997,14 @@ function scene:DebugGetCard(id)
                     deck[index + 1] = nil
                     index = index + 1
                 end
-
-
-                scene:AdjustScroller()
+                
                 break
             end
         else
             -- the draw pile is empty
             -- todo: deal with this by either reshuffling discard or ending game
             scrollY = controls:GameLogAdd(logScroll,scrollY,"There are no cards left to draw.")
-        end
-        
+        end        
     end
 end
 
@@ -1443,12 +1435,12 @@ function scene:InitializeGame()
     discardPile = {} 
     -- aww for tutorial
     --scene:drawCards(5,hand, "Player")    -- pass 5 cards out to the player
-    scene:DebugGetCard(1) -- env
-    scene:DebugGetCard(23) -- plant, ginseng
-    scene:DebugGetCard(41) -- amber snail
-    scene:DebugGetCard(64) -- eastern toad
-    scene:DebugGetCard(77) -- timber wolf      
-    -- aww end tutorial code
+    scene:DebugGetCard(1, hand, "player") -- env
+    scene:DebugGetCard(23, hand, "player") -- plant, ginseng
+    scene:DebugGetCard(41, hand, "player") -- amber snail
+    scene:DebugGetCard(64, hand, "player") -- eastern toad
+    scene:DebugGetCard(77, hand, "player") -- timber wolf      
+    -- aww end tutorial code       
     numOpp = 2
     
     -- pass 5 cards out to other players 
@@ -1459,10 +1451,12 @@ function scene:InitializeGame()
             cpuActiveEnvs[i] = {} -- initialize computer's playfield area
             cpuHand[i] = {}
             local whoString = "Opponent"..i
-            scene:drawCards(5,cpuHand[i], whoString)            
+            scene:drawCards(5,cpuHand[i], whoString)   
+            
         end
     end 
-    
+
+     
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Drag an environment card onto the playfield.")
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Plant cards can be played on environments.")
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Other animals can be played on plants.")

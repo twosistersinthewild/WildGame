@@ -1380,7 +1380,7 @@ function scene:ShowOpponentCards(oppNum)
     for i = 1, 10 do
         oppGroup:insert(cpuScoreIconsOn[i])
         oppGroup:insert(cpuScoreIconsOff[i])
-    end
+    end    
     
     local myChain = ""
     
@@ -1418,6 +1418,7 @@ function scene:HideOpponentCards()
     -- hide the player's hand and cards
     mainGroup.isVisible = true
     scrollView.isVisible = true
+    
     
     -- remove all display objects from the group before hiding again
     -- this allows it to be empty the next time cards are displayed
@@ -1514,7 +1515,7 @@ function scene:ScoreImageChange(myEco, who)
             }
         }
         local catcher = controls:TouchCatcher(winningGroup)
-        timer.performWithDelay(3000, function() composer.gotoScene(screenString, options) end)
+        timer.performWithDelay(1500, function() composer.gotoScene(screenString, options) end)
     end
 end
 
@@ -1523,7 +1524,7 @@ function scene:ResumeGame()
     music = GLOB.pMusic
     
     if GLOB.pMusic then
-        audio.resume(backgroundMusic)
+        --audio.resume(backgroundMusic)
     end    
 end
 
@@ -1532,13 +1533,14 @@ function scene:create( event )
     mainGroup = display.newGroup() -- display group for anything that just needs added
     sceneGroup:insert(mainGroup) 
     oppGroup = display.newGroup()
-    cpuBackground = controls:CPUBG(oppGroup)
+    cpuBackground = display.newRect( display.contentWidth/2, display.contentHeight/2, display.contentWidth, display.contentHeight )
+    cpuBackground:toBack()    
     hiddenGroup = display.newGroup()
     sceneGroup:insert(oppGroup)
     sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
     hiddenGroup.isVisible = false  
-    --oppGroup:insert(cpuBackground)
+    oppGroup:insert(cpuBackground)
 
     
     -- create a rectangle for each card
@@ -1573,7 +1575,7 @@ function scene:create( event )
     scoreIconsOn = controls:ScoreIconsOn(mainGroup)
     scoreIconsOff = controls:ScoreIconsOff(mainGroup)
     cpuScoreIconsOn = controls:ScoreIconsOn(oppGroup)
-    cpuScoreIconsOff = controls:ScoreIconsOff(oppGroup)    
+    cpuScoreIconsOff = controls:ScoreIconsOff(oppGroup)  
     
     local function drawCardListener( event )
         local object = event.target
@@ -1618,10 +1620,11 @@ function scene:create( event )
    -- mainGroup:insert(showOppLabel)    
     
     -- show opp 1 cards
-    local showMain = display.newRect( 900, 425, 100, 100 )
+    local showMain = display.newRect( 900, 424, 100, 100 )
     showMain:setFillColor(.5,.5,.5)
-    local showMainLabel = display.newText( { text = "Show Main", x = 900, y = btnY + 100, fontSize = 16 } )
-    showMainLabel:setTextColor( 1 )
+    
+    local playerIndic = display.newRect(display.contentWidth/2, btnY + 200, 200,40)
+    playerIndic:setFillColor(.5,.5,.5)
     
     local function oppViewListener( event )
         while oppGroup[1] do
@@ -1630,8 +1633,9 @@ function scene:create( event )
         
   
         scene:HideOpponentCards()
-        showMainLabel.visible = false
-        showMain.visible = false
+        showMain.isVisible = true
+        playerIndic.isVisible = true
+
        
         
         if(currentOpp<=numOpp)then
@@ -1642,24 +1646,27 @@ function scene:create( event )
             scene:HideOpponentCards() 
         else
             if(currentOpp == numOpp)then
-                showMainLabel.text = "Return to player "
-                cpuBackground = controls:CPUBG(oppGroup)
-            else
-                showMainLabel.text = "Show Opponent " .. currentOpp+1
-                cpuBackground = controls:CPUBG1(oppGroup)
+                showMain.fill = {type = "image",filename = "images/view-your-hand.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-2.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-2.png"}
             end
             
             scene:ShowOpponentCards(currentOpp)
         end
-
+        
+        oppGroup:insert(cpuBackground)
+        cpuBackground:toBack()
         oppGroup:insert(showMain)
-        oppGroup:insert(showMainLabel)
+        oppGroup:insert(playerIndic)
     end
     
     showMain:addEventListener( "tap", oppViewListener )
 
+    oppGroup:insert(cpuBackground)
+    cpuBackground:toBack()
     oppGroup:insert(showMain)
-    oppGroup:insert(showMainLabel)       
+    oppGroup:insert(playerIndic)
+
     
     --local getHuman = display.newRect( 650, btnY, 100, 100 )
     --getHuman:setFillColor(.5,.5,.5)
@@ -1691,7 +1698,6 @@ function scene:create( event )
     
      local function endTurnListener( event )
         local self = event.target
-        cpuBackground = controls:CPUBG(oppGroup)
 
         if(event.phase == "began") then
             currentOpp = 1
@@ -1706,21 +1712,21 @@ function scene:create( event )
                 display.getCurrentStage():setFocus(nil)
                 scene:EndTurn()
                 turnCount = turnCount + 1
+                oppGroup:insert(cpuBackground)
+                cpuBackground:toBack()
+                showMain.fill = {type = "image",filename = "images/view-next-player.png"}
+                playerIndic.fill = {type = "image",filename = "images/title-player-1.png"}
+                cpuBackground.fill = {type = "image",filename = "images/background-player-1.png"}
+                display.getCurrentStage():setFocus(event.target)
                 scene:ShowOpponentCards(currentOpp)
-            end
-            
-            if numOpp == 1 then
-                showMainLabel.text = "Return to Player"
-            else
-                showMainLabel.text = "Show Opponent "..currentOpp+1
-            end            
+            end           
         end 
     end        
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
     
-    audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
+    --audio.play(backgroundMusic, {channel = 1,loops = -1,fadein = 5000})
     audio.setVolume( 0.5, { channel=1 } )
 end
 
@@ -1743,7 +1749,7 @@ function scene:show( event )
         timer.resume(gameTimer)
         scene:InitializeGame()
         if music then
-            audio.resume(backgroundMusic)
+            --audio.resume(backgroundMusic)
         end
    end
 end
@@ -1759,7 +1765,7 @@ function scene:hide( event )
       -- Insert code here to "pause" the scene.
       -- Example: stop timers, stop animation, stop audio, etc.
       if music then
-        audio.pause(backgroundChanel)
+        --audio.pause(backgroundChanel)
       end
 
       if gameTimer then

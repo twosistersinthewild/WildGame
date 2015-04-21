@@ -25,6 +25,7 @@ local currentOpp = 1
 local drawCount = 1
 local deckIndex = 1
 local tapCounter = 0 -- flag
+local stalemateCounter = false
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -86,7 +87,6 @@ function DiscardMovementListener(event)
         end
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
@@ -176,7 +176,6 @@ function FieldMovementListener(event)
         self.markY = self.y    -- store y location of object  
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY        
@@ -516,8 +515,7 @@ function FieldMovementListener(event)
 
                         if not canMigrate then
                             self.x = self.originalX
-                            self.y = self.originalY  
-                            print(self.x.." "..self.y)
+                            self.y = self.originalY
                         else -- move all of the cards now    
                             while activeEnvs[envNum][myChain] and activeEnvs[envNum][myChain][myIndex] do
                                 if activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 2 or activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 3 then
@@ -574,7 +572,6 @@ function HandMovementListener(event)
         -- todo see if getCurrentStage can be used to pass to another file to manipulate controls
         display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
@@ -692,7 +689,6 @@ function HandMovementListener(event)
         
         if played then 
             cardsPlayed = cardsPlayed + 1
-            print(cardsPlayed)
         end
         
         if not played and validLoc and validLoc ~= "discard" then
@@ -753,8 +749,6 @@ local function ZoomTapListener( event )
             self.x = display.contentWidth/2    
             scrollView.isVisible = false
             tapCounter = 1 -- sets flag to indicate zoomed image
-            
-            print( "The object was double-tapped." )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
@@ -945,47 +939,43 @@ function scene:SearchForStrohm()
 end
 
 --for testing to get a specific card from deck
-function scene:DebugGetCard(id)
-    --local numDraw = deckIndex + num - 1 -- todo make sure this is ok  
-    --local numPlayed = 0
+-- aww
+function scene:DebugGetCard(id, myHand, who)
     local size = #deck - deckIndex
     
     for i = deckIndex, size, 1 do -- start from deckIndex and draw the number passed in. third param is step
         if deck[i] then
             if deck[i]["cardData"]["ID"] == id then -- make sure there is a card to draw
                 -- insert the card into the hand, then nil it from the deck            
-                table.insert(hand, deck[i])
+                table.insert(myHand, deck[i])
 
-            -- if the player is being dealt a card, put the image on screen
+                -- if the player is being dealt a card, put the image on screen
+                if who == "player" then
+                    local imgString = "assets/"
+                    local filenameString = myHand[#myHand]["cardData"]["File Name"]
+                    imgString = imgString..filenameString
 
-                local imgString = "assets/"
-                local filenameString = hand[#hand]["cardData"]["File Name"]
-                imgString = imgString..filenameString
+                    local paint = {type = "image", filename = imgString}
+                    local myImg = myHand[#myHand]
+                    myImg.fill = paint  
+                    scrollView:insert(myHand[#myHand])
+                    myImg.x = scrollXPos
+                    myImg.y = scrollYPos
+                    scrollXPos = scrollXPos + GLOB.cardWidth 
 
-                --print(imgString)
-                --print(myHand[#myHand].x)
-                local paint = {
-                    type = "image",
-                    filename = imgString
-                }
+                    myImg:addEventListener( "touch", HandMovementListener ) 
 
-                local myImg = hand[#hand]
-                myImg.fill = paint  
+                    if not myImg._functionListeners or myImg._functionListeners.tap == nil then
+                        myImg:addEventListener( "tap", ZoomTapListener )
+                    end
 
-
-
-                scrollView:insert(hand[#hand])
-                myImg.x = scrollXPos
-                myImg.y = scrollYPos
-                scrollXPos = scrollXPos + GLOB.cardWidth 
-
-                myImg:addEventListener( "touch", HandMovementListener ) 
-
-                if not myImg._functionListeners or myImg._functionListeners.tap == nil then
-                    myImg:addEventListener( "tap", ZoomTapListener )
+                    scrollY = controls:GameLogAdd(logScroll,scrollY,"Player has drawn the " .. deck[i]["cardData"].Name .. " card.")
+                
+                    scene:AdjustScroller()
+                else
+                    scrollY = controls:GameLogAdd(logScroll,scrollY,who.." has drawn the " .. deck[i]["cardData"].Name .. " card.")
                 end
-
-                scrollY = controls:GameLogAdd(logScroll,scrollY,"Player has drawn the " .. deck[i]["cardData"].Name .. " card.")
+                
                 deck[i] = nil  
 
                 local index = i
@@ -995,17 +985,14 @@ function scene:DebugGetCard(id)
                     deck[index + 1] = nil
                     index = index + 1
                 end
-
-
-                scene:AdjustScroller()
+                
                 break
             end
         else
             -- the draw pile is empty
             -- todo: deal with this by either reshuffling discard or ending game
             scrollY = controls:GameLogAdd(logScroll,scrollY,"There are no cards left to draw.")
-        end
-        
+        end        
     end
 end
 
@@ -1258,6 +1245,7 @@ function scene:EndTurn()
         for i = 1, numOpp do
             local whoString = "Opponent"..i
             
+            -- computer will check discard pile before drawing blindly from deck
             if turnCount > 1 then -- only do this after first turn.                
                 local cardsDrawn = 0
                 
@@ -1356,6 +1344,7 @@ function scene:EndTurn()
                     ind = ind + 1
                 elseif playedString ~= "" then
                     scrollY = controls:GameLogAdd(logScroll,scrollY,playedString)
+                    ind = 1 -- if a card was played, start back at start of hand in case ones already tried can now be played
                 end                
             end
             

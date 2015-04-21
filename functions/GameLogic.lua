@@ -264,7 +264,7 @@ function gameLogic:PlayAnimal(myCard, myHand, myEnvs, index, availChain, who)
                     if myEnvs[index][availChain][tabLen]["cardData"].Value == 2 or myEnvs[index][availChain][tabLen]["cardData"].Value == 3 then  
                         foodType = "Plant"
                     elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 6 or myEnvs[index][availChain][tabLen]["cardData"].Value == 7 then  
-                        foodType = "Invertebrate"
+                        foodType = "Small Animal"
                     elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 8 then  
                         foodType = "Small Animal"
                     elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 9 then
@@ -418,23 +418,40 @@ function gameLogic:MigrateAnimal(myCard, myHand, myEnvs, index, availChain, who,
                 tabLen = #myEnvs[index][availChain]
 
                 if tabLen > 0 then
-                        local foodType = myEnvs[index][availChain][tabLen]["cardData"].Type
+                    local foodType = myEnvs[index][availChain][tabLen]["cardData"].Type
 
-                        -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
-                        if foodType == "Small Plant" or foodType == "Large Plant" then
+                    -- since other creatures don't discriminate between sm and lg plant, change the string to just Plant
+                    if foodType == "Small Plant" or foodType == "Large Plant" then
+                        foodType = "Plant"
+                    end
+
+                    -- if it's a wild card, set the string based on its current value
+                    -- this will determine its "type"
+                    -- todo make sure this is working correctly
+                    if foodType == "Wild" then
+                        if myEnvs[index][availChain][tabLen]["cardData"].Value == 2 or myEnvs[index][availChain][tabLen]["cardData"].Value == 3 then  
                             foodType = "Plant"
+                        elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 6 or myEnvs[index][availChain][tabLen]["cardData"].Value == 7 then  
+                            foodType = "Small Animal"
+                        elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 8 then  
+                            foodType = "Small Animal"
+                        elseif myEnvs[index][availChain][tabLen]["cardData"].Value == 9 then
+                            foodType = "Large Animal"
+                        else
+                            foodType = "Apex"
                         end
+                    end
 
-                        -- loop through the card's available diets and try to match the chain
-                        for diet = 1, 5 do
-                            local dietString = "Diet"..diet.."_Type"
+                    -- loop through the card's available diets and try to match the chain
+                    for diet = 1, 5 do
+                        local dietString = "Diet"..diet.."_Type"
 
-                            -- if this is true, there is space and the last card in the chain is edible
-                            if myCard["cardData"][dietString] and myCard["cardData"][dietString] == foodType then
-                                space = true
-                                dietValue = diet
-                                break
-                            end                                        
+                        -- if this is true, there is space and the last card in the chain is edible
+                        if myCard["cardData"][dietString] and myCard["cardData"][dietString] == foodType then
+                            space = true
+                            dietValue = diet
+                            break
+                        end  
                     end  
                 end 
             else
