@@ -807,7 +807,7 @@ function gameLogic:CalculateScore(myEnvs)
     local chainStr = "chain"    
     
     for i = 1, 3 do 
-        if myEnvs[i] then
+        if myEnvs and myEnvs[i] then
             if not envFound then -- only want to set this once, so once an env has been found this will not be true again
                 envFound = true
                 curEco[1] = true -- hard coded to make it a 1 for env

@@ -25,6 +25,7 @@ local currentOpp = 1
 local drawCount = 1
 local deckIndex = 1
 local tapCounter = 0 -- flag
+local stalemateCounter = false
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -93,7 +94,6 @@ function DiscardMovementListener(event)
         end
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
@@ -183,7 +183,6 @@ function FieldMovementListener(event)
         self.markY = self.y    -- store y location of object  
         self:toFront()
         display.getCurrentStage():setFocus(event.target)
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY        
@@ -523,8 +522,7 @@ function FieldMovementListener(event)
 
                         if not canMigrate then
                             self.x = self.originalX
-                            self.y = self.originalY  
-                            print(self.x.." "..self.y)
+                            self.y = self.originalY
                         else -- move all of the cards now    
                             while activeEnvs[envNum][myChain] and activeEnvs[envNum][myChain][myIndex] do
                                 if activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 2 or activeEnvs[envNum][myChain][myIndex]["cardData"]["Value"] == 3 then
@@ -554,7 +552,7 @@ function FieldMovementListener(event)
 
             local curEco = gameLogic:CalculateScore(activeEnvs)
             
-            scene:ScoreImageChange(curEco)            
+            scene:ScoreImageChange(curEco, "player")            
         end
         gameLogic:RepositionCards(activeEnvs)
         cardMoving = false
@@ -581,7 +579,6 @@ function HandMovementListener(event)
         -- todo see if getCurrentStage can be used to pass to another file to manipulate controls
         display.getCurrentStage():setFocus(event.target)
         scrollView.isVisible = false
-        print(self.markX, self.markY, self.x, self.y);
         cardMoving = true
     elseif event.phase == "moved" and cardMoving then
         local myX, myY
@@ -699,7 +696,6 @@ function HandMovementListener(event)
         
         if played then 
             cardsPlayed = cardsPlayed + 1
-            print(cardsPlayed)
         end
         
         if not played and validLoc and validLoc ~= "discard" then
@@ -722,7 +718,7 @@ function HandMovementListener(event)
         scrollView.isVisible = true
         scene:AdjustScroller()
         local curEco = gameLogic:CalculateScore(activeEnvs)
-        scene:ScoreImageChange(curEco)
+        scene:ScoreImageChange(curEco, "player")
         
         cardMoving = false
     end
@@ -760,8 +756,6 @@ local function ZoomTapListener( event )
             self.x = display.contentWidth/2    
             scrollView.isVisible = false
             tapCounter = 1 -- sets flag to indicate zoomed image
-            
-            print( "The object was double-tapped." )
         else
             self.xScale = 1 -- reset size
             self.yScale = 1
@@ -952,6 +946,7 @@ function scene:SearchForStrohm()
 end
 
 --for testing to get a specific card from deck
+-- aww
 function scene:DebugGetCard(id, myHand, who)
     local size = #deck - deckIndex
     
@@ -1116,7 +1111,7 @@ function scene:PlayCard()
             
             scene:AdjustScroller()
             local curEco = gameLogic:CalculateScore(activeEnvs)
-            scene:ScoreImageChange(curEco)
+            scene:ScoreImageChange(curEco, "player")
             
             -- since a card was played, break the loop so as not to continue checking more to play
             break
@@ -1257,6 +1252,7 @@ function scene:EndTurn()
         for i = 1, numOpp do
             local whoString = "Opponent"..i
             
+            -- computer will check discard pile before drawing blindly from deck
             if turnCount > 1 then -- only do this after first turn.                
                 local cardsDrawn = 0
                 
@@ -1355,6 +1351,7 @@ function scene:EndTurn()
                     ind = ind + 1
                 elseif playedString ~= "" then
                     scrollY = controls:GameLogAdd(logScroll,scrollY,playedString)
+                    ind = 1 -- if a card was played, start back at start of hand in case ones already tried can now be played
                 end                
             end
             
@@ -1440,7 +1437,7 @@ function scene:InitializeGame()
     scene:DebugGetCard(41, hand, "player") -- amber snail
     scene:DebugGetCard(64, hand, "player") -- eastern toad
     scene:DebugGetCard(77, hand, "player") -- timber wolf      
-    -- aww end tutorial code       
+    -- aww end tutorial code  
     numOpp = 2
     
     -- pass 5 cards out to other players 
@@ -1451,12 +1448,10 @@ function scene:InitializeGame()
             cpuActiveEnvs[i] = {} -- initialize computer's playfield area
             cpuHand[i] = {}
             local whoString = "Opponent"..i
-            scene:drawCards(5,cpuHand[i], whoString)   
-            
+            scene:drawCards(5,cpuHand[i], whoString)            
         end
     end 
-
-     
+    
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Drag an environment card onto the playfield.")
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Plant cards can be played on environments.")
     scrollY = controls:GameLogAdd(logScroll,scrollY, "Other animals can be played on plants.")
@@ -1523,7 +1518,7 @@ function scene:ScoreImageChange(myEco, who)
             }
         }
         local catcher = controls:TouchCatcher(winningGroup)
-        timer.performWithDelay(3000, function() composer.gotoScene(screenString, options) end)
+        timer.performWithDelay(1500, function() composer.gotoScene(screenString, options) end)
     end
 end
 
@@ -1548,7 +1543,7 @@ function scene:create( event )
     sceneGroup:insert(hiddenGroup)
     oppGroup.isVisible = false
     hiddenGroup.isVisible = false  
-    --oppGroup:insert(cpuBackground)
+    oppGroup:insert(cpuBackground)
 
     
     -- create a rectangle for each card
@@ -1677,7 +1672,7 @@ function scene:create( event )
     end
     
     tutTimer  = timer.performWithDelay( 50, tutListener, -1)
-    -- aww end tutorial code       
+    -- aww end tutorial code        
        
     local btnY = 400
    
@@ -1723,8 +1718,8 @@ function scene:create( event )
         
   
         scene:HideOpponentCards()
-        showMain.visible = false
-        playerIndic.visible = false
+        showMain.isVisible = true
+        playerIndic.isVisible = true
 
        
         
@@ -1743,13 +1738,17 @@ function scene:create( event )
             
             scene:ShowOpponentCards(currentOpp)
         end
-
+        
+        oppGroup:insert(cpuBackground)
+        cpuBackground:toBack()
         oppGroup:insert(showMain)
         oppGroup:insert(playerIndic)
     end
     
     showMain:addEventListener( "tap", oppViewListener )
 
+    oppGroup:insert(cpuBackground)
+    cpuBackground:toBack()
     oppGroup:insert(showMain)
     oppGroup:insert(playerIndic)
 
@@ -1811,7 +1810,7 @@ function scene:create( event )
             display.getCurrentStage():setFocus(nil)              
         end 
     end        
-    -- aww end tutorial code  
+    -- aww end tutorial code       
     
     endTurnBtn:addEventListener( "touch", endTurnListener )
     mainGroup:insert(endTurnBtn)  
@@ -1835,7 +1834,7 @@ function scene:show( event )
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         composer.removeScene("screens.Win")
-        -- aww for tutorial
+	        -- aww for tutorial
         composer.removeScene("screens.Game_test")
         -- aww end for tutorial	 
         timer.resume(gameTimer)
