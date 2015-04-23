@@ -24,7 +24,6 @@ function jumpListener (event)
         display.getCurrentStage():setFocus(nil)
         if(target.name == "play")then
             composer.hideOverlay( "fade", 400 )
-            --composer.gotoScene("screens.Game_test", options)
         end
         if(target.name == "menu") then
             --composer.hideOverlay()
@@ -34,8 +33,8 @@ function jumpListener (event)
             os.exit();
         end
         if(target.name == "new") then
-            composer.removeScene("screens.Game_test")
-            composer.gotoScene("screens.Game_test")
+            composer.removeScene("screens.Game")
+            composer.gotoScene("screens.Game")
         end
     end
     

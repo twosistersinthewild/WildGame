@@ -12,8 +12,8 @@ local function menuListener (event)
     local self = event.target
     if event.phase == "ended" then
         if self.name == "play" then
-            composer.removeScene("screens.Game_test")
-            composer.gotoScene("screens.Game_test")
+            composer.removeScene("screens.Game")
+            composer.gotoScene("screens.Game")
         elseif self.name == "menu" then
             composer.gotoScene("screens.MainMenu")
         elseif self.name == "exit" then
@@ -97,7 +97,7 @@ function scene:show( event )
    if ( phase == "will" ) then
       -- Called when the scene is still off screen (but is about to come on screen).
    elseif ( phase == "did" ) then
-       composer.removeScene("screens.Game_test")
+       composer.removeScene("screens.Game")
       -- Called when the scene is now on screen.
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
