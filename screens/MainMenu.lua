@@ -26,7 +26,7 @@ function scene:create( event )
                 -- i put a small delay on the call to gotoScene or else the loading screen wouldn't actually come to front
                 -- before starting the load
                 loadingScreen:toFront()
-                timer.performWithDelay(50, function() composer.gotoScene("screens.Game_test") end)
+                timer.performWithDelay(50, function() composer.gotoScene("screens.Game_test_DO") end)
             elseif self.name == "howToPlay" then
                 --system.openURL( "https://www.youtube.com/watch?v=n4Cc02VLYq4" )
                 loadingScreen:toFront()
@@ -36,10 +36,11 @@ function scene:create( event )
                 isModal = true,
                 effect = "fade",
                 time = 400,
-                params = {name = "menu", pTime = 8, pDrawn = 8, pPlayed = 8}
+                params = {name = "menu", pTime = 7, pDrawn = 8, pPlayed = 9, pTurns = 10}
                 }
                 composer.showOverlay( "screens.SettingsOverlay", options )
                 --composer.showOverlay( "screens.Lose", options )
+                --composer.showOverlay( "screens.Win", options )
             elseif self.name == "exit" then
                 os.exit();
             end

@@ -40,13 +40,17 @@ function scene:create( event )
     timeLbl:setTextColor( 1 )
     sceneGroup:insert(timeLbl)
     
-    local playedLbl = display.newText( { text = event.params.pPlayed, x = 755, y = 250, fontSize = 28 } )
+    local playedLbl = display.newText( { text = event.params.pPlayed, x = 755, y = 308, fontSize = 28 } )
     playedLbl:setTextColor( 1 )
     sceneGroup:insert(playedLbl)
     
-    local drawnLbl = display.newText( { text = event.params.pDrawn, x = 755, y = 308, fontSize = 28 } )
+    local drawnLbl = display.newText( { text = event.params.pDrawn, x = 755, y = 370, fontSize = 28 } )
     drawnLbl:setTextColor( 1 )
     sceneGroup:insert(drawnLbl)
+    
+    local turnLbl = display.newText( { text = event.params.pTurns, x = 755, y = 250, fontSize = 28 } )
+    turnLbl:setTextColor( 1 )
+    sceneGroup:insert(turnLbl)
     
     local play = display.newRect(450, 585, 80, 80);
     imgString = "images/new-game-button.png"
