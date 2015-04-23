@@ -25,7 +25,7 @@ local currentOpp = 1
 local drawCount = 1
 local deckIndex = 1
 local tapCounter = 0 -- flag
-local stalemateCounter = false
+local stalemateCounter = 0
 
 -- variables for the scroller x and y
 local scrollYPos = GLOB.cardHeight / 2 
@@ -45,7 +45,6 @@ local cpuScoreIconsOn = {}
 local cpuScoreIconsOff = {}
 local cardBack
 local cpuBackground
-
 
 local cardMoving = false
 
@@ -1240,6 +1239,8 @@ function scene:EndTurn()
     local curEco = gameLogic:CalculateScore(activeEnvs)
     scene:ScoreImageChange(curEco, "player")    
     
+    local stalemate = true -- see if we have a stalemate
+    
     drawCount = 1
     if numOpp > 0 then       
         for i = 1, numOpp do
@@ -1259,6 +1260,23 @@ function scene:EndTurn()
                     end
                 end
             end     
+            
+            if stalemateCounter >= 2 then -- computer will try to replay hand by dumping active playfield into hand and replaying everything
+                for j = 1, 3 do
+                    if cpuActiveEnvs[i][j] then  
+                        for k = 1, 2 do
+                            if cpuActiveEnvs[i][j]["chain"..k] then
+                                for m = 1, #cpuActiveEnvs[i][j]["chain"..k] do
+                                    if m > 1 then -- we're going to ignore plants here. todo could make them placed into hand if strohmstead is active
+                                        table.insert(cpuHand[i], cpuActiveEnvs[i][j]["chain"..k][m])
+                                        cpuActiveEnvs[i][j]["chain"..k][m] = nil
+                                    end
+                                end
+                            end                        
+                        end
+                    end
+                end
+            end
             
             -- opponent tries to play cards
             -- cycle through their entire hand
@@ -1345,6 +1363,7 @@ function scene:EndTurn()
                 elseif playedString ~= "" then
                     scrollY = controls:GameLogAdd(logScroll,scrollY,playedString)
                     ind = 1 -- if a card was played, start back at start of hand in case ones already tried can now be played
+                    stalemate = false -- set to false if any computer player plays a card
                 end                
             end
             
@@ -1353,7 +1372,62 @@ function scene:EndTurn()
                 scene:DiscardHand(cpuHand[i])
             end
         end
-    end   
+    end 
+    
+    if stalemate then -- note: this will never be set to false if there are no opponents
+        stalemateCounter = stalemateCounter + 1
+    else
+        stalemateCounter = 0
+    end
+    
+    
+    -- we've tried to replay all cards for cpu now.
+    -- now check to see if there's still a deadlock for lg plant, apex, lg animal, wild, etc.
+    if stalemateCounter >= 2 then
+        stalemateCounter = 0
+        
+        local lgPlantCount = 0
+        local lgAnimalCount = 0
+        local apexCount = 0
+        
+        for i = 1, numOpp do
+            for j = 1, 3 do
+                if cpuActiveEnvs[i][j] then
+                    for k = 1, 2 do
+                        if cpuActiveEnvs[i][j]["chain"..k] then
+                            for m = 1, #cpuActiveEnvs[i][j]["chain"..k] do
+                                if cpuActiveEnvs[i][j]["chain"..k][m]["cardData"]["Type"] == "Large Plant" then
+                                    lgPlantCount = lgPlantCount + 1
+                                elseif cpuActiveEnvs[i][j]["chain"..k][m]["cardData"]["Type"] == "Large Animal" then
+                                    lgAnimalCount = lgAnimalCount + 1
+                                elseif cpuActiveEnvs[i][j]["chain"..k][m]["cardData"]["Type"] == "Apex" then
+                                    apexCount = apexCount + 1
+                                end                                
+                            end
+                        end 
+                    end
+                end
+            end
+        end
+        
+        if lgPlantCount == 6 or lgAnimalCount == 7 or apexCount == 6 or turnCount > 30 then
+            local winString = "You lose!"
+            local screenString = "screens.Lose" 
+            scrollY = controls:GameLogAdd(logScroll,scrollY,winString)
+            local options = 
+            {
+                params = {
+                    pTime = gameTime,
+                    pPlayed = cardsPlayed,
+                    pDrawn = drawn,
+                    pTurns = turnCount
+                }
+            }
+            local catcherMain = controls:TouchCatcher(mainGroup)
+            local catcherOpp = controls:TouchCatcher(oppGroup)
+            timer.performWithDelay(1500, function() composer.gotoScene(screenString, options) end)          
+        end        
+    end
 end
 
 function scene:ShowOpponentCards(oppNum)
@@ -1500,7 +1574,8 @@ function scene:ScoreImageChange(myEco, who)
             params = {
                 pTime = gameTime,
                 pPlayed = cardsPlayed,
-                pDrawn = drawn
+                pDrawn = drawn,
+                pTurns = turnCount
             }
         }
         local catcher = controls:TouchCatcher(winningGroup)

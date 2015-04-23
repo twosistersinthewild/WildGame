@@ -9,7 +9,7 @@ settings = {
 	},
         
         android = {
-            versionCode = "04",        
+            versionCode = "10",        
         },
         
 	iphone = {
