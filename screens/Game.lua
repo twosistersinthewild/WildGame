@@ -1239,6 +1239,8 @@ function scene:EndTurn()
     local curEco = gameLogic:CalculateScore(activeEnvs)
     scene:ScoreImageChange(curEco, "player")    
     
+    local pullCount = 0
+    local playCount = 0
     local stalemate = true -- see if we have a stalemate
     
     drawCount = 1
@@ -1259,21 +1261,20 @@ function scene:EndTurn()
                         cardsDrawn = cardsDrawn + 1
                     end
                 end
-            end     
+            end 
             
-            if stalemateCounter >= 2 then -- computer will try to replay hand by dumping active playfield into hand and replaying everything
-                for j = 1, 3 do
-                    if cpuActiveEnvs[i][j] then  
-                        for k = 1, 2 do
-                            if cpuActiveEnvs[i][j]["chain"..k] then
-                                for m = 1, #cpuActiveEnvs[i][j]["chain"..k] do
-                                    if m > 1 then -- we're going to ignore plants here. todo could make them placed into hand if strohmstead is active
-                                        table.insert(cpuHand[i], cpuActiveEnvs[i][j]["chain"..k][m])
-                                        cpuActiveEnvs[i][j]["chain"..k][m] = nil
-                                    end
+            for j = 1, 3 do-- computer will try to replay hand by dumping active playfield into hand and replaying everything
+                if cpuActiveEnvs[i][j] then  
+                    for k = 1, 2 do
+                        if cpuActiveEnvs[i][j]["chain"..k] then
+                            for m = 1, #cpuActiveEnvs[i][j]["chain"..k] do
+                                if m > 1 then -- we're going to ignore plants here. todo could make them placed into hand if strohmstead is active
+                                    pullCount = pullCount + 1
+                                    table.insert(cpuHand[i], cpuActiveEnvs[i][j]["chain"..k][m])
+                                    cpuActiveEnvs[i][j]["chain"..k][m] = nil
                                 end
-                            end                        
-                        end
+                            end
+                        end                        
                     end
                 end
             end
@@ -1291,12 +1292,14 @@ function scene:EndTurn()
                         cardPlayed, playedString = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
 
                         if cardPlayed then -- break the for loop if a card has been played
+                            playCount = playCount + 1
                             break
                         end
                     end
                 elseif cpuHand[i][ind]["cardData"].Type == "Small Plant" or cpuHand[i][ind]["cardData"].Type == "Large Plant" then
                     for j = 1, 3 do -- try all 3 environments                        
                         if cardPlayed then
+                            playCount = playCount + 1
                             break
                         end
                         
@@ -1306,6 +1309,7 @@ function scene:EndTurn()
                             cardPlayed, playedString = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
                         
                             if cardPlayed then -- break the for loop if a card has been played
+                                playCount = playCount + 1
                                 break
                             end
                         end
@@ -1313,6 +1317,7 @@ function scene:EndTurn()
                 elseif cpuHand[i][ind]["cardData"].Type == "Invertebrate" or cpuHand[i][ind]["cardData"].Type == "Small Animal" or cpuHand[i][ind]["cardData"].Type == "Large Animal" or cpuHand[i][ind]["cardData"].Type == "Apex" then
                     for j = 1, 3 do -- try all 3 environments                        
                         if cardPlayed then
+                            playCount = playCount + 1
                             break
                         end
                         
@@ -1322,6 +1327,7 @@ function scene:EndTurn()
                             cardPlayed, playedString = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
                         
                             if cardPlayed then -- break the for loop if a card has been played
+                                playCount = playCount + 1
                                 break
                             end
                         end
@@ -1329,11 +1335,13 @@ function scene:EndTurn()
                 elseif cpuHand[i][ind]["cardData"].Type == "Wild" then
                     for j = 1, 3 do -- try all 3 environments                          
                         if cardPlayed then
+                            playCount = playCount + 1
                             break
                         else -- try to play as env
                             cardPlayed, playedString = gameLogic:PlayEnvironment(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, "Opponent"..i)
                         
                             if cardPlayed then
+                                playCount = playCount + 1
                                 break 
                             else -- else try to play as plant                            
                                 for k = 1, 2 do -- try both chains on each env
@@ -1341,11 +1349,13 @@ function scene:EndTurn()
                                     cardPlayed, playedString = gameLogic:PlayPlant(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
 
                                     if cardPlayed then
+                                        playCount = playCount + 1
                                         break
                                     else-- else try to play as animal 
                                         cardPlayed, playedString = gameLogic:PlayAnimal(cpuHand[i][ind], cpuHand[i], cpuActiveEnvs[i], j, chainString, "Opponent"..i)
 
                                         if cardPlayed then
+                                            playCount = playCount + 1
                                             break
                                         end
                                     end
@@ -1363,7 +1373,6 @@ function scene:EndTurn()
                 elseif playedString ~= "" then
                     scrollY = controls:GameLogAdd(logScroll,scrollY,playedString)
                     ind = 1 -- if a card was played, start back at start of hand in case ones already tried can now be played
-                    stalemate = false -- set to false if any computer player plays a card
                 end                
             end
             
@@ -1374,7 +1383,7 @@ function scene:EndTurn()
         end
     end 
     
-    if stalemate then -- note: this will never be set to false if there are no opponents
+    if pullCount == playCount and playCount > 0  then
         stalemateCounter = stalemateCounter + 1
     else
         stalemateCounter = 0
@@ -1390,6 +1399,7 @@ function scene:EndTurn()
         local lgAnimalCount = 0
         local apexCount = 0
         
+        -- see if opponents are holding all of certain card types
         for i = 1, numOpp do
             for j = 1, 3 do
                 if cpuActiveEnvs[i][j] then
@@ -1809,6 +1819,7 @@ function scene:show( event )
       -- Insert code here to make the scene come alive.
       -- Example: start timers, begin animation, play audio, etc.
         composer.removeScene("screens.Win")
+        composer.removeScene("screens.Lose")
         composer.removeScene("screens.tutorial")
         timer.resume(gameTimer)
         scene:InitializeGame()
